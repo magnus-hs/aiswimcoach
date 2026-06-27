@@ -1,4 +1,4 @@
-import { ApiError, CoachingResponse } from '../types';
+import { ApiError, FullResponse } from '../types';
 
 /**
  * Maps HTTP status codes to user-facing error messages.
@@ -23,14 +23,15 @@ function errorMessageForStatus(status: number, bodyText: string): string {
 }
 
 /**
- * Uploads a .fit file to the backend and returns the AI coaching response.
+ * Uploads a .fit file to the backend and returns the full response
+ * including session info, splits, metrics, and coaching.
  *
  * @param file - The .fit file selected by the user.
- * @returns The coaching response containing tips and a drill.
+ * @returns The full response from the backend.
  * @throws {ApiError} When the server returns a non-2xx response.
  * @throws {Error} When a network error prevents the request from completing.
  */
-export async function uploadFitFile(file: File): Promise<CoachingResponse> {
+export async function uploadFitFile(file: File): Promise<FullResponse> {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -49,5 +50,5 @@ export async function uploadFitFile(file: File): Promise<CoachingResponse> {
     throw new ApiError(response.status, errorMessageForStatus(response.status, text));
   }
 
-  return response.json() as Promise<CoachingResponse>;
+  return response.json() as Promise<FullResponse>;
 }

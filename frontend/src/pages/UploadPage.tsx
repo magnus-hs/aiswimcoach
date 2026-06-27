@@ -1,10 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
 import { FileDropZone } from '../components/FileDropZone';
 import { LoadingIndicator } from '../components/LoadingIndicator';
+import { SessionSummary } from '../components/SessionSummary';
+import { SplitsTable } from '../components/SplitsTable';
 import { CoachingResult } from '../components/CoachingResult';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { uploadFitFile } from '../api/upload';
-import { ApiError, CoachingResponse } from '../types';
+import { ApiError, FullResponse } from '../types';
 
 type PageState = 'idle' | 'uploading' | 'result' | 'error';
 
@@ -14,14 +16,12 @@ type PageState = 'idle' | 'uploading' | 'result' | 'error';
  * States:
  *   idle      → FileDropZone active
  *   uploading → LoadingIndicator shown, FileDropZone disabled
- *   result    → CoachingResult rendered
+ *   result    → SessionSummary + SplitsTable + CoachingResult rendered
  *   error     → ErrorBanner rendered (with retry for network/5xx)
- *
- * Validates: Requirements 1.4, 1.5, 1.6, 1.7, 1.8
  */
 export function UploadPage() {
   const [state, setState] = useState<PageState>('idle');
-  const [result, setResult] = useState<CoachingResponse | null>(null);
+  const [result, setResult] = useState<FullResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [canRetry, setCanRetry] = useState(false);
   const [rejectionMessage, setRejectionMessage] = useState('');
@@ -79,7 +79,7 @@ export function UploadPage() {
   );
 
   return (
-    <div style={{ maxWidth: '40rem', margin: '0 auto', padding: '2rem 1rem' }}>
+    <div className="upload-page">
       <FileDropZone
         onFileAccepted={handleFileAccepted}
         onFileRejected={handleFileRejected}
@@ -93,7 +93,11 @@ export function UploadPage() {
       {state === 'uploading' && <LoadingIndicator />}
 
       {state === 'result' && result && (
-        <CoachingResult tips={result.tips} drill={result.drill} />
+        <div className="upload-page__results">
+          <SessionSummary session={result.session} />
+          <SplitsTable splits={result.splits} />
+          <CoachingResult tips={result.coaching.tips} drill={result.coaching.drill} />
+        </div>
       )}
 
       {state === 'error' && (

@@ -9,7 +9,7 @@ Invariants:
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -38,6 +38,25 @@ class Metrics:
                 raise ValueError(
                     f"Metrics.{field_name} must be a finite number, got {value}"
                 )
+
+
+@dataclass
+class LengthSplit:
+    """Per-length split data."""
+    length_number: int
+    time_seconds: float
+    stroke: str
+
+
+@dataclass
+class SessionInfo:
+    """High-level session information extracted from the FIT file."""
+    start_time: str          # ISO format datetime string
+    pool_length_m: float
+    stroke: str              # dominant stroke
+    total_distance_m: float
+    total_time_seconds: float
+    num_lengths: int
 
 
 @dataclass
@@ -74,3 +93,12 @@ class CoachingResponse:
             raise ValueError(
                 f"CoachingResponse.drill exceeds 500 characters (length={len(self.drill)})"
             )
+
+
+@dataclass
+class FullResponse:
+    """Complete API response combining session info, splits, metrics, and coaching."""
+    session: SessionInfo
+    splits: list[LengthSplit]
+    metrics: Metrics
+    coaching: CoachingResponse

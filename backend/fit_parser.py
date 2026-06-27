@@ -11,11 +11,11 @@ Processing strategy:
 from __future__ import annotations
 
 import math
-from typing import Optional
+from typing import Any, Optional
 
 from fitparse import FitFile
 
-from models import Metrics
+from models import Metrics, SessionInfo, LengthSplit
 
 
 # ---------------------------------------------------------------------------
@@ -198,3 +198,124 @@ def parse_fit(fit_bytes: bytes) -> Metrics:
         swolf=_average(swolf_values),
         stroke_rate=_average(stroke_rate_values),
     )
+
+
+# ---------------------------------------------------------------------------
+# Stroke enum mapping (FIT SDK swim_stroke enum)
+# ---------------------------------------------------------------------------
+
+_STROKE_MAP: dict[int, str] = {
+    0: "freestyle",
+    1: "backstroke",
+    2: "breaststroke",
+    3: "butterfly",
+    4: "drill",
+    5: "mixed",
+    6: "IM",
+}
+
+
+def _stroke_name(value: Any) -> str:
+    """Convert a FIT swim_stroke enum value to a readable string."""
+    if value is None:
+        return "unknown"
+    if isinstance(value, str):
+        return value
+    try:
+        return _STROKE_MAP.get(int(value), "unknown")
+    except (ValueError, TypeError):
+        return "unknown"
+
+
+def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSplit]]:
+    """Extract session-level info and per-length splits from a FIT file.
+
+    Args:
+        fit_bytes: Raw bytes of a Garmin .fit file.
+
+    Returns:
+        A tuple of (SessionInfo, list[LengthSplit]).
+
+    Raises:
+        ParseError: If fitparse cannot parse the bytes.
+    """
+    try:
+        fitfile = FitFile(fit_bytes)
+    except Exception as exc:
+        raise ParseError(f"Malformed FIT file: {exc}") from exc
+
+    # Extract session-level data
+    start_time = ""
+    pool_length_m = 25.0
+    total_distance_m = 0.0
+    total_time_seconds = 0.0
+
+    for record in fitfile.get_messages("session"):
+        data = {f.name: f.value for f in record}
+        ts = data.get("start_time") or data.get("timestamp")
+        if ts is not None:
+            start_time = ts.isoformat() if hasattr(ts, "isoformat") else str(ts)
+        pl = data.get("pool_length")
+        if pl is not None and pl > 0:
+            pool_length_m = float(pl)
+        td = data.get("total_distance")
+        if td is not None:
+            total_distance_m = float(td)
+        tt = data.get("total_elapsed_time") or data.get("total_timer_time")
+        if tt is not None:
+            total_time_seconds = float(tt)
+        break  # only need first session record
+
+    # Extract per-length splits
+    splits: list[LengthSplit] = []
+    stroke_counts: dict[str, int] = {}
+    length_number = 0
+
+    for record in fitfile.get_messages("length"):
+        data = {f.name: f.value for f in record}
+
+        # Skip rest intervals (length_type == 1 means "idle")
+        length_type = data.get("length_type")
+        if length_type is not None:
+            # length_type can be an int or string
+            lt_str = str(length_type).lower()
+            if lt_str in ("1", "idle"):
+                continue
+
+        length_number += 1
+        elapsed = data.get("total_elapsed_time") or data.get("total_timer_time") or 0.0
+        stroke_val = data.get("swim_stroke")
+        stroke = _stroke_name(stroke_val)
+
+        splits.append(LengthSplit(
+            length_number=length_number,
+            time_seconds=round(float(elapsed), 2),
+            stroke=stroke,
+        ))
+
+        stroke_counts[stroke] = stroke_counts.get(stroke, 0) + 1
+
+    # Determine dominant stroke
+    dominant_stroke = "unknown"
+    if stroke_counts:
+        # Exclude "unknown" and "drill" when picking dominant stroke if possible
+        filtered = {k: v for k, v in stroke_counts.items() if k not in ("unknown", "drill")}
+        source = filtered if filtered else stroke_counts
+        dominant_stroke = max(source, key=source.get)  # type: ignore[arg-type]
+
+    num_lengths = len(splits)
+
+    # If total_distance wasn't in session, estimate from pool length × lengths
+    if total_distance_m == 0.0 and num_lengths > 0:
+        total_distance_m = pool_length_m * num_lengths
+
+    session_info = SessionInfo(
+        start_time=start_time,
+        pool_length_m=pool_length_m,
+        stroke=dominant_stroke,
+        total_distance_m=total_distance_m,
+        total_time_seconds=total_time_seconds,
+        num_lengths=num_lengths,
+    )
+
+    return session_info, splits

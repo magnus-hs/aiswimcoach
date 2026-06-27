@@ -1,8 +1,8 @@
 """
 Lambda handler for AI Swim Coach.
 
-Pipeline: parse_multipart → store_in_s3 → parse_fit → invoke_bedrock
-          → save_to_dynamodb (best-effort) → http_200(coaching)
+Pipeline: parse_multipart → store_in_s3 → parse_fit → extract_session_info
+          → invoke_bedrock → save_to_dynamodb (best-effort) → http_200(full_response)
 
 Lambda timeout: 28 seconds (configured in infrastructure — one second under
 the API Gateway 29-second integration timeout limit).
@@ -19,9 +19,10 @@ from multipart_parser import parse_multipart
 from s3_store import StorageError, store_in_s3
 from fit_parser import MetricsMissingError
 from fit_parser import ParseError as FitParseError
-from fit_parser import parse_fit
+from fit_parser import parse_fit, extract_session_info
 from bedrock_client import BedrockError, invoke_bedrock
 from dynamo_writer import save_to_dynamodb
+from models import FullResponse
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -34,9 +35,10 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
       1. Parse multipart body to extract raw .fit bytes
       2. Store the file in S3
       3. Parse swim metrics from the FIT data
-      4. Invoke Bedrock for AI coaching feedback
-      5. Persist the result to DynamoDB (best-effort)
-      6. Return the coaching response
+      4. Extract session info and per-length splits
+      5. Invoke Bedrock for AI coaching feedback
+      6. Persist the result to DynamoDB (best-effort)
+      7. Return the full response
 
     Args:
         event:   API Gateway proxy integration event.
@@ -60,7 +62,7 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _error_response(500, "Failed to store file")
 
     try:
-        # 3. Parse FIT file
+        # 3. Parse FIT file for metrics
         metrics = parse_fit(fit_bytes)
     except FitParseError as exc:
         logger.warning("FIT parse error: %s", exc)
@@ -70,20 +72,33 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _error_response(422, str(exc))
 
     try:
-        # 4. Invoke Bedrock
+        # 4. Extract session info and splits
+        session_info, splits = extract_session_info(fit_bytes)
+    except FitParseError as exc:
+        logger.warning("FIT session parse error: %s", exc)
+        return _error_response(422, exc.message)
+
+    try:
+        # 5. Invoke Bedrock
         coaching = invoke_bedrock(metrics)
     except BedrockError as exc:
         logger.error("Bedrock invocation failed: %s", exc)
         return _error_response(502, str(exc))
 
-    # 5. Persist to DynamoDB (best-effort — failure must not block the response)
+    # 6. Persist to DynamoDB (best-effort — failure must not block the response)
     try:
         save_to_dynamodb(s3_key, metrics, coaching)
     except Exception as exc:
         logger.error("DynamoDB write failed for %s: %s", s3_key, exc)
 
-    # 6. Return coaching response
-    return http_200(coaching)
+    # 7. Return full response
+    full_response = FullResponse(
+        session=session_info,
+        splits=splits,
+        metrics=metrics,
+        coaching=coaching,
+    )
+    return http_200(full_response)
 
 
 # ---------------------------------------------------------------------------
@@ -103,13 +118,13 @@ def _error_response(status_code: int, message: str) -> dict[str, Any]:
     }
 
 
-def http_200(coaching: Any) -> dict[str, Any]:
-    """Return a successful coaching response as a Lambda proxy response."""
+def http_200(response: Any) -> dict[str, Any]:
+    """Return a successful response as a Lambda proxy response."""
     return {
         "statusCode": 200,
         "headers": {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
         },
-        "body": json.dumps(dataclasses.asdict(coaching)),
+        "body": json.dumps(dataclasses.asdict(response)),
     }
