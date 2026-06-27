@@ -5,6 +5,7 @@ interface AuthState {
   user_id: string | null;
   email: string | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 interface AuthContextValue extends AuthState {
@@ -66,6 +67,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user_id: null,
     email: null,
     isAuthenticated: false,
+    isLoading: true, // Start as loading
   });
 
   // Load token from localStorage on mount
@@ -79,11 +81,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
           user_id: decoded.user_id,
           email: decoded.email,
           isAuthenticated: true,
+          isLoading: false,
         });
       } else {
         // Invalid token, clear it
         localStorage.removeItem('auth_token');
+        setAuthState(prev => ({ ...prev, isLoading: false }));
       }
+    } else {
+      setAuthState(prev => ({ ...prev, isLoading: false }));
     }
   }, []);
 
@@ -96,6 +102,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         user_id: decoded.user_id,
         email: decoded.email,
         isAuthenticated: true,
+        isLoading: false,
       });
     } else {
       throw new Error('Invalid token format');
@@ -109,6 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       user_id: null,
       email: null,
       isAuthenticated: false,
+      isLoading: false,
     });
   };
 
