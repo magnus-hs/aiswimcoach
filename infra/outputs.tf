@@ -3,6 +3,11 @@ output "api_gateway_url" {
   description = "API Gateway invoke URL for the /upload endpoint"
 }
 
+output "amplify_app_url" {
+  value       = "https://main.${aws_amplify_app.ai_swim_coach.id}.amplifyapp.com"
+  description = "Amplify frontend URL"
+}
+
 output "s3_bucket_name" {
   value = aws_s3_bucket.uploads.id
 }
