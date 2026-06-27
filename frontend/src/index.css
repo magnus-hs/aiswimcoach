@@ -1,0 +1,61 @@
+/* Base styles for AI Swim Coach */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background: #f5f8fa;
+  color: #1a1a2e;
+}
+
+/* Screen-reader-only utility (WCAG 2.1 AA) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* FileDropZone styles */
+.dropzone {
+  border: 2px dashed #90a4ae;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.dropzone:hover,
+.dropzone:focus-within {
+  border-color: #1976d2;
+  background-color: #e3f2fd;
+}
+
+.dropzone--active {
+  border-color: #1976d2;
+  background-color: #e3f2fd;
+}
+
+.dropzone--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* LoadingIndicator spinner animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
