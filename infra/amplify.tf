@@ -8,9 +8,16 @@ variable "repository_url" {
   type        = string
 }
 
+variable "github_access_token" {
+  description = "GitHub personal access token for Amplify to access the repository"
+  type        = string
+  sensitive   = true
+}
+
 resource "aws_amplify_app" "ai_swim_coach" {
   name       = "ai-swim-coach"
   repository = var.repository_url
+  access_token = var.github_access_token
 
   build_spec = <<-YAML
     version: 1
