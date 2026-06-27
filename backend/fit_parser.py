@@ -15,7 +15,7 @@ from typing import Any, Optional
 
 from fitparse import FitFile
 
-from backend.models import Metrics, SessionInfo, LengthSplit
+from models import Metrics, SessionInfo, LengthSplit
 
 
 # ---------------------------------------------------------------------------

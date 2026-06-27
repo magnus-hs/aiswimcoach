@@ -14,25 +14,25 @@ import json
 import logging
 from typing import Any
 
-from backend.multipart_parser import ParseError as MultipartParseError  # noqa: E402
-from backend.multipart_parser import parse_multipart
-from backend.s3_store import StorageError, store_in_s3
-from backend.fit_parser import MetricsMissingError
-from backend.fit_parser import ParseError as FitParseError
-from backend.fit_parser import parse_fit, extract_session_info
-from backend.bedrock_client import BedrockError, invoke_bedrock, generate_training_plan, generate_ability_assessment
-from backend.dynamo_writer import save_to_dynamodb
-from backend.models import FullResponse, Metrics, TrainingGoal, TrainingPlan, UserProfile
-from backend.hr_zones import extract_heart_rate_data, calculate_hr_zones, HRDataError
-from backend.profile_manager import (
+from multipart_parser import ParseError as MultipartParseError  # noqa: E402
+from multipart_parser import parse_multipart
+from s3_store import StorageError, store_in_s3
+from fit_parser import MetricsMissingError
+from fit_parser import ParseError as FitParseError
+from fit_parser import parse_fit, extract_session_info
+from bedrock_client import BedrockError, invoke_bedrock, generate_training_plan, generate_ability_assessment
+from dynamo_writer import save_to_dynamodb
+from models import FullResponse, Metrics, TrainingGoal, TrainingPlan, UserProfile
+from hr_zones import extract_heart_rate_data, calculate_hr_zones, HRDataError
+from profile_manager import (
     get_profile,
     save_profile,
     upload_profile_picture,
     StorageError as ProfileStorageError,
 )
-from backend.auth import AuthenticationError, ConflictError, register_user, login_user, verify_token, get_user_info
-from backend.middleware import require_auth
-from backend.session_history import get_user_sessions, get_session_by_id, save_session
+from auth import AuthenticationError, ConflictError, register_user, login_user, verify_token, get_user_info
+from middleware import require_auth
+from session_history import get_user_sessions, get_session_by_id, save_session
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

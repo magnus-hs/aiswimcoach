@@ -14,7 +14,7 @@ from typing import Optional
 import boto3
 from botocore.exceptions import ClientError
 
-from backend.models import UserProfile  # type: ignore
+from models import UserProfile  # type: ignore
 
 
 # Module-level placeholders; lazily initialized on first call

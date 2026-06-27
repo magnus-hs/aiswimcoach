@@ -18,7 +18,7 @@ from decimal import Decimal
 
 import boto3
 
-from backend.models import CoachingResponse, Metrics
+from models import CoachingResponse, Metrics
 
 # Module-level placeholder; lazily initialised on first call so that:
 #   1. Lambda warm-path reuses the connection across invocations.

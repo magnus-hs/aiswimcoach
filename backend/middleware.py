@@ -15,7 +15,7 @@ import logging
 from functools import wraps
 from typing import Any, Callable
 
-from backend.auth import AuthenticationError, verify_token
+from auth import AuthenticationError, verify_token
 
 
 logger = logging.getLogger(__name__)

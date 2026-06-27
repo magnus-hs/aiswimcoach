@@ -18,7 +18,7 @@ from typing import Any
 import boto3
 from botocore.exceptions import ClientError
 
-from backend.models import CoachingResponse, Metrics, TrainingGoal, TrainingPlan, AbilityAssessment, UserProfile
+from models import CoachingResponse, Metrics, TrainingGoal, TrainingPlan, AbilityAssessment, UserProfile
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

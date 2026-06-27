@@ -16,92 +16,52 @@ resource "aws_api_gateway_rest_api" "swim_coach" {
   }
 }
 
-# --- /upload resource ---
+# --- Proxy resource (catch-all) ---
 
-resource "aws_api_gateway_resource" "upload" {
+resource "aws_api_gateway_resource" "proxy" {
   rest_api_id = aws_api_gateway_rest_api.swim_coach.id
   parent_id   = aws_api_gateway_rest_api.swim_coach.root_resource_id
-  path_part   = "upload"
+  path_part   = "{proxy+}"
 }
 
-# --- POST method ---
+# --- ANY method for proxy ---
 
-resource "aws_api_gateway_method" "post_upload" {
+resource "aws_api_gateway_method" "proxy_any" {
   rest_api_id   = aws_api_gateway_rest_api.swim_coach.id
-  resource_id   = aws_api_gateway_resource.upload.id
-  http_method   = "POST"
+  resource_id   = aws_api_gateway_resource.proxy.id
+  http_method   = "ANY"
   authorization = "NONE"
 }
 
 # --- Lambda proxy integration (29-second timeout) ---
 
-resource "aws_api_gateway_integration" "post_upload_lambda" {
+resource "aws_api_gateway_integration" "proxy_lambda" {
   rest_api_id             = aws_api_gateway_rest_api.swim_coach.id
-  resource_id             = aws_api_gateway_resource.upload.id
-  http_method             = aws_api_gateway_method.post_upload.http_method
+  resource_id             = aws_api_gateway_resource.proxy.id
+  http_method             = aws_api_gateway_method.proxy_any.http_method
   integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.swim_coach.invoke_arn
   timeout_milliseconds    = 29000
 }
 
-# --- POST method response (for CORS headers) ---
+# --- Root resource ANY method ---
 
-resource "aws_api_gateway_method_response" "post_upload_200" {
-  rest_api_id = aws_api_gateway_rest_api.swim_coach.id
-  resource_id = aws_api_gateway_resource.upload.id
-  http_method = aws_api_gateway_method.post_upload.http_method
-  status_code = "200"
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Origin" = true
-  }
-}
-
-# --- OPTIONS method (CORS preflight) ---
-
-resource "aws_api_gateway_method" "options_upload" {
+resource "aws_api_gateway_method" "root_any" {
   rest_api_id   = aws_api_gateway_rest_api.swim_coach.id
-  resource_id   = aws_api_gateway_resource.upload.id
-  http_method   = "OPTIONS"
+  resource_id   = aws_api_gateway_rest_api.swim_coach.root_resource_id
+  http_method   = "ANY"
   authorization = "NONE"
 }
 
-resource "aws_api_gateway_integration" "options_upload_mock" {
-  rest_api_id = aws_api_gateway_rest_api.swim_coach.id
-  resource_id = aws_api_gateway_resource.upload.id
-  http_method = aws_api_gateway_method.options_upload.http_method
-  type        = "MOCK"
-
-  request_templates = {
-    "application/json" = "{\"statusCode\": 200}"
-  }
-}
-
-resource "aws_api_gateway_method_response" "options_upload_200" {
-  rest_api_id = aws_api_gateway_rest_api.swim_coach.id
-  resource_id = aws_api_gateway_resource.upload.id
-  http_method = aws_api_gateway_method.options_upload.http_method
-  status_code = "200"
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = true
-    "method.response.header.Access-Control-Allow-Methods" = true
-    "method.response.header.Access-Control-Allow-Origin"  = true
-  }
-}
-
-resource "aws_api_gateway_integration_response" "options_upload_200" {
-  rest_api_id = aws_api_gateway_rest_api.swim_coach.id
-  resource_id = aws_api_gateway_resource.upload.id
-  http_method = aws_api_gateway_method.options_upload.http_method
-  status_code = aws_api_gateway_method_response.options_upload_200.status_code
-
-  response_parameters = {
-    "method.response.header.Access-Control-Allow-Headers" = "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
-    "method.response.header.Access-Control-Allow-Methods" = "'POST,OPTIONS'"
-    "method.response.header.Access-Control-Allow-Origin"  = "'*'"
-  }
+resource "aws_api_gateway_integration" "root_lambda" {
+  rest_api_id             = aws_api_gateway_rest_api.swim_coach.id
+  resource_id             = aws_api_gateway_rest_api.swim_coach.root_resource_id
+  http_method             = aws_api_gateway_method.root_any.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.swim_coach.invoke_arn
+  timeout_milliseconds    = 29000
 }
 
 # --- Gateway Response: REQUEST_TOO_LARGE (HTTP 413) ---
@@ -156,8 +116,8 @@ resource "aws_api_gateway_deployment" "swim_coach" {
   rest_api_id = aws_api_gateway_rest_api.swim_coach.id
 
   depends_on = [
-    aws_api_gateway_integration.post_upload_lambda,
-    aws_api_gateway_integration.options_upload_mock,
+    aws_api_gateway_integration.proxy_lambda,
+    aws_api_gateway_integration.root_lambda,
     aws_api_gateway_gateway_response.request_too_large,
     aws_api_gateway_gateway_response.default_4xx,
     aws_api_gateway_gateway_response.default_5xx,
@@ -166,13 +126,11 @@ resource "aws_api_gateway_deployment" "swim_coach" {
   # Force redeployment when any resource changes
   triggers = {
     redeployment = sha1(jsonencode([
-      aws_api_gateway_resource.upload,
-      aws_api_gateway_method.post_upload,
-      aws_api_gateway_integration.post_upload_lambda,
-      aws_api_gateway_method.options_upload,
-      aws_api_gateway_integration.options_upload_mock,
-      aws_api_gateway_method_response.options_upload_200,
-      aws_api_gateway_integration_response.options_upload_200,
+      aws_api_gateway_resource.proxy,
+      aws_api_gateway_method.proxy_any,
+      aws_api_gateway_integration.proxy_lambda,
+      aws_api_gateway_method.root_any,
+      aws_api_gateway_integration.root_lambda,
       aws_api_gateway_gateway_response.request_too_large,
       aws_api_gateway_gateway_response.default_4xx,
       aws_api_gateway_gateway_response.default_5xx,
