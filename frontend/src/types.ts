@@ -33,11 +33,46 @@ export interface CoachingResponse {
   drill: string;
 }
 
+/**
+ * Heart rate zone distribution data.
+ */
+export interface HRZonesData {
+  zone_1_seconds: number;
+  zone_2_seconds: number;
+  zone_3_seconds: number;
+  zone_4_seconds: number;
+  zone_5_seconds: number;
+  zone_1_percent: number;
+  zone_2_percent: number;
+  zone_3_percent: number;
+  zone_4_percent: number;
+  zone_5_percent: number;
+  max_hr: number;
+  zone_boundaries: Record<number, [number, number]>;
+}
+
+/**
+ * AI-generated competitive ability assessment.
+ */
+export interface AbilityAssessment {
+  /** Estimated percentile ranking within age group (e.g., "top 25%"). */
+  percentile_estimate: string;
+  /** Estimated local competition ranking in specified locality. */
+  local_ranking: string;
+  /** Estimated national competition ranking in specified nationality. */
+  national_ranking: string;
+  /** Assessment of competitiveness for age and population context. */
+  competitive_analysis: string;
+}
+
 export interface FullResponse {
   session: SessionInfo;
   splits: LengthSplit[];
   metrics: { pace: number; swolf: number; stroke_rate: number };
   coaching: CoachingResponse;
+  hr_zones?: HRZonesData;
+  ability_assessment?: AbilityAssessment;
+  session_id?: string;
 }
 
 /**
@@ -69,3 +104,4 @@ export interface TrainingPlan {
   total_distance: number;
   focus_notes: string;
 }
+

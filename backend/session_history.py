@@ -1,0 +1,376 @@
+"""
+Session history module for AI Swim Coach.
+
+Provides functions for persisting and retrieving swim session data.
+Sessions are stored in DynamoDB with user_id as partition key and
+session_date as sort key, with a GSI on session_id for direct lookups.
+"""
+from __future__ import annotations
+
+import os
+import uuid
+from datetime import datetime, timezone
+from decimal import Decimal
+
+import boto3
+from boto3.dynamodb.conditions import Key
+
+from backend.models import (
+    AbilityAssessment,
+    HRZonesData,
+    Metrics,
+    Session,
+    SessionInfo,
+)
+
+# Module-level placeholder for DynamoDB resource (lazy initialization)
+_dynamodb_resource = None
+
+
+def _get_dynamodb() -> "boto3.resources.base.ServiceResource":
+    """Return the (cached) DynamoDB resource, creating it if necessary."""
+    global _dynamodb_resource  # noqa: PLW0603
+    if _dynamodb_resource is None:
+        _dynamodb_resource = boto3.resource("dynamodb")
+    return _dynamodb_resource
+
+
+def _serialize_hr_zones(hr_zones: HRZonesData | None) -> dict | None:
+    """Serialize HRZonesData to DynamoDB-compatible dict.
+    
+    Args:
+        hr_zones: HRZonesData object or None
+        
+    Returns:
+        dict with Decimal values for DynamoDB or None
+    """
+    if hr_zones is None:
+        return None
+    
+    return {
+        "zone_1_seconds": hr_zones.zone_1_seconds,
+        "zone_2_seconds": hr_zones.zone_2_seconds,
+        "zone_3_seconds": hr_zones.zone_3_seconds,
+        "zone_4_seconds": hr_zones.zone_4_seconds,
+        "zone_5_seconds": hr_zones.zone_5_seconds,
+        "zone_1_percent": Decimal(str(hr_zones.zone_1_percent)),
+        "zone_2_percent": Decimal(str(hr_zones.zone_2_percent)),
+        "zone_3_percent": Decimal(str(hr_zones.zone_3_percent)),
+        "zone_4_percent": Decimal(str(hr_zones.zone_4_percent)),
+        "zone_5_percent": Decimal(str(hr_zones.zone_5_percent)),
+        "max_hr": hr_zones.max_hr,
+        "zone_boundaries": {
+            str(k): {"lower": v[0], "upper": v[1]}
+            for k, v in hr_zones.zone_boundaries.items()
+        },
+    }
+
+
+def _serialize_ability_assessment(assessment: AbilityAssessment | None) -> dict | None:
+    """Serialize AbilityAssessment to DynamoDB-compatible dict.
+    
+    Args:
+        assessment: AbilityAssessment object or None
+        
+    Returns:
+        dict with assessment fields or None
+    """
+    if assessment is None:
+        return None
+    
+    return {
+        "percentile_estimate": assessment.percentile_estimate,
+        "local_ranking": assessment.local_ranking,
+        "national_ranking": assessment.national_ranking,
+        "competitive_analysis": assessment.competitive_analysis,
+    }
+
+
+def _deserialize_hr_zones(hr_zones_dict: dict | None) -> HRZonesData | None:
+    """Deserialize HRZonesData from DynamoDB dict.
+    
+    Args:
+        hr_zones_dict: dict from DynamoDB or None
+        
+    Returns:
+        HRZonesData object or None
+    """
+    if hr_zones_dict is None:
+        return None
+    
+    # Convert Decimal to int for boundaries, float for percentages
+    return HRZonesData(
+        zone_1_seconds=int(hr_zones_dict["zone_1_seconds"]),
+        zone_2_seconds=int(hr_zones_dict["zone_2_seconds"]),
+        zone_3_seconds=int(hr_zones_dict["zone_3_seconds"]),
+        zone_4_seconds=int(hr_zones_dict["zone_4_seconds"]),
+        zone_5_seconds=int(hr_zones_dict["zone_5_seconds"]),
+        zone_1_percent=float(hr_zones_dict["zone_1_percent"]),
+        zone_2_percent=float(hr_zones_dict["zone_2_percent"]),
+        zone_3_percent=float(hr_zones_dict["zone_3_percent"]),
+        zone_4_percent=float(hr_zones_dict["zone_4_percent"]),
+        zone_5_percent=float(hr_zones_dict["zone_5_percent"]),
+        max_hr=int(hr_zones_dict["max_hr"]),
+        zone_boundaries={
+            int(k): (int(v["lower"]), int(v["upper"]))
+            for k, v in hr_zones_dict["zone_boundaries"].items()
+        },
+    )
+
+
+def _deserialize_ability_assessment(assessment_dict: dict | None) -> AbilityAssessment | None:
+    """Deserialize AbilityAssessment from DynamoDB dict.
+    
+    Args:
+        assessment_dict: dict from DynamoDB or None
+        
+    Returns:
+        AbilityAssessment object or None
+    """
+    if assessment_dict is None:
+        return None
+    
+    return AbilityAssessment(
+        percentile_estimate=assessment_dict["percentile_estimate"],
+        local_ranking=assessment_dict["local_ranking"],
+        national_ranking=assessment_dict["national_ranking"],
+        competitive_analysis=assessment_dict["competitive_analysis"],
+    )
+
+
+def save_session(
+    user_id: str,
+    session_info: SessionInfo,
+    metrics: Metrics,
+    s3_key: str,
+    hr_zones: HRZonesData | None = None,
+    ability_assessment: AbilityAssessment | None = None,
+) -> str:
+    """Persist session to Sessions table.
+    
+    Generates a unique session_id (UUID v4) and stores the complete session
+    record in DynamoDB. The Sessions table uses user_id as partition key and
+    session_date as sort key, with a GSI on session_id for direct lookups.
+    
+    Args:
+        user_id: User identifier (UUID v4)
+        session_info: Session metadata (start_time, pool_length, etc.)
+        metrics: Calculated metrics (pace, swolf, stroke_rate)
+        s3_key: S3 key for the FIT file
+        hr_zones: Optional HR zones data
+        ability_assessment: Optional ability assessment
+    
+    Returns:
+        session_id (UUID v4 string)
+    
+    Raises:
+        Exception: Any exception raised by DynamoDB put_item operation
+    """
+    # Generate unique session_id
+    session_id = str(uuid.uuid4())
+    
+    # Get current timestamp for uploaded_at
+    now = datetime.now(tz=timezone.utc)
+    uploaded_at = now.isoformat()
+    
+    # Build DynamoDB item
+    item = {
+        "session_id": session_id,
+        "user_id": user_id,
+        "session_date": session_info.start_time,
+        "pool_length_meters": int(session_info.pool_length_m),
+        "total_distance_meters": int(session_info.total_distance_m),
+        "total_time_seconds": int(session_info.total_time_seconds),
+        "stroke_type": session_info.stroke,
+        "average_pace_per_100m": Decimal(str(round(metrics.pace, 2))),
+        "swolf_score": int(metrics.swolf),
+        "stroke_rate": Decimal(str(round(metrics.stroke_rate, 1))),
+        "uploaded_at": uploaded_at,
+        "s3_key": s3_key,
+    }
+    
+    # Add optional fields if present
+    if hr_zones is not None:
+        item["hr_zones"] = _serialize_hr_zones(hr_zones)
+    
+    if ability_assessment is not None:
+        item["ability_assessment"] = _serialize_ability_assessment(ability_assessment)
+    
+    # Get table name from environment
+    table_name = os.environ.get("SESSIONS_TABLE", "Sessions")
+    
+    # Write to DynamoDB
+    table = _get_dynamodb().Table(table_name)
+    table.put_item(Item=item)
+    
+    return session_id
+
+
+def get_user_sessions(
+    user_id: str,
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> list[Session]:
+    """Retrieve user's session history.
+    
+    Queries the Sessions table by user_id (partition key) with optional
+    date range filtering on session_date (sort key). Returns sessions
+    ordered by session_date in descending order (most recent first).
+    
+    Args:
+        user_id: User identifier (UUID v4)
+        start_date: Optional ISO 8601 date filter (inclusive)
+        end_date: Optional ISO 8601 date filter (inclusive)
+    
+    Returns:
+        List of Session objects ordered by session_date descending
+    
+    Raises:
+        Exception: Any exception raised by DynamoDB query operation
+    """
+    # Get table name from environment
+    table_name = os.environ.get("SESSIONS_TABLE", "Sessions")
+    table = _get_dynamodb().Table(table_name)
+    
+    # Build query parameters
+    query_params = {
+        "KeyConditionExpression": Key("user_id").eq(user_id),
+        "ScanIndexForward": False,  # Descending order (most recent first)
+    }
+    
+    # Add date range filtering if provided
+    if start_date is not None and end_date is not None:
+        # Both start and end date provided
+        query_params["KeyConditionExpression"] &= Key("session_date").between(
+            start_date, end_date
+        )
+    elif start_date is not None:
+        # Only start date provided
+        query_params["KeyConditionExpression"] &= Key("session_date").gte(
+            start_date
+        )
+    elif end_date is not None:
+        # Only end date provided
+        query_params["KeyConditionExpression"] &= Key("session_date").lte(
+            end_date
+        )
+    
+    # Execute query
+    response = table.query(**query_params)
+    items = response.get("Items", [])
+    
+    # Deserialize items into Session objects
+    sessions = []
+    for item in items:
+        session = Session(
+            session_id=item["session_id"],
+            user_id=item["user_id"],
+            session_date=item["session_date"],
+            pool_length_meters=int(item["pool_length_meters"]),
+            total_distance_meters=int(item["total_distance_meters"]),
+            total_time_seconds=int(item["total_time_seconds"]),
+            stroke_type=item["stroke_type"],
+            average_pace_per_100m=float(item["average_pace_per_100m"]),
+            swolf_score=int(item["swolf_score"]),
+            stroke_rate=float(item["stroke_rate"]),
+            uploaded_at=item["uploaded_at"],
+            s3_key=item["s3_key"],
+            hr_zones=_deserialize_hr_zones(item.get("hr_zones")),
+            ability_assessment=_deserialize_ability_assessment(item.get("ability_assessment")),
+        )
+        sessions.append(session)
+    
+    return sessions
+
+
+def get_session_by_id(session_id: str) -> Session:
+    """Retrieve single session by ID.
+    
+    Queries the session_id-index GSI to retrieve the full session record.
+    Returns a complete Session object with all details including optional
+    HR zones and ability assessment.
+    
+    Args:
+        session_id: Session identifier (UUID v4)
+    
+    Returns:
+        Session object with full details
+    
+    Raises:
+        ValueError: If session doesn't exist (404 case)
+        Exception: Any exception raised by DynamoDB query operation
+    """
+    # Get table name from environment
+    table_name = os.environ.get("SESSIONS_TABLE", "Sessions")
+    
+    # Query the session_id-index GSI
+    table = _get_dynamodb().Table(table_name)
+    response = table.query(
+        IndexName="session_id-index",
+        KeyConditionExpression=Key("session_id").eq(session_id),
+    )
+    
+    # Check if session exists
+    items = response.get("Items", [])
+    if not items:
+        raise ValueError(f"Session not found: {session_id}")
+    
+    # Get the first (and only) item
+    item = items[0]
+    
+    # Deserialize optional fields
+    hr_zones = _deserialize_hr_zones(item.get("hr_zones"))
+    ability_assessment = _deserialize_ability_assessment(item.get("ability_assessment"))
+    
+    # Build and return Session object
+    return Session(
+        session_id=item["session_id"],
+        user_id=item["user_id"],
+        session_date=item["session_date"],
+        pool_length_meters=int(item["pool_length_meters"]),
+        total_distance_meters=int(item["total_distance_meters"]),
+        total_time_seconds=int(item["total_time_seconds"]),
+        stroke_type=item["stroke_type"],
+        average_pace_per_100m=float(item["average_pace_per_100m"]),
+        swolf_score=int(item["swolf_score"]),
+        stroke_rate=float(item["stroke_rate"]),
+        uploaded_at=item["uploaded_at"],
+        s3_key=item["s3_key"],
+        hr_zones=hr_zones,
+        ability_assessment=ability_assessment,
+    )
+
+
+def aggregate_daily_distances(sessions: list[Session]) -> dict[str, int]:
+    """Aggregate total distance by date from a list of sessions.
+    
+    Groups sessions by their session_date (date part only) and sums the
+    total_distance_meters for each date. This is useful for generating
+    progress graphs showing daily training volume.
+    
+    Args:
+        sessions: List of Session objects
+    
+    Returns:
+        dict mapping date string (YYYY-MM-DD) to total distance in meters
+    
+    Examples:
+        >>> s1 = Session(session_date="2024-01-15T10:00:00Z", total_distance_meters=1000, ...)
+        >>> s2 = Session(session_date="2024-01-15T16:00:00Z", total_distance_meters=1500, ...)
+        >>> s3 = Session(session_date="2024-01-16T10:00:00Z", total_distance_meters=2000, ...)
+        >>> aggregate_daily_distances([s1, s2, s3])
+        {'2024-01-15': 2500, '2024-01-16': 2000}
+    """
+    daily_totals: dict[str, int] = {}
+    
+    for session in sessions:
+        # Extract date part from ISO 8601 timestamp (YYYY-MM-DD)
+        # session_date format: "2024-06-15T10:30:00Z"
+        date_part = session.session_date.split("T")[0]
+        
+        # Sum distances for each date
+        daily_totals[date_part] = (
+            daily_totals.get(date_part, 0) + session.total_distance_meters
+        )
+    
+    return daily_totals

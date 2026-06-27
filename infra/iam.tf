@@ -38,6 +38,12 @@ resource "aws_iam_role_policy" "lambda_permissions" {
         Resource = "${aws_s3_bucket.uploads.arn}/*"
       },
       {
+        Sid      = "S3ProfilePictures"
+        Effect   = "Allow"
+        Action   = ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"]
+        Resource = "${aws_s3_bucket.profile_pictures.arn}/*"
+      },
+      {
         Sid      = "BedrockInvokeModel"
         Effect   = "Allow"
         Action   = ["bedrock:InvokeModel"]
@@ -57,10 +63,43 @@ resource "aws_iam_role_policy" "lambda_permissions" {
         Resource = "*"
       },
       {
-        Sid      = "DynamoDBPutItem"
+        Sid      = "DynamoDBCoachingSessions"
         Effect   = "Allow"
         Action   = ["dynamodb:PutItem"]
         Resource = aws_dynamodb_table.coaching_sessions.arn
+      },
+      {
+        Sid    = "DynamoDBUsers"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.users.arn,
+          "${aws_dynamodb_table.users.arn}/index/email-index"
+        ]
+      },
+      {
+        Sid      = "DynamoDBUserProfiles"
+        Effect   = "Allow"
+        Action   = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"]
+        Resource = aws_dynamodb_table.user_profiles.arn
+      },
+      {
+        Sid    = "DynamoDBSessions"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem",
+          "dynamodb:GetItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.sessions.arn,
+          "${aws_dynamodb_table.sessions.arn}/index/session_id-index"
+        ]
       }
     ]
   })

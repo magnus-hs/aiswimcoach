@@ -32,12 +32,22 @@ function capitalize(s: string): string {
 
 /**
  * Displays a summary card with key session information.
+ * Key metrics (distance, time) are displayed with large bold numbers per Strava/Garmin pattern.
+ * Validates: Requirements 25.1, 25.2
  */
 export function SessionSummary({ session }: SessionSummaryProps) {
   return (
     <section className="session-summary" aria-label="Session summary">
       <h2 className="session-summary__heading">Session Summary</h2>
       <div className="session-summary__grid">
+        <div className="session-summary__item session-summary__item--primary">
+          <span className="session-summary__label">Distance</span>
+          <span className="session-summary__value session-summary__value--large">{session.total_distance_m}m</span>
+        </div>
+        <div className="session-summary__item session-summary__item--primary">
+          <span className="session-summary__label">Total Time</span>
+          <span className="session-summary__value session-summary__value--large">{formatTime(session.total_time_seconds)}</span>
+        </div>
         <div className="session-summary__item">
           <span className="session-summary__label">Date</span>
           <span className="session-summary__value">{formatDate(session.start_time)}</span>
@@ -49,14 +59,6 @@ export function SessionSummary({ session }: SessionSummaryProps) {
         <div className="session-summary__item">
           <span className="session-summary__label">Stroke</span>
           <span className="session-summary__value">{capitalize(session.stroke)}</span>
-        </div>
-        <div className="session-summary__item">
-          <span className="session-summary__label">Distance</span>
-          <span className="session-summary__value">{session.total_distance_m}m</span>
-        </div>
-        <div className="session-summary__item">
-          <span className="session-summary__label">Total Time</span>
-          <span className="session-summary__value">{formatTime(session.total_time_seconds)}</span>
         </div>
         <div className="session-summary__item">
           <span className="session-summary__label">Lengths</span>

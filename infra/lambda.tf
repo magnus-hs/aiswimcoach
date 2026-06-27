@@ -21,8 +21,13 @@ resource "aws_lambda_function" "swim_coach" {
 
   environment {
     variables = {
-      S3_BUCKET      = aws_s3_bucket.uploads.id
-      DYNAMODB_TABLE = aws_dynamodb_table.coaching_sessions.name
+      S3_BUCKET               = aws_s3_bucket.uploads.id
+      DYNAMODB_TABLE          = aws_dynamodb_table.coaching_sessions.name
+      PROFILE_PICTURES_BUCKET = aws_s3_bucket.profile_pictures.id
+      USERS_TABLE             = aws_dynamodb_table.users.name
+      PROFILES_TABLE          = aws_dynamodb_table.user_profiles.name
+      SESSIONS_TABLE          = aws_dynamodb_table.sessions.name
+      JWT_SECRET              = var.jwt_secret
     }
   }
 }

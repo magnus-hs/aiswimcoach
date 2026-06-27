@@ -1,0 +1,112 @@
+.progress-graph {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  margin-bottom: 1.5rem;
+}
+
+.progress-graph__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.progress-graph__heading {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.progress-graph__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progress-graph__label {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.progress-graph__select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background-color: white;
+  color: #1e293b;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.progress-graph__select:hover {
+  border-color: #3b82f6;
+}
+
+.progress-graph__select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.progress-graph__chart-container {
+  width: 100%;
+  height: 300px;
+}
+
+.progress-graph__empty {
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+  background-color: #f8fafc;
+  border-radius: 6px;
+}
+
+.progress-graph__empty p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.progress-graph__tooltip {
+  background-color: white;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.progress-graph__tooltip-date {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.progress-graph__tooltip-distance {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .progress-graph__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .progress-graph__controls {
+    width: 100%;
+  }
+
+  .progress-graph__select {
+    flex: 1;
+  }
+}

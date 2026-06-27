@@ -3,7 +3,9 @@ import { FileDropZone } from '../components/FileDropZone';
 import { LoadingIndicator } from '../components/LoadingIndicator';
 import { SessionSummary } from '../components/SessionSummary';
 import { SplitsTable } from '../components/SplitsTable';
+import { HRZonesCard } from '../components/HRZonesCard';
 import { CoachingResult } from '../components/CoachingResult';
+import { AbilityAssessmentCard } from '../components/AbilityAssessmentCard';
 import { TrainingGoalForm } from '../components/TrainingGoalForm';
 import { TrainingPlanResult } from '../components/TrainingPlanResult';
 import { ErrorBanner } from '../components/ErrorBanner';
@@ -129,9 +131,24 @@ export function UploadPage() {
 
       {state === 'result' && result && (
         <div className="upload-page__results">
+          {!result.hr_zones && (
+            <div className="upload-page__profile-prompt">
+              Complete your <a href="/profile">profile</a> to enable heart rate zone analysis.
+            </div>
+          )}
+          
           <SessionSummary session={result.session} />
           <SplitsTable splits={result.splits} />
+          <HRZonesCard hrZones={result.hr_zones} />
           <CoachingResult tips={result.coaching.tips} drill={result.coaching.drill} />
+          <AbilityAssessmentCard assessment={result.ability_assessment} />
+          
+          {result.session_id && (
+            <div className="upload-page__success-message">
+              Session saved! <a href="/history">View your training history</a> to track progress.
+            </div>
+          )}
+          
           <TrainingGoalForm onSubmit={handleGoalSubmit} loading={planLoading} />
           {planError && <ErrorBanner message={planError} />}
           {trainingPlan && <TrainingPlanResult plan={trainingPlan} />}

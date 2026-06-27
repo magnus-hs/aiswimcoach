@@ -16,3 +16,9 @@ variable "aws_region" {
   type        = string
   default     = "us-east-1"
 }
+
+variable "jwt_secret" {
+  description = "Secret key for signing JWT tokens (minimum 256-bit)"
+  type        = string
+  sensitive   = true
+}

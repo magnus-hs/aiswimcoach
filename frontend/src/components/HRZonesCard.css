@@ -1,0 +1,99 @@
+.hr-zones-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.hr-zones-card__heading {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: #1e293b;
+}
+
+.hr-zones-card__empty {
+  color: #64748b;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Horizontal bar chart */
+.hr-zones-card__chart {
+  display: flex;
+  height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.hr-zones-card__bar {
+  height: 100%;
+  transition: opacity 0.2s;
+}
+
+.hr-zones-card__bar:hover {
+  opacity: 0.8;
+}
+
+/* Zone details list */
+.hr-zones-card__list {
+  padding: 0;
+  margin: 0;
+}
+
+.hr-zones-card__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.hr-zones-card__item:last-child {
+  border-bottom: none;
+}
+
+.hr-zones-card__item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.hr-zones-card__zone-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.hr-zones-card__zone-label {
+  font-weight: 500;
+  color: #334155;
+  min-width: 60px;
+}
+
+.hr-zones-card__zone-range {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.hr-zones-card__item-stats {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.hr-zones-card__time {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.hr-zones-card__percent {
+  font-weight: 600;
+  color: #1e293b;
+  text-align: right;
+  min-width: 50px;
+}
