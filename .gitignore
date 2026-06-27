@@ -28,6 +28,7 @@ infra/*.tfvars
 
 # Build artifacts
 backend.zip
+backend/package/
 
 # Environment
 .env
