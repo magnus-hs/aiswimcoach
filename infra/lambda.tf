@@ -23,7 +23,6 @@ resource "aws_lambda_function" "swim_coach" {
     variables = {
       S3_BUCKET      = aws_s3_bucket.uploads.id
       DYNAMODB_TABLE = aws_dynamodb_table.coaching_sessions.name
-      AWS_REGION     = var.aws_region
     }
   }
 }
