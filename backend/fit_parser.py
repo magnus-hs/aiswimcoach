@@ -59,9 +59,11 @@ def speed_to_pace(avg_speed: float) -> float:
 
 
 def compute_swolf(data: dict, length_m: float = 25.0) -> Optional[float]:
-    """Compute SWOLF from a record's field dict.
+    """Extract or compute SWOLF from a record's field dict.
 
-    SWOLF = avg_stroke_count + (length_m / avg_speed)
+    Strategy:
+      1. Use pre-computed 'swolf' field if present (many Garmin devices report this directly).
+      2. Otherwise compute: avg_stroke_count + (length_m / avg_speed)
 
     Args:
         data:     Dict of field_name → value for one length/lap record.
@@ -70,6 +72,12 @@ def compute_swolf(data: dict, length_m: float = 25.0) -> Optional[float]:
     Returns:
         SWOLF value, or None if required fields are absent/invalid.
     """
+    # 1. Check for pre-computed SWOLF field (Garmin stores this directly)
+    direct_swolf = data.get("swolf")
+    if direct_swolf is not None and math.isfinite(float(direct_swolf)):
+        return float(direct_swolf)
+
+    # 2. Compute from components: stroke_count + time_per_length
     avg_speed = data.get("avg_speed")
     avg_stroke_count = data.get("avg_stroke_count")
 
@@ -118,6 +126,15 @@ def parse_fit(fit_bytes: bytes) -> Metrics:
     except Exception as exc:
         raise ParseError(f"Malformed FIT file: {exc}") from exc
 
+    # Try to get pool length from session record
+    pool_length = 25.0  # default
+    for record in fitfile.get_messages("session"):
+        data = {f.name: f.value for f in record}
+        pl = data.get("pool_length")
+        if pl is not None and pl > 0:
+            pool_length = float(pl)
+            break
+
     pace_values: list[float] = []
     swolf_values: list[float] = []
     stroke_rate_values: list[float] = []
@@ -137,8 +154,8 @@ def parse_fit(fit_bytes: bytes) -> Metrics:
             if cadence is not None:
                 stroke_rate_values.append(float(cadence))
 
-            # SWOLF = avg_stroke_count + (length_m / avg_speed)
-            swolf = compute_swolf(data)
+            # SWOLF: use pre-computed field or calculate from components
+            swolf = compute_swolf(data, pool_length)
             if swolf is not None:
                 swolf_values.append(swolf)
 
