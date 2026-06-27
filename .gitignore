@@ -23,6 +23,7 @@ Thumbs.db
 infra/.terraform/
 infra/*.tfstate
 infra/*.tfstate.backup
+infra/*.tfvars
 .terraform.lock.hcl
 
 # Build artifacts
