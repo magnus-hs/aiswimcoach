@@ -62,8 +62,9 @@ def compute_swolf(data: dict, length_m: float = 25.0) -> Optional[float]:
     """Extract or compute SWOLF from a record's field dict.
 
     Strategy:
-      1. Use pre-computed 'swolf' field if present (many Garmin devices report this directly).
-      2. Otherwise compute: avg_stroke_count + (length_m / avg_speed)
+      1. Use pre-computed 'swolf' field if present.
+      2. Compute from total_strokes + total_elapsed_time (per-length SWOLF).
+      3. Compute from avg_stroke_count + (length_m / avg_speed).
 
     Args:
         data:     Dict of field_name → value for one length/lap record.
@@ -72,12 +73,28 @@ def compute_swolf(data: dict, length_m: float = 25.0) -> Optional[float]:
     Returns:
         SWOLF value, or None if required fields are absent/invalid.
     """
-    # 1. Check for pre-computed SWOLF field (Garmin stores this directly)
+    # 1. Check for pre-computed SWOLF field
     direct_swolf = data.get("swolf")
-    if direct_swolf is not None and math.isfinite(float(direct_swolf)):
-        return float(direct_swolf)
+    if direct_swolf is not None:
+        try:
+            val = float(direct_swolf)
+            if math.isfinite(val) and val > 0:
+                return val
+        except (ValueError, TypeError):
+            pass
 
-    # 2. Compute from components: stroke_count + time_per_length
+    # 2. Compute from total_strokes + total_elapsed_time (most common in per-length)
+    total_strokes = data.get("total_strokes")
+    total_elapsed_time = data.get("total_elapsed_time")
+    if total_strokes is not None and total_elapsed_time is not None:
+        try:
+            swolf = float(total_strokes) + float(total_elapsed_time)
+            if math.isfinite(swolf) and swolf > 0:
+                return swolf
+        except (ValueError, TypeError):
+            pass
+
+    # 3. Compute from avg_stroke_count + time_per_length
     avg_speed = data.get("avg_speed")
     avg_stroke_count = data.get("avg_stroke_count")
 
