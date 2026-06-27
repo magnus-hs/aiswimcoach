@@ -27,7 +27,7 @@ logger.setLevel(logging.INFO)
 # Model configuration
 # ---------------------------------------------------------------------------
 
-_MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+_MODEL_ID = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
 
 # ---------------------------------------------------------------------------
 # Tool schema — enforces structured output

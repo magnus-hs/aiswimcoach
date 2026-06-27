@@ -41,7 +41,10 @@ resource "aws_iam_role_policy" "lambda_permissions" {
         Sid      = "BedrockInvokeModel"
         Effect   = "Allow"
         Action   = ["bedrock:InvokeModel"]
-        Resource = "arn:aws:bedrock:*::foundation-model/anthropic.claude-3-5-sonnet-20240620-v1:0"
+        Resource = [
+          "arn:aws:bedrock:*::foundation-model/anthropic.*",
+          "arn:aws:bedrock:*:*:inference-profile/us.anthropic.*"
+        ]
       },
       {
         Sid      = "DynamoDBPutItem"
