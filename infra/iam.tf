@@ -47,6 +47,16 @@ resource "aws_iam_role_policy" "lambda_permissions" {
         ]
       },
       {
+        Sid      = "MarketplaceSubscription"
+        Effect   = "Allow"
+        Action   = [
+          "aws-marketplace:ViewSubscriptions",
+          "aws-marketplace:Subscribe",
+          "aws-marketplace:Unsubscribe"
+        ]
+        Resource = "*"
+      },
+      {
         Sid      = "DynamoDBPutItem"
         Effect   = "Allow"
         Action   = ["dynamodb:PutItem"]
