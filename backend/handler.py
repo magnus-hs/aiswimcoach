@@ -67,6 +67,19 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     http_method = event.get("httpMethod", "")
     path = event.get("path", "")
     
+    # Handle CORS preflight requests
+    if http_method == "OPTIONS":
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                "Access-Control-Max-Age": "86400"
+            },
+            "body": ""
+        }
+    
     # Authentication routes (no auth required)
     if path == "/auth/register" and http_method == "POST":
         return _handle_register(event)
