@@ -1,12 +1,16 @@
+import React from 'react';
+import Login from '../components/Login';
+
 /**
- * LoginPage - Placeholder for authentication login page.
- * Will be implemented in a separate task.
+ * LoginPage Component
+ * 
+ * Renders the login page for the application.
+ * 
+ * Requirements validated:
+ * - 21.10-21.18: User login interface
+ * - 22.1: Check for auth_token on load
+ * - 22.2: Manage auth state for routing
  */
 export function LoginPage() {
-  return (
-    <div style={{ padding: '2rem', textAlign: 'center' }}>
-      <h1>Login Page</h1>
-      <p>Login functionality will be implemented in task 15.1</p>
-    </div>
-  );
+  return <Login />;
 }
