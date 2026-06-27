@@ -132,7 +132,9 @@ def _handle_register(event: dict[str, Any]) -> dict[str, Any]:
     import base64
     
     try:
-        body = event.get("body", "")
+        body = event.get("body")
+        if not body:
+            return _error_response(400, "Request body is required")
         if event.get("isBase64Encoded"):
             body = base64.b64decode(body).decode("utf-8")
         payload = json.loads(body)
@@ -192,7 +194,9 @@ def _handle_login(event: dict[str, Any]) -> dict[str, Any]:
     import base64
     
     try:
-        body = event.get("body", "")
+        body = event.get("body")
+        if not body:
+            return _error_response(400, "Request body is required")
         if event.get("isBase64Encoded"):
             body = base64.b64decode(body).decode("utf-8")
         payload = json.loads(body)
@@ -301,7 +305,9 @@ def _handle_training_plan(event: dict[str, Any], context: Any) -> dict[str, Any]
     import base64
 
     try:
-        body = event.get("body", "")
+        body = event.get("body")
+        if not body:
+            return _error_response(400, "Request body is required")
         if event.get("isBase64Encoded"):
             body = base64.b64decode(body).decode("utf-8")
         payload = json.loads(body)
@@ -594,7 +600,9 @@ def _handle_save_profile(event: dict[str, Any], context: Any) -> dict[str, Any]:
     user_id = event["auth_context"]["user_id"]
     
     try:
-        body = event.get("body", "")
+        body = event.get("body")
+        if not body:
+            return _error_response(400, "Request body is required")
         if event.get("isBase64Encoded"):
             body = base64.b64decode(body).decode("utf-8")
         payload = json.loads(body)
