@@ -35,10 +35,18 @@ export async function uploadFitFile(file: File): Promise<FullResponse> {
   const formData = new FormData();
   formData.append('file', file);
 
+  // Get JWT token from localStorage
+  const token = localStorage.getItem('auth_token');
+  const headers: HeadersInit = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   let response: Response;
   try {
     response = await fetch(import.meta.env.VITE_API_ENDPOINT + '/upload', {
       method: 'POST',
+      headers,
       body: formData,
     });
   } catch {
@@ -67,11 +75,18 @@ export async function generateTrainingPlan(
   metrics: { pace: number; swolf: number; stroke_rate: number },
   goal: TrainingGoal,
 ): Promise<TrainingPlan> {
+  // Get JWT token from localStorage
+  const token = localStorage.getItem('auth_token');
+  const headers: HeadersInit = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   let response: Response;
   try {
     response = await fetch(import.meta.env.VITE_API_ENDPOINT + '/upload', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         action: 'training_plan',
         metrics,
