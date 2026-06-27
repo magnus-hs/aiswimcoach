@@ -13,7 +13,7 @@ resource "aws_lambda_function" "swim_coach" {
   source_code_hash = fileexists("${path.module}/../backend.zip") ? filebase64sha256("${path.module}/../backend.zip") : null
 
   runtime     = "python3.12"
-  handler     = "backend.handler.handler"
+  handler     = "handler.handler"
   timeout     = 28
   memory_size = 256
 

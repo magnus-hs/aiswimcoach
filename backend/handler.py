@@ -14,14 +14,14 @@ import json
 import logging
 from typing import Any
 
-from backend.multipart_parser import ParseError as MultipartParseError  # noqa: E402
-from backend.multipart_parser import parse_multipart
-from backend.s3_store import StorageError, store_in_s3
-from backend.fit_parser import MetricsMissingError
-from backend.fit_parser import ParseError as FitParseError
-from backend.fit_parser import parse_fit
-from backend.bedrock_client import BedrockError, invoke_bedrock
-from backend.dynamo_writer import save_to_dynamodb
+from multipart_parser import ParseError as MultipartParseError  # noqa: E402
+from multipart_parser import parse_multipart
+from s3_store import StorageError, store_in_s3
+from fit_parser import MetricsMissingError
+from fit_parser import ParseError as FitParseError
+from fit_parser import parse_fit
+from bedrock_client import BedrockError, invoke_bedrock
+from dynamo_writer import save_to_dynamodb
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

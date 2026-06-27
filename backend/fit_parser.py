@@ -15,7 +15,7 @@ from typing import Optional
 
 from fitparse import FitFile
 
-from backend.models import Metrics
+from models import Metrics
 
 
 # ---------------------------------------------------------------------------
