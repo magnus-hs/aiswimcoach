@@ -46,6 +46,7 @@ class LengthSplit:
     length_number: int
     time_seconds: float
     stroke: str
+    strokes: int
 
 
 @dataclass
@@ -93,6 +94,26 @@ class CoachingResponse:
             raise ValueError(
                 f"CoachingResponse.drill exceeds 500 characters (length={len(self.drill)})"
             )
+
+
+@dataclass
+class TrainingGoal:
+    """User-submitted training goal."""
+    event: str
+    target_time: str
+    volume_meters: int
+    timeframe: str
+
+
+@dataclass
+class TrainingPlan:
+    """AI-generated training session plan."""
+    session_title: str
+    warm_up: list[str]
+    main_set: list[str]
+    cool_down: list[str]
+    total_distance: int
+    focus_notes: str
 
 
 @dataclass

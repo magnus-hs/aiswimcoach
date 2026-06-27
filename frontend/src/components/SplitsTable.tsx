@@ -23,6 +23,7 @@ export function SplitsTable({ splits }: SplitsTableProps) {
             <tr>
               <th scope="col">#</th>
               <th scope="col">Time (s)</th>
+              <th scope="col">Strokes</th>
               <th scope="col">Stroke</th>
             </tr>
           </thead>
@@ -31,6 +32,7 @@ export function SplitsTable({ splits }: SplitsTableProps) {
               <tr key={split.length_number}>
                 <td>{split.length_number}</td>
                 <td>{split.time_seconds.toFixed(1)}</td>
+                <td>{split.strokes}</td>
                 <td>{capitalize(split.stroke)}</td>
               </tr>
             ))}

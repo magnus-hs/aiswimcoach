@@ -4,9 +4,11 @@ import { LoadingIndicator } from '../components/LoadingIndicator';
 import { SessionSummary } from '../components/SessionSummary';
 import { SplitsTable } from '../components/SplitsTable';
 import { CoachingResult } from '../components/CoachingResult';
+import { TrainingGoalForm } from '../components/TrainingGoalForm';
+import { TrainingPlanResult } from '../components/TrainingPlanResult';
 import { ErrorBanner } from '../components/ErrorBanner';
-import { uploadFitFile } from '../api/upload';
-import { ApiError, FullResponse } from '../types';
+import { uploadFitFile, generateTrainingPlan } from '../api/upload';
+import { ApiError, FullResponse, TrainingGoal, TrainingPlan } from '../types';
 
 type PageState = 'idle' | 'uploading' | 'result' | 'error';
 
@@ -16,7 +18,7 @@ type PageState = 'idle' | 'uploading' | 'result' | 'error';
  * States:
  *   idle      → FileDropZone active
  *   uploading → LoadingIndicator shown, FileDropZone disabled
- *   result    → SessionSummary + SplitsTable + CoachingResult rendered
+ *   result    → SessionSummary + SplitsTable + CoachingResult + TrainingGoalForm rendered
  *   error     → ErrorBanner rendered (with retry for network/5xx)
  */
 export function UploadPage() {
@@ -25,6 +27,11 @@ export function UploadPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [canRetry, setCanRetry] = useState(false);
   const [rejectionMessage, setRejectionMessage] = useState('');
+
+  // Training plan state
+  const [trainingPlan, setTrainingPlan] = useState<TrainingPlan | null>(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [planError, setPlanError] = useState('');
 
   // Keep a ref to the last file so retry can re-upload it
   const lastFileRef = useRef<File | null>(null);
@@ -36,6 +43,8 @@ export function UploadPage() {
     setResult(null);
     setErrorMessage('');
     setCanRetry(false);
+    setTrainingPlan(null);
+    setPlanError('');
 
     try {
       const response = await uploadFitFile(file);
@@ -78,6 +87,32 @@ export function UploadPage() {
     [handleUpload],
   );
 
+  const handleGoalSubmit = useCallback(
+    async (goal: TrainingGoal) => {
+      if (!result) return;
+
+      setPlanLoading(true);
+      setPlanError('');
+      setTrainingPlan(null);
+
+      try {
+        const plan = await generateTrainingPlan(result.metrics, goal);
+        setTrainingPlan(plan);
+      } catch (err: unknown) {
+        if (err instanceof ApiError) {
+          setPlanError(err.serverMessage);
+        } else if (err instanceof Error) {
+          setPlanError(err.message);
+        } else {
+          setPlanError('Failed to generate training plan.');
+        }
+      } finally {
+        setPlanLoading(false);
+      }
+    },
+    [result],
+  );
+
   return (
     <div className="upload-page">
       <FileDropZone
@@ -97,6 +132,9 @@ export function UploadPage() {
           <SessionSummary session={result.session} />
           <SplitsTable splits={result.splits} />
           <CoachingResult tips={result.coaching.tips} drill={result.coaching.drill} />
+          <TrainingGoalForm onSubmit={handleGoalSubmit} loading={planLoading} />
+          {planError && <ErrorBanner message={planError} />}
+          {trainingPlan && <TrainingPlanResult plan={trainingPlan} />}
         </div>
       )}
 

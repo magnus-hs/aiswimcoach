@@ -20,9 +20,9 @@ from s3_store import StorageError, store_in_s3
 from fit_parser import MetricsMissingError
 from fit_parser import ParseError as FitParseError
 from fit_parser import parse_fit, extract_session_info
-from bedrock_client import BedrockError, invoke_bedrock
+from bedrock_client import BedrockError, invoke_bedrock, generate_training_plan
 from dynamo_writer import save_to_dynamodb
-from models import FullResponse
+from models import FullResponse, Metrics, TrainingGoal, TrainingPlan
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -31,14 +31,9 @@ logger.setLevel(logging.INFO)
 def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """AWS Lambda entry point.
 
-    Orchestrates the full processing pipeline for a swim FIT file upload:
-      1. Parse multipart body to extract raw .fit bytes
-      2. Store the file in S3
-      3. Parse swim metrics from the FIT data
-      4. Extract session info and per-length splits
-      5. Invoke Bedrock for AI coaching feedback
-      6. Persist the result to DynamoDB (best-effort)
-      7. Return the full response
+    Routes requests based on Content-Type:
+      - multipart/form-data → FIT file upload pipeline
+      - application/json with action "training_plan" → AI training plan generation
 
     Args:
         event:   API Gateway proxy integration event.
@@ -46,6 +41,71 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
     Returns:
         API Gateway proxy integration response dict.
+    """
+    content_type = (event.get("headers") or {}).get("content-type", "") or \
+                   (event.get("headers") or {}).get("Content-Type", "")
+
+    if "application/json" in content_type:
+        return _handle_training_plan(event)
+
+    return _handle_file_upload(event)
+
+
+def _handle_training_plan(event: dict[str, Any]) -> dict[str, Any]:
+    """Handle a JSON training plan generation request."""
+    import base64
+
+    try:
+        body = event.get("body", "")
+        if event.get("isBase64Encoded"):
+            body = base64.b64decode(body).decode("utf-8")
+        payload = json.loads(body)
+    except (json.JSONDecodeError, ValueError) as exc:
+        return _error_response(400, f"Invalid JSON body: {exc}")
+
+    action = payload.get("action")
+    if action != "training_plan":
+        return _error_response(400, f"Unknown action: {action}")
+
+    metrics_data = payload.get("metrics")
+    goal_data = payload.get("goal")
+
+    if not metrics_data or not goal_data:
+        return _error_response(400, "Missing 'metrics' or 'goal' in request body")
+
+    try:
+        metrics = Metrics(
+            pace=float(metrics_data["pace"]),
+            swolf=float(metrics_data["swolf"]),
+            stroke_rate=float(metrics_data["stroke_rate"]),
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        return _error_response(400, f"Invalid metrics: {exc}")
+
+    try:
+        goal = TrainingGoal(
+            event=str(goal_data["event"]),
+            target_time=str(goal_data["target_time"]),
+            volume_meters=int(goal_data["volume_meters"]),
+            timeframe=str(goal_data["timeframe"]),
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        return _error_response(400, f"Invalid goal: {exc}")
+
+    try:
+        plan = generate_training_plan(metrics, goal)
+    except BedrockError as exc:
+        logger.error("Bedrock training plan failed: %s", exc)
+        return _error_response(502, str(exc))
+
+    return http_200(plan)
+
+
+def _handle_file_upload(event: dict[str, Any]) -> dict[str, Any]:
+    """Handle the FIT file upload pipeline.
+
+    Pipeline: parse_multipart → store_in_s3 → parse_fit → extract_session_info
+              → invoke_bedrock → save_to_dynamodb (best-effort) → http_200(full_response)
     """
     try:
         # 1. Parse multipart body

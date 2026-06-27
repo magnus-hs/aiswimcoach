@@ -33,3 +33,4 @@ backend/package/
 # Environment
 .env
 .env.local
+backend.zip

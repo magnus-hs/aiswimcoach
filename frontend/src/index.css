@@ -305,3 +305,183 @@ section[aria-label="Coaching results"] {
   border-radius: 8px;
   color: #991b1b;
 }
+
+
+/* ---------------------------------------------------------------------------
+   Training Goal Form
+--------------------------------------------------------------------------- */
+
+.training-goal-form {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.training-goal-form__heading {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1rem;
+}
+
+.training-goal-form__form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.training-goal-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.training-goal-form__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.training-goal-form__input,
+.training-goal-form__select {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: #ffffff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.training-goal-form__input:focus,
+.training-goal-form__select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.training-goal-form__submit {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #3b82f6;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.training-goal-form__submit:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.training-goal-form__submit:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.training-goal-form__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+   Training Plan Result
+--------------------------------------------------------------------------- */
+
+.training-plan {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.training-plan__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 1.25rem;
+}
+
+.training-plan__section {
+  margin-bottom: 1rem;
+}
+
+.training-plan__section--main {
+  background: #eff6ff;
+  border-radius: 8px;
+  padding: 1rem;
+  border-left: 3px solid #3b82f6;
+}
+
+.training-plan__section-heading {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin: 0 0 0.5rem;
+}
+
+.training-plan__section-heading--main {
+  color: #1d4ed8;
+}
+
+.training-plan__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.training-plan__item {
+  font-size: 0.875rem;
+  color: #334155;
+  padding: 0.375rem 0;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.training-plan__item::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: #94a3b8;
+}
+
+.training-plan__item--main {
+  color: #1e40af;
+}
+
+.training-plan__item--main::before {
+  color: #3b82f6;
+}
+
+.training-plan__distance {
+  margin-top: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.training-plan__distance-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+
+.training-plan__notes {
+  margin: 0;
+  font-size: 0.875rem;
+  font-style: italic;
+  color: #64748b;
+  line-height: 1.6;
+}

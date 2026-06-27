@@ -1,4 +1,4 @@
-import { ApiError, FullResponse } from '../types';
+import { ApiError, FullResponse, TrainingGoal, TrainingPlan } from '../types';
 
 /**
  * Maps HTTP status codes to user-facing error messages.
@@ -51,4 +51,41 @@ export async function uploadFitFile(file: File): Promise<FullResponse> {
   }
 
   return response.json() as Promise<FullResponse>;
+}
+
+
+/**
+ * Generates a training plan from current metrics and a training goal.
+ *
+ * @param metrics - Current swim performance metrics.
+ * @param goal - The swimmer's training goal.
+ * @returns A structured training plan.
+ * @throws {ApiError} When the server returns a non-2xx response.
+ * @throws {Error} When a network error prevents the request from completing.
+ */
+export async function generateTrainingPlan(
+  metrics: { pace: number; swolf: number; stroke_rate: number },
+  goal: TrainingGoal,
+): Promise<TrainingPlan> {
+  let response: Response;
+  try {
+    response = await fetch(import.meta.env.VITE_API_ENDPOINT + '/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'training_plan',
+        metrics,
+        goal,
+      }),
+    });
+  } catch {
+    throw new ApiError(0, 'Could not reach the server. Check your connection and retry.');
+  }
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new ApiError(response.status, errorMessageForStatus(response.status, text));
+  }
+
+  return response.json() as Promise<TrainingPlan>;
 }

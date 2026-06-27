@@ -6,6 +6,7 @@ export interface LengthSplit {
   length_number: number;
   time_seconds: number;
   stroke: string;
+  strokes: number;
 }
 
 export interface SessionInfo {
@@ -51,4 +52,20 @@ export class ApiError extends Error {
     super(`HTTP ${status}: ${serverMessage}`);
     this.name = 'ApiError';
   }
+}
+
+export interface TrainingGoal {
+  event: string;
+  target_time: string;
+  volume_meters: number;
+  timeframe: string;
+}
+
+export interface TrainingPlan {
+  session_title: string;
+  warm_up: string[];
+  main_set: string[];
+  cool_down: string[];
+  total_distance: number;
+  focus_notes: string;
 }

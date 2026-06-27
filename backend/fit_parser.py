@@ -286,11 +286,14 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
         elapsed = data.get("total_elapsed_time") or data.get("total_timer_time") or 0.0
         stroke_val = data.get("swim_stroke")
         stroke = _stroke_name(stroke_val)
+        total_strokes = data.get("total_strokes")
+        strokes = int(total_strokes) if total_strokes is not None else 0
 
         splits.append(LengthSplit(
             length_number=length_number,
             time_seconds=round(float(elapsed), 2),
             stroke=stroke,
+            strokes=strokes,
         ))
 
         stroke_counts[stroke] = stroke_counts.get(stroke, 0) + 1
