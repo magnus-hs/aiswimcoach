@@ -84,6 +84,56 @@ export function PersonalBestManager() {
     <div className="pb-manager">
       <h1 className="pb-manager__heading">Personal Bests</h1>
 
+      <section className="pb-manager__list-section" aria-label="Personal bests list">
+        {loading ? (
+          <p className="pb-manager__loading">Loading…</p>
+        ) : error ? (
+          <p className="pb-manager__error" role="alert">{error}</p>
+        ) : pbs.length === 0 ? (
+          <p className="pb-manager__empty">
+            No personal bests recorded yet. Add one below or upload swim sessions to get derived PBs.
+          </p>
+        ) : (
+          <div className="pb-manager__groups">
+            {groupPersonalBests(pbs).map((group) => (
+              <div key={group.stroke} className="pb-manager__group">
+                <h2 className="pb-manager__group-heading">{group.stroke}</h2>
+                <table className="pb-manager__table">
+                  <thead>
+                    <tr>
+                      <th className="pb-manager__th">Distance</th>
+                      <th className="pb-manager__th">Entered</th>
+                      <th className="pb-manager__th">Derived</th>
+                      <th className="pb-manager__th">Diff</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.events.map((entry) => (
+                      <tr key={`${group.stroke}-${entry.event}`} className="pb-manager__row">
+                        <td className="pb-manager__td pb-manager__td--distance">{entry.distance}m</td>
+                        <td className="pb-manager__td">
+                          {entry.manual ? formatPBTime(entry.manual.time_seconds) : '—'}
+                        </td>
+                        <td className="pb-manager__td">
+                          {entry.derived ? formatPBTime(entry.derived.time_seconds) : '—'}
+                        </td>
+                        <td className="pb-manager__td">
+                          {entry.manual && entry.derived ? (
+                            <span className={`pb-manager__diff pb-manager__diff--${formatTimeDiff(entry.manual.time_seconds, entry.derived.time_seconds).label}`}>
+                              {formatTimeDiff(entry.manual.time_seconds, entry.derived.time_seconds).diff}s {formatTimeDiff(entry.manual.time_seconds, entry.derived.time_seconds).label}
+                            </span>
+                          ) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       <div className="pb-manager__form-card">
         <h2 className="pb-manager__form-title">Add Personal Best</h2>
         <form className="pb-manager__form" onSubmit={handleSubmit}>
@@ -173,65 +223,7 @@ export function PersonalBestManager() {
           </button>
         </form>
       </div>
-
-      <section className="pb-manager__list-section" aria-label="Personal bests list">
-        <h2 className="pb-manager__list-title">Your Personal Bests</h2>
-
-        {loading ? (
-          <p className="pb-manager__loading">Loading…</p>
-        ) : error ? (
-          <p className="pb-manager__error" role="alert">{error}</p>
-        ) : pbs.length === 0 ? (
-          <p className="pb-manager__empty">
-            No personal bests recorded yet. Add one above or swim sessions to get derived PBs.
-          </p>
-        ) : (
-          <div className="pb-manager__list">
-            {groupPersonalBests(pbs).map((group) => (
-              <div key={group.stroke} className="pb-manager__group">
-                <h3 className="pb-manager__group-heading">{group.stroke}</h3>
-                {group.events.map((entry) => (
-                  <div key={`${group.stroke}-${entry.event}`} className="pb-manager__event-row">
-                    <span className="pb-manager__item-event">{entry.event}</span>
-                    <div className="pb-manager__times">
-                      {entry.manual && (
-                        <div className="pb-manager__time-entry">
-                          <span className="pb-manager__item-time">{formatPBTime(entry.manual.time_seconds)}</span>
-                          <SourceBadge source="manual" />
-                        </div>
-                      )}
-                      {entry.derived && (
-                        <div className="pb-manager__time-entry">
-                          <span className="pb-manager__item-time">{formatPBTime(entry.derived.time_seconds)}</span>
-                          <SourceBadge source="derived" />
-                        </div>
-                      )}
-                      {entry.manual && entry.derived && (
-                        <span className={`pb-manager__diff pb-manager__diff--${formatTimeDiff(entry.manual.time_seconds, entry.derived.time_seconds).label}`}>
-                          {formatTimeDiff(entry.manual.time_seconds, entry.derived.time_seconds).diff}s {formatTimeDiff(entry.manual.time_seconds, entry.derived.time_seconds).label}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
     </div>
-  );
-}
-
-function SourceBadge({ source }: { source: PersonalBest['source'] }) {
-  const className = source === 'manual'
-    ? 'pb-manager__source--manual'
-    : 'pb-manager__source--derived';
-
-  return (
-    <span className={`pb-manager__source ${className}`}>
-      {source}
-    </span>
   );
 }
 
