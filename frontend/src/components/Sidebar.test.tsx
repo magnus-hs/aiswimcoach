@@ -17,6 +17,29 @@ describe('Sidebar', () => {
     distanceThisWeekMeters: 4500,
     distanceThisMonthMeters: 18000,
     distanceYTDMeters: 45000,
+    weeklyDistanceChart: [
+      { label: 'Mon', distance: 1500 },
+      { label: 'Tue', distance: 0 },
+      { label: 'Wed', distance: 2000 },
+      { label: 'Thu', distance: 0 },
+      { label: 'Fri', distance: 1000 },
+      { label: 'Sat', distance: 0 },
+      { label: 'Sun', distance: 0 },
+    ],
+    monthlyDistanceChart: [
+      { label: 'W1', distance: 5000 },
+      { label: 'W2', distance: 6000 },
+      { label: 'W3', distance: 4500 },
+      { label: 'W4', distance: 2500 },
+    ],
+    yearlyDistanceChart: [
+      { label: 'Jan', distance: 8000 },
+      { label: 'Feb', distance: 10000 },
+      { label: 'Mar', distance: 9000 },
+      { label: 'Apr', distance: 11000 },
+      { label: 'May', distance: 7000 },
+      { label: 'Jun', distance: 0 },
+    ],
   };
 
   function renderSidebar(props = defaultProps) {

@@ -131,6 +131,69 @@ export function DashboardPage() {
     .filter(s => new Date(s.session_date) >= startOfYear)
     .reduce((sum, s) => sum + s.total_distance_meters, 0);
 
+  // Compute chart data: daily distances for the week (Mon–Sun)
+  const weeklyDistanceChart = (() => {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days.map((label, i) => {
+      const dayStart = new Date(startOfWeek);
+      dayStart.setDate(startOfWeek.getDate() + i);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayStart.getDate() + 1);
+      const distance = sessions
+        .filter(s => {
+          const d = new Date(s.session_date);
+          return d >= dayStart && d < dayEnd;
+        })
+        .reduce((sum, s) => sum + s.total_distance_meters, 0);
+      return { label, distance };
+    });
+  })();
+
+  // Compute chart data: weekly distances for the month (Week 1, 2, 3, 4/5)
+  const monthlyDistanceChart = (() => {
+    const weeksInMonth: { label: string; start: Date; end: Date }[] = [];
+    const d = new Date(startOfMonth);
+    let weekNum = 1;
+    while (d.getMonth() === now.getMonth()) {
+      const weekStart = new Date(d);
+      const weekEnd = new Date(d);
+      weekEnd.setDate(d.getDate() + 7);
+      if (weekEnd.getMonth() !== now.getMonth()) {
+        weekEnd.setDate(1);
+        weekEnd.setMonth(now.getMonth() + 1);
+      }
+      weeksInMonth.push({ label: `W${weekNum}`, start: weekStart, end: weekEnd });
+      d.setDate(d.getDate() + 7);
+      weekNum++;
+    }
+    return weeksInMonth.map(({ label, start, end }) => {
+      const distance = sessions
+        .filter(s => {
+          const sd = new Date(s.session_date);
+          return sd >= start && sd < end;
+        })
+        .reduce((sum, s) => sum + s.total_distance_meters, 0);
+      return { label, distance };
+    });
+  })();
+
+  // Compute chart data: monthly distances for the year (Jan–current month)
+  const yearlyDistanceChart = (() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentMonth = now.getMonth();
+    return months.slice(0, currentMonth + 1).map((label, i) => {
+      const monthStart = new Date(now.getFullYear(), i, 1);
+      const monthEnd = new Date(now.getFullYear(), i + 1, 1);
+      const distance = sessions
+        .filter(s => {
+          const sd = new Date(s.session_date);
+          return sd >= monthStart && sd < monthEnd;
+        })
+        .reduce((sum, s) => sum + s.total_distance_meters, 0);
+      return { label, distance };
+    });
+  })();
+
   // Derive display name from email (use part before @)
   const displayName = email ? email.split('@')[0] : 'Swimmer';
 
@@ -150,6 +213,9 @@ export function DashboardPage() {
           distanceThisWeekMeters={distanceThisWeek}
           distanceThisMonthMeters={distanceThisMonth}
           distanceYTDMeters={distanceYTD}
+          weeklyDistanceChart={weeklyDistanceChart}
+          monthlyDistanceChart={monthlyDistanceChart}
+          yearlyDistanceChart={yearlyDistanceChart}
         />
       </aside>
       <section className="dashboard__feed">

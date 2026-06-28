@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { DistanceChart, DistanceChartPoint } from './DistanceChart';
 import './Sidebar.css';
 
 export interface SidebarProps {
@@ -14,6 +15,9 @@ export interface SidebarProps {
   distanceThisWeekMeters: number;
   distanceThisMonthMeters: number;
   distanceYTDMeters: number;
+  weeklyDistanceChart: DistanceChartPoint[];
+  monthlyDistanceChart: DistanceChartPoint[];
+  yearlyDistanceChart: DistanceChartPoint[];
 }
 
 /**
@@ -33,13 +37,14 @@ export function Sidebar({
   swimsThisWeek,
   swimsThisMonth,
   swimsYTD,
-  sessionsPerWeek,
   distanceThisWeekMeters,
   distanceThisMonthMeters,
   distanceYTDMeters,
+  weeklyDistanceChart,
+  monthlyDistanceChart,
+  yearlyDistanceChart,
 }: SidebarProps) {
   const formattedDistance = formatDistance(totalDistanceMeters);
-  const maxWeekCount = Math.max(...sessionsPerWeek, 1);
 
   return (
     <aside className="sidebar" aria-label="Profile summary">
@@ -73,20 +78,11 @@ export function Sidebar({
         <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{swimsThisWeek}</span>
           <span className="sidebar__stat-label">Swims / Week</span>
-          <div className="sidebar__mini-chart" aria-label={`Weekly swim trend: ${sessionsPerWeek.join(', ')} sessions over last 4 weeks`}>
-            {sessionsPerWeek.map((count, i) => (
-              <div
-                key={i}
-                className="sidebar__mini-chart-bar"
-                style={{ height: `${(count / maxWeekCount) * 100}%` }}
-                aria-hidden="true"
-              />
-            ))}
-          </div>
         </div>
         <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{formatDistance(distanceThisWeekMeters)}</span>
           <span className="sidebar__stat-label">Distance / Week</span>
+          <DistanceChart data={weeklyDistanceChart} height={80} />
         </div>
         <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{swimsThisMonth}</span>
@@ -95,6 +91,7 @@ export function Sidebar({
         <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{formatDistance(distanceThisMonthMeters)}</span>
           <span className="sidebar__stat-label">Distance / Month</span>
+          <DistanceChart data={monthlyDistanceChart} height={80} />
         </div>
         <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{swimsYTD}</span>
@@ -103,6 +100,7 @@ export function Sidebar({
         <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{formatDistance(distanceYTDMeters)}</span>
           <span className="sidebar__stat-label">Distance Year to Date</span>
+          <DistanceChart data={yearlyDistanceChart} height={80} />
         </div>
       </div>
 
