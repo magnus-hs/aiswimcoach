@@ -111,3 +111,27 @@
   border-radius: var(--radius-sm);
   transition: height 0.2s ease;
 }
+
+/* Links section */
+.sidebar__links {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar__link:hover {
+  background-color: var(--color-gray-100);
+  color: var(--color-primary);
+}

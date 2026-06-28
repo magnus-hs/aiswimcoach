@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import './Sidebar.css';
 
 export interface SidebarProps {
@@ -85,6 +86,12 @@ export function Sidebar({
           <span className="sidebar__stat-value">{swimsYTD}</span>
           <span className="sidebar__stat-label">Swims Year to Date</span>
         </div>
+      </div>
+
+      <div className="sidebar__links">
+        <Link to="/plans" className="sidebar__link">
+          📋 Training Plans
+        </Link>
       </div>
     </aside>
   );
