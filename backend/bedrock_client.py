@@ -613,6 +613,12 @@ def _parse_ability_assessment_response(response_body: dict[str, Any]) -> Ability
         if not isinstance(competitive_analysis, str) or not competitive_analysis:
             return None
 
+        # Truncate fields if they exceed max length (defensive coding against AI over-generation)
+        percentile_estimate = percentile_estimate[:100]
+        local_ranking = local_ranking[:200]
+        national_ranking = national_ranking[:200]
+        competitive_analysis = competitive_analysis[:800]
+
         # AbilityAssessment.__post_init__ enforces full invariants
         return AbilityAssessment(
             percentile_estimate=percentile_estimate,
