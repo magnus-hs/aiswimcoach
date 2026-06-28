@@ -1,4 +1,5 @@
 import { SessionInfo } from '../types';
+import './SessionSummary.css';
 
 interface SessionSummaryProps {
   session: SessionInfo;

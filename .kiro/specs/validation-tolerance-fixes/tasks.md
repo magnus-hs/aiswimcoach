@@ -1,0 +1,91 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration tests for both bugs
+  - **Property 1: Bug Condition** - HR Zones Tolerance and Training Plan Truncation
+  - **CRITICAL**: These tests MUST FAIL on unfixed code - failure confirms the bugs exist
+  - **DO NOT attempt to fix the tests or the code when they fail**
+  - **NOTE**: These tests encode the expected behavior - they will validate the fixes when they pass after implementation
+  - **GOAL**: Surface counterexamples that demonstrate both bugs exist
+  - **Scoped PBT Approach**: For deterministic bugs, scope the property to the concrete failing case(s) to ensure reproducibility
+  - Test HR zones with 84-second time discrepancy (reported bug case from isBugCondition_HR)
+  - Test HR zones with 30-second and 60-second time discrepancies (additional cases)
+  - Test training plan parsing with 350-character goal_likelihood (from isBugCondition_Training)
+  - Test training plan parsing with 500-character goal_likelihood (additional case)
+  - The test assertions should match the Expected Behavior Properties from design
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests FAIL (this is correct - it proves the bugs exist)
+  - Document counterexamples found:
+    - HR zones: ValueError with message showing exact time discrepancy
+    - Training plans: Function returns None with warning log
+  - Mark task complete when tests are written, run, and failures are documented
+  - _Requirements: 1.1, 1.2_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - HR Zones Accuracy and Training Plan Validation
+  - **IMPORTANT**: Follow observation-first methodology
+  - Observe HR zones behavior on UNFIXED code for files with ≤1 second time difference
+  - Observe training plan parsing on UNFIXED code for goal_likelihood ≤300 characters
+  - Write property-based tests capturing observed behavior patterns from Preservation Requirements:
+    - HR zones: For time differences ≤1s, calculate zones correctly (same as original)
+    - Training plans: For goal_likelihood ≤300 chars, process without modification
+    - Training plans: Other field validations continue to work (session_title, total_distance, etc.)
+  - Property-based testing generates many test cases for stronger guarantees
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 3. Fix for validation tolerance issues
+
+  - [x] 3.1 Implement HR zones tolerance fix
+    - Open `/home/magnus/aiswimcoach/backend/hr_zones.py`
+    - Locate line 278: `if abs(sum_zone_times - total_time) > 1.0:`
+    - Change tolerance from 1.0 to 90.0 seconds (1.5 minutes)
+    - Update error message to reflect new tolerance expectation
+    - Rationale: Accommodates real-world FIT files with sampling gaps while still catching major data quality issues (>90s indicates problems)
+    - _Bug_Condition: isBugCondition_HR(hr_samples) where ABS(sum_zone_times - total_time) > 1.0 AND <= 90.0_
+    - _Expected_Behavior: Return HRZonesData without ValueError for reasonable time discrepancies_
+    - _Preservation: Files with time difference ≤1s must calculate identically to original_
+    - _Requirements: 2.1, 3.1, 3.4_
+
+  - [x] 3.2 Implement training plan truncation fix
+    - Open `/home/magnus/aiswimcoach/backend/bedrock_client.py`
+    - Locate lines 424-427 (goal_likelihood validation)
+    - Remove the length check that returns None
+    - Add defensive truncation before validation: `goal_likelihood = goal_likelihood[:300]`
+    - This matches the truncation pattern from ability assessment (lines 620-623)
+    - Keep the empty/type validation check
+    - Optionally adjust or remove the warning log (since truncation handles it)
+    - _Bug_Condition: isBugCondition_Training(goal_likelihood) where LENGTH(goal_likelihood) > 300_
+    - _Expected_Behavior: Truncate to 300 characters and return TrainingPlan_
+    - _Preservation: goal_likelihood ≤300 chars processed without modification, other validations unchanged_
+    - _Requirements: 2.2, 3.2, 3.3, 3.5_
+
+  - [x] 3.3 Verify bug condition exploration tests now pass
+    - **Property 1: Expected Behavior** - HR Zones Tolerance and Training Plan Truncation
+    - **IMPORTANT**: Re-run the SAME tests from task 1 - do NOT write new tests
+    - The tests from task 1 encode the expected behavior
+    - When these tests pass, it confirms the expected behavior is satisfied
+    - Run bug condition exploration tests from step 1
+    - **EXPECTED OUTCOME**: Tests PASS (confirms bugs are fixed)
+    - Verify HR zones tests pass with 84s, 30s, 60s time discrepancies
+    - Verify training plan tests pass with 350-char and 500-char goal_likelihood (truncated to 300)
+    - _Requirements: Expected Behavior Properties from design (2.1, 2.2)_
+
+  - [x] 3.4 Verify preservation tests still pass
+    - **Property 2: Preservation** - HR Zones Accuracy and Training Plan Validation
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Verify HR zones calculations unchanged for time differences ≤1s
+    - Verify training plan processing unchanged for goal_likelihood ≤300 chars
+    - Verify ability assessment truncation still works (lines 620-623)
+    - Verify other training plan field validations still work
+    - Confirm all tests still pass after fix (no regressions)
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Run full test suite for both hr_zones.py and bedrock_client.py
+  - Verify no regressions in existing test_hr_zones.py and test_bedrock_client.py
+  - Confirm bug condition tests pass (bugs fixed)
+  - Confirm preservation tests pass (no regressions)
+  - Ask the user if questions arise about test results or behavior

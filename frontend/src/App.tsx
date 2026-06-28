@@ -1,78 +1,107 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useState, useRef, useCallback } from 'react';
+import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { Header } from './components/Header';
+import { Navigation } from './components/Navigation';
+import { ProfileModal } from './components/ProfileModal';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { UploadPage } from './pages/UploadPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { HistoryPage } from './pages/HistoryPage';
-import { SessionDetailPage } from './pages/SessionDetailPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { ActivityDetailPage } from './pages/ActivityDetailPage';
+import { TrainingPlansPage } from './pages/TrainingPlansPage';
 
 /**
- * Root redirect component that redirects to /login or /upload based on auth state.
- * Validates: Requirements 22.1
+ * Redirect component for backward compatibility.
+ * Redirects /session/:id to /activity/:id preserving the session ID.
+ * Validates: Requirements 2.6
  */
-function RootRedirect() {
-  const { isAuthenticated } = useAuth();
-  return <Navigate to={isAuthenticated ? '/upload' : '/login'} replace />;
+function RedirectToActivity() {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/activity/${id}`} replace />;
 }
 
 function App() {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
 
+  // ProfileModal state
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileTriggerRef = useRef<HTMLElement>(null!);
+
+  const handleProfileClick = useCallback(() => {
+    setIsProfileOpen(true);
+  }, []);
+
+  const handleProfileClose = useCallback(() => {
+    setIsProfileOpen(false);
+  }, []);
+
   // Determine if we should show sidebar layout
   const isPublicRoute = location.pathname === '/login' || location.pathname === '/register';
   const showSidebar = isAuthenticated && !isPublicRoute;
+  const showNavigation = isAuthenticated && !isPublicRoute;
 
   return (
     <div className="app">
-      <Header />
+      {showNavigation && (
+        <Navigation onProfileClick={handleProfileClick} profileButtonRef={profileTriggerRef} />
+      )}
       <main className={`app-main ${showSidebar ? 'app-main--with-sidebar' : ''}`}>
         <Routes>
-          {/* Root route - redirect based on auth state */}
-          <Route path="/" element={<RootRedirect />} />
-          
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          
+
           {/* Protected routes */}
           <Route
-            path="/upload"
+            path="/"
             element={
               <ProtectedRoute>
-                <UploadPage />
+                <DashboardPage />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/profile"
+            path="/activity/new"
             element={
               <ProtectedRoute>
-                <ProfilePage />
+                <ActivityDetailPage mode="upload" />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/history"
+            path="/activity/:id"
             element={
               <ProtectedRoute>
-                <HistoryPage />
+                <ActivityDetailPage />
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/plans"
+            element={
+              <ProtectedRoute>
+                <TrainingPlansPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Backward compatibility: /session/:id → /activity/:id */}
           <Route
             path="/session/:id"
             element={
               <ProtectedRoute>
-                <SessionDetailPage />
+                <RedirectToActivity />
               </ProtectedRoute>
             }
           />
         </Routes>
       </main>
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={handleProfileClose}
+        triggerRef={profileTriggerRef}
+      />
     </div>
   );
 }

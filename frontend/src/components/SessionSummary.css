@@ -1,0 +1,60 @@
+/* SessionSummary.css — Token-based styling for session summary card */
+
+.session-summary {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+}
+
+.session-summary__heading {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-4);
+  line-height: var(--line-height-tight);
+}
+
+.session-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-4);
+}
+
+.session-summary__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.session-summary__label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.session-summary__value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  line-height: var(--line-height-tight);
+}
+
+.session-summary__value--large {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  line-height: var(--line-height-tight);
+}
+
+.session-summary__item--primary {
+  /* Primary metrics span full width on mobile for emphasis */
+}
+
+@media (max-width: 640px) {
+  .session-summary__item--primary {
+    grid-column: 1 / -1;
+  }
+}

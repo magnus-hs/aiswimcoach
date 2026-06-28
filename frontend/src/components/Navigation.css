@@ -1,0 +1,104 @@
+/* Navigation — Top header bar
+ * Clean, flat design with token-based styling.
+ * Validates: Requirements 7.1, 7.2, 7.3, 7.5, 11.4
+ */
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Left section: logo + app name */
+.nav__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.nav__logo {
+  font-size: var(--font-size-xl);
+  line-height: 1;
+}
+
+.nav__app-name {
+  font-family: var(--font-family);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  line-height: var(--line-height-tight);
+}
+
+/* Right section: nav links */
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.nav__link {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease, background-color 0.15s ease;
+  position: relative;
+}
+
+.nav__link:hover {
+  color: var(--color-text);
+  background-color: var(--color-gray-100);
+}
+
+/* Active route indicator — bottom border accent */
+.nav__link--active {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.nav__link--active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: var(--space-3);
+  right: var(--space-3);
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 1px;
+}
+
+/* Profile button — reset button styles to match links */
+.nav__profile-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Responsive: compact format below 768px */
+@media (max-width: 767px) {
+  .nav {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .nav__app-name {
+    font-size: var(--font-size-base);
+  }
+
+  .nav__links {
+    gap: var(--space-2);
+  }
+
+  .nav__link {
+    font-size: var(--font-size-sm);
+    padding: var(--space-2);
+  }
+}

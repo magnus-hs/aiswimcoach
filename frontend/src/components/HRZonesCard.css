@@ -1,99 +1,109 @@
+/* HRZonesCard — Token-based styling */
+
 .hr-zones-card {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+  margin-bottom: var(--space-5);
 }
 
 .hr-zones-card__heading {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 1rem 0;
-  color: #1e293b;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-4) 0;
 }
 
 .hr-zones-card__empty {
-  color: #64748b;
+  color: var(--color-text-muted);
   font-style: italic;
   margin: 0;
+  padding: var(--space-4) 0;
+  text-align: center;
 }
 
-/* Horizontal bar chart */
+/* Horizontal bar chart — zone colors are intentional and kept as-is */
 .hr-zones-card__chart {
   display: flex;
-  height: 40px;
-  border-radius: 4px;
+  height: 2.5rem;
+  border-radius: var(--radius-md);
   overflow: hidden;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-5);
+  box-shadow: var(--shadow-subtle);
 }
 
 .hr-zones-card__bar {
-  height: 100%;
   transition: opacity 0.2s;
+  cursor: pointer;
 }
 
 .hr-zones-card__bar:hover {
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 /* Zone details list */
 .hr-zones-card__list {
-  padding: 0;
-  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .hr-zones-card__item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.hr-zones-card__item:last-child {
-  border-bottom: none;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-gray-200);
 }
 
 .hr-zones-card__item-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   flex: 1;
 }
 
 .hr-zones-card__zone-indicator {
-  width: 16px;
-  height: 16px;
-  border-radius: 2px;
+  width: 1rem;
+  height: 1rem;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
 .hr-zones-card__zone-label {
-  font-weight: 500;
-  color: #334155;
-  min-width: 60px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  min-width: 4rem;
 }
 
 .hr-zones-card__zone-range {
-  color: #64748b;
-  font-size: 0.875rem;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
 }
 
 .hr-zones-card__item-stats {
   display: flex;
-  gap: 1rem;
+  gap: var(--space-4);
   align-items: center;
 }
 
 .hr-zones-card__time {
-  color: #64748b;
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  font-weight: var(--font-weight-semibold);
+  min-width: 3rem;
+  text-align: right;
 }
 
 .hr-zones-card__percent {
-  font-weight: 600;
-  color: #1e293b;
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+  min-width: 3rem;
   text-align: right;
-  min-width: 50px;
 }
