@@ -46,8 +46,37 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
     setLoading(true);
     setError(null);
     try {
-      const detail = await getSessionById(sessionId);
-      setSessionDetail(detail);
+      const data = await getSessionById(sessionId);
+      // The backend returns a flat session object — adapt to SessionDetail format
+      // If the response already has nested 'session' field, use it directly
+      // Otherwise wrap the flat response
+      if (data.session) {
+        setSessionDetail(data);
+      } else {
+        // Flat format from GET /sessions/:id — create a compatible shape
+        const flat = data as unknown as Record<string, unknown>;
+        const adapted: SessionDetail = {
+          session: {
+            start_time: (flat.session_date as string) || '',
+            pool_length_m: (flat.pool_length_meters as number) || 25,
+            total_distance_m: (flat.total_distance_meters as number) || 0,
+            total_time_seconds: (flat.total_time_seconds as number) || 0,
+            num_lengths: Math.round(((flat.total_distance_meters as number) || 0) / ((flat.pool_length_meters as number) || 25)),
+            stroke: (flat.stroke_type as string) || 'freestyle',
+          },
+          splits: [],
+          metrics: {
+            pace: (flat.average_pace_per_100m as number) || 0,
+            swolf: (flat.swolf_score as number) || 0,
+            stroke_rate: (flat.stroke_rate as number) || 0,
+          },
+          coaching: { tips: [], drill: '' },
+          hr_zones: flat.hr_zones as SessionDetail['hr_zones'],
+          ability_assessment: flat.ability_assessment as SessionDetail['ability_assessment'],
+          session_id: (flat.session_id as string) || sessionId,
+        };
+        setSessionDetail(adapted);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to load session.';
       setError(message);
@@ -92,9 +121,11 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
     return (
       <div className="activity-detail__sections">
         <SessionSummary session={data.session} />
-        <SplitsTable splits={data.splits} />
+        {data.splits && data.splits.length > 0 && <SplitsTable splits={data.splits} />}
         <HRZonesCard hrZones={data.hr_zones ?? null} />
-        <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
+        {data.coaching && data.coaching.tips && data.coaching.tips.length > 0 && (
+          <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
+        )}
         <AbilityAssessmentCard assessment={data.ability_assessment ?? null} />
         {data.training_plan && <TrainingPlanResult plan={data.training_plan} />}
       </div>
