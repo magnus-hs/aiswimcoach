@@ -5,6 +5,12 @@
   padding: var(--space-6) var(--space-4);
 }
 
+@media (max-width: 767px) {
+  .pb-manager {
+    padding: var(--space-4) var(--space-2);
+  }
+}
+
 .pb-manager__heading {
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
@@ -154,6 +160,14 @@
 .pb-manager__table {
   width: 100%;
   border-collapse: collapse;
+  overflow-x: auto;
+  display: block;
+}
+
+@media (min-width: 600px) {
+  .pb-manager__table {
+    display: table;
+  }
 }
 
 .pb-manager__th {

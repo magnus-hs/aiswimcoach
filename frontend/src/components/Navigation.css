@@ -97,26 +97,33 @@
 @media (max-width: 767px) {
   .nav {
     padding: var(--space-2) var(--space-3);
-  }
-
-  .nav__app-name {
-    font-size: var(--font-size-base);
-  }
-
-  .nav__links {
+    flex-wrap: wrap;
     gap: var(--space-2);
   }
 
-  .nav__link {
+  .nav__app-name {
     font-size: var(--font-size-sm);
-    padding: var(--space-2);
+    letter-spacing: 0.04em;
+  }
+
+  .nav__logo-img {
+    height: 22px;
+  }
+
+  .nav__links {
+    gap: var(--space-1);
+  }
+
+  .nav__link {
+    font-size: var(--font-size-xs);
+    padding: var(--space-1) var(--space-2);
   }
 }
 
-/* Responsive: ensure logo min-height at narrow viewports */
-@media (max-width: 599px) {
-  .nav__logo-img {
-    min-height: 24px;
+/* Very small phones */
+@media (max-width: 400px) {
+  .nav__app-name {
+    display: none;
   }
 }
 

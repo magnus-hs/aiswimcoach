@@ -111,11 +111,20 @@ body.auth-page-body {
 .app__body {
   display: flex;
   flex: 1;
+  min-height: 0;
 }
 
 .app-main {
   flex: 1;
   padding: 2rem 1rem;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+@media (max-width: 767px) {
+  .app-main {
+    padding: 1rem 0.75rem;
+  }
 }
 
 /* ---------------------------------------------------------------------------
