@@ -92,6 +92,9 @@ export function Sidebar({
         <Link to="/plans" className="sidebar__link">
           📋 Training Plans
         </Link>
+        <Link to="/personal-bests" className="sidebar__link">
+          🏆 Personal Bests
+        </Link>
       </div>
     </aside>
   );

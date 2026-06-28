@@ -1,0 +1,87 @@
+/* StructuredPlanForm styles */
+.structured-plan-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.structured-plan-form__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-2);
+  line-height: var(--line-height-tight);
+}
+
+.structured-plan-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.structured-plan-form__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+.structured-plan-form__input {
+  padding: var(--space-3);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  color: var(--color-text);
+  background: var(--color-surface);
+  transition: border-color 0.15s ease;
+}
+
+.structured-plan-form__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px hsla(215, 35%, 45%, 0.1);
+}
+
+.structured-plan-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.structured-plan-form__error {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  padding: var(--space-3) var(--space-4);
+  background: hsl(0, 60%, 97%);
+  border-radius: var(--radius-md);
+  margin: 0;
+}
+
+.structured-plan-form__submit {
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.structured-plan-form__submit:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.structured-plan-form__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.structured-plan-form__loading {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  font-style: italic;
+}

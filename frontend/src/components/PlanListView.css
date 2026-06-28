@@ -1,0 +1,128 @@
+/* PlanListView styles */
+.plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.plan-list__loading,
+.plan-list__empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: var(--space-4);
+}
+
+.plan-list__error {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  padding: var(--space-3) var(--space-4);
+  background: hsl(0, 60%, 97%);
+  border-radius: var(--radius-md);
+}
+
+.plan-list__card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.plan-list__card:hover {
+  box-shadow: var(--shadow-elevated);
+  transform: translateY(-1px);
+}
+
+.plan-list__card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.plan-list__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.plan-list__card-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.plan-list__badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.plan-list__badge--active {
+  background: hsl(145, 50%, 92%);
+  color: var(--color-success);
+}
+
+.plan-list__badge--draft {
+  background: var(--color-gray-100);
+  color: var(--color-gray-500);
+}
+
+.plan-list__badge--archived {
+  background: var(--color-gray-100);
+  color: var(--color-gray-400);
+}
+
+.plan-list__card-meta {
+  display: flex;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.plan-list__card-target {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  margin-bottom: var(--space-3);
+}
+
+.plan-list__card-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.plan-list__btn {
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.plan-list__btn--activate {
+  background: var(--color-success);
+  color: #fff;
+}
+
+.plan-list__btn--activate:hover {
+  background: hsl(145, 50%, 32%);
+}
+
+.plan-list__btn--archive {
+  background: var(--color-gray-200);
+  color: var(--color-gray-600);
+}
+
+.plan-list__btn--archive:hover {
+  background: var(--color-gray-300);
+}

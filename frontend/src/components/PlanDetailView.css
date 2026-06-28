@@ -1,0 +1,275 @@
+/* PlanDetailView styles */
+.plan-detail {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+.plan-detail__loading {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-8);
+}
+
+.plan-detail__error {
+  text-align: center;
+  color: var(--color-error);
+  padding: var(--space-6);
+}
+
+.plan-detail__error button {
+  margin-top: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.plan-detail__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  cursor: pointer;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-md);
+  transition: background-color 0.15s ease;
+}
+
+.plan-detail__back:hover {
+  background: var(--color-gray-100);
+}
+
+.plan-detail__header {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.plan-detail__header-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.plan-detail__title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0;
+  line-height: var(--line-height-tight);
+}
+
+.plan-detail__status {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.plan-detail__status--active {
+  background: hsl(145, 50%, 92%);
+  color: var(--color-success);
+}
+
+.plan-detail__status--draft {
+  background: var(--color-gray-100);
+  color: var(--color-gray-500);
+}
+
+.plan-detail__status--archived {
+  background: var(--color-gray-100);
+  color: var(--color-gray-400);
+}
+
+.plan-detail__meta {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.plan-detail__empty {
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: var(--space-6);
+}
+
+/* Week accordion */
+.plan-detail__weeks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.plan-detail__week {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.plan-detail__week-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.plan-detail__week-header:hover {
+  background: var(--color-gray-50);
+}
+
+.plan-detail__week-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.plan-detail__week-summary {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  flex: 1;
+}
+
+.plan-detail__week-chevron {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-400);
+}
+
+.plan-detail__week-body {
+  padding: 0 var(--space-5) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Session cards */
+.plan-detail__session {
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  border: 1px solid var(--color-gray-200);
+}
+
+.plan-detail__session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.plan-detail__session-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.plan-detail__type-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: capitalize;
+}
+
+.plan-detail__type-badge--endurance {
+  background: hsl(200, 40%, 92%);
+  color: hsl(200, 50%, 35%);
+}
+
+.plan-detail__type-badge--speed {
+  background: hsl(0, 50%, 93%);
+  color: hsl(0, 50%, 40%);
+}
+
+.plan-detail__type-badge--technique {
+  background: hsl(270, 40%, 93%);
+  color: hsl(270, 40%, 40%);
+}
+
+.plan-detail__type-badge--threshold {
+  background: hsl(35, 60%, 92%);
+  color: hsl(35, 60%, 35%);
+}
+
+/* Set lists */
+.plan-detail__session-sets {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+@media (max-width: 640px) {
+  .plan-detail__session-sets {
+    grid-template-columns: 1fr;
+  }
+}
+
+.plan-detail__set-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--space-2);
+}
+
+.plan-detail__set-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.plan-detail__session-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.plan-detail__distance {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.plan-detail__focus {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+  text-align: right;
+  max-width: 60%;
+}

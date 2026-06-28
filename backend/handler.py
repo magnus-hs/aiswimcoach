@@ -34,6 +34,10 @@ from auth import AuthenticationError, ConflictError, register_user, login_user, 
 from middleware import require_auth
 from session_history import get_user_sessions, get_session_by_id, save_session
 from training_plan_store import save_training_plan, get_user_plans
+from plan_generator import generate_multi_week_plan, PlanGenerationError
+from pb_resolver import save_personal_best, get_personal_bests, PBResolverError
+from plan_lifecycle import activate_plan, archive_plan
+from structured_plan_store import get_user_structured_plans, get_plan_by_id
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -99,6 +103,27 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     elif path == "/profile/picture" and http_method == "POST":
         return _handle_upload_profile_picture(event, context)
     
+    # Structured training plans routes (auth required)
+    elif path == "/plans/generate" and http_method == "POST":
+        return _handle_generate_structured_plan(event, context)
+    elif path == "/plans/structured" and http_method == "GET":
+        return _handle_get_structured_plans(event, context)
+    elif path.startswith("/plans/") and path.endswith("/status") and http_method == "PATCH":
+        plan_id = path.split("/plans/")[1].split("/status")[0]
+        event["plan_id"] = plan_id
+        return _handle_update_plan_status(event, context)
+    elif path.startswith("/plans/") and http_method == "GET" and not path.endswith("/status"):
+        plan_id = path.split("/plans/")[1]
+        if plan_id and plan_id != "structured" and plan_id != "generate":
+            event["plan_id"] = plan_id
+            return _handle_get_plan_by_id(event, context)
+
+    # Personal bests routes (auth required)
+    elif path == "/personal-bests" and http_method == "POST":
+        return _handle_save_personal_best(event, context)
+    elif path == "/personal-bests" and http_method == "GET":
+        return _handle_get_personal_bests(event, context)
+
     # Training plans route (auth required)
     elif path == "/plans" and http_method == "GET":
         return _handle_get_plans(event, context)
@@ -790,6 +815,325 @@ def _handle_get_plans(event: dict[str, Any], context: Any) -> dict[str, Any]:
     except Exception as exc:
         logger.error("Plan retrieval failed for user %s: %s", user_id, exc)
         return _error_response(500, "Plan retrieval failure")
+
+
+# ---------------------------------------------------------------------------
+# Structured training plan handlers (require authentication)
+# ---------------------------------------------------------------------------
+
+
+@require_auth
+def _handle_generate_structured_plan(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle POST /plans/generate endpoint.
+
+    Generates a multi-week structured training plan.
+
+    Request body (JSON):
+        {
+            "event": "100m Freestyle",
+            "target_time": "0:58.5",
+            "weeks": 8,
+            "sessions_per_week": 3
+        }
+
+    Response (200):
+        {
+            "plan_id": "uuid",
+            "status": "draft",
+            "goal": {...},
+            "duration_weeks": 8,
+            "sessions_per_week": 3,
+            "weeks": [...]
+        }
+
+    Errors:
+        400: Invalid input parameters
+        502: Plan generation failure
+    """
+    import base64
+
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        body = event.get("body")
+        if not body:
+            return _error_response(400, "Request body is required")
+        if event.get("isBase64Encoded"):
+            body = base64.b64decode(body).decode("utf-8")
+        payload = json.loads(body)
+    except (json.JSONDecodeError, ValueError) as exc:
+        return _error_response(400, f"Invalid JSON body: {exc}")
+
+    plan_event = payload.get("event")
+    target_time = payload.get("target_time")
+    weeks = payload.get("weeks")
+    sessions_per_week = payload.get("sessions_per_week", 3)
+
+    if not plan_event:
+        return _error_response(400, "Missing 'event' in request body")
+    if not target_time:
+        return _error_response(400, "Missing 'target_time' in request body")
+    if weeks is None:
+        return _error_response(400, "Missing 'weeks' in request body")
+
+    try:
+        weeks = int(weeks)
+        sessions_per_week = int(sessions_per_week)
+    except (TypeError, ValueError) as exc:
+        return _error_response(400, f"Invalid numeric parameter: {exc}")
+
+    try:
+        plan = generate_multi_week_plan(
+            user_id=user_id,
+            event=plan_event,
+            target_time=target_time,
+            weeks=weeks,
+            sessions_per_week=sessions_per_week,
+        )
+        return http_200_dict(plan)
+    except ValueError as exc:
+        return _error_response(400, str(exc))
+    except PlanGenerationError as exc:
+        logger.error("Plan generation failed for user %s: %s", user_id, exc)
+        return _error_response(exc.http_status, str(exc))
+    except Exception as exc:
+        logger.error("Unexpected error generating plan for user %s: %s", user_id, exc)
+        return _error_response(502, "Plan generation failed")
+
+
+@require_auth
+def _handle_get_structured_plans(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /plans/structured endpoint.
+
+    Retrieves user's structured multi-week training plans.
+
+    Response (200):
+        {
+            "plans": [
+                {
+                    "plan_id": "uuid",
+                    "created_at": "2024-...",
+                    "status": "draft",
+                    "goal": {...},
+                    "duration_weeks": 8,
+                    "sessions_per_week": 3
+                },
+                ...
+            ]
+        }
+
+    Errors:
+        500: Plan retrieval failure
+    """
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        plans = get_user_structured_plans(user_id)
+        return http_200_dict({"plans": plans})
+    except Exception as exc:
+        logger.error("Structured plan retrieval failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Plan retrieval failure")
+
+
+@require_auth
+def _handle_get_plan_by_id(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /plans/<plan_id> endpoint.
+
+    Retrieves a complete structured plan by ID.
+
+    Response (200):
+        {
+            "plan_id": "uuid",
+            "status": "draft",
+            "goal": {...},
+            "duration_weeks": 8,
+            "sessions_per_week": 3,
+            "weeks": [...]
+        }
+
+    Errors:
+        404: Plan not found
+        500: Plan retrieval failure
+    """
+    user_id = event["auth_context"]["user_id"]
+    plan_id = event.get("plan_id")
+
+    if not plan_id:
+        return _error_response(400, "Missing plan_id")
+
+    try:
+        plan = get_plan_by_id(user_id, plan_id)
+        if plan is None:
+            return _error_response(404, "Plan not found")
+        return http_200_dict(plan)
+    except Exception as exc:
+        logger.error("Plan retrieval failed for plan %s: %s", plan_id, exc)
+        return _error_response(500, "Plan retrieval failure")
+
+
+@require_auth
+def _handle_update_plan_status(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle PATCH /plans/<plan_id>/status endpoint.
+
+    Updates plan status (activate or archive).
+
+    Request body (JSON):
+        {
+            "status": "active" | "archived"
+        }
+
+    Response (200):
+        {
+            "message": "Plan status updated",
+            "plan_id": "uuid",
+            "status": "active"
+        }
+
+    Errors:
+        400: Invalid status or transition
+        404: Plan not found
+        500: Update failure
+    """
+    import base64
+
+    user_id = event["auth_context"]["user_id"]
+    plan_id = event.get("plan_id")
+
+    if not plan_id:
+        return _error_response(400, "Missing plan_id")
+
+    try:
+        body = event.get("body")
+        if not body:
+            return _error_response(400, "Request body is required")
+        if event.get("isBase64Encoded"):
+            body = base64.b64decode(body).decode("utf-8")
+        payload = json.loads(body)
+    except (json.JSONDecodeError, ValueError) as exc:
+        return _error_response(400, f"Invalid JSON body: {exc}")
+
+    new_status = payload.get("status")
+    if new_status not in ("active", "archived"):
+        return _error_response(400, "status must be 'active' or 'archived'")
+
+    try:
+        if new_status == "active":
+            activate_plan(user_id, plan_id)
+        else:
+            archive_plan(user_id, plan_id)
+
+        return http_200_dict({
+            "message": "Plan status updated",
+            "plan_id": plan_id,
+            "status": new_status,
+        })
+    except ValueError as exc:
+        return _error_response(400, str(exc))
+    except Exception as exc:
+        logger.error("Plan status update failed for plan %s: %s", plan_id, exc)
+        return _error_response(500, "Plan status update failure")
+
+
+@require_auth
+def _handle_save_personal_best(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle POST /personal-bests endpoint.
+
+    Saves a manually entered personal best.
+
+    Request body (JSON):
+        {
+            "event": "100m Freestyle",
+            "time_seconds": 65.5
+        }
+
+    Response (200):
+        {
+            "message": "Personal best saved",
+            "event": "100m Freestyle",
+            "time_seconds": 65.5
+        }
+
+    Errors:
+        400: Invalid input
+        500: Save failure
+    """
+    import base64
+
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        body = event.get("body")
+        if not body:
+            return _error_response(400, "Request body is required")
+        if event.get("isBase64Encoded"):
+            body = base64.b64decode(body).decode("utf-8")
+        payload = json.loads(body)
+    except (json.JSONDecodeError, ValueError) as exc:
+        return _error_response(400, f"Invalid JSON body: {exc}")
+
+    pb_event = payload.get("event")
+    time_seconds = payload.get("time_seconds")
+
+    if not pb_event:
+        return _error_response(400, "Missing 'event' in request body")
+    if time_seconds is None:
+        return _error_response(400, "Missing 'time_seconds' in request body")
+
+    try:
+        time_seconds = float(time_seconds)
+    except (TypeError, ValueError):
+        return _error_response(400, "time_seconds must be a number")
+
+    try:
+        save_personal_best(user_id, pb_event, time_seconds)
+        return http_200_dict({
+            "message": "Personal best saved",
+            "event": pb_event,
+            "time_seconds": time_seconds,
+        })
+    except ValueError as exc:
+        return _error_response(400, str(exc))
+    except PBResolverError as exc:
+        logger.error("PB save failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to save personal best")
+    except Exception as exc:
+        logger.error("Unexpected error saving PB for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to save personal best")
+
+
+@require_auth
+def _handle_get_personal_bests(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /personal-bests endpoint.
+
+    Retrieves all personal bests (manual + derived) for the user.
+
+    Response (200):
+        {
+            "personal_bests": [
+                {
+                    "event": "100m Freestyle",
+                    "time_seconds": 65.5,
+                    "source": "manual",
+                    "updated_at": "2024-..."
+                },
+                ...
+            ]
+        }
+
+    Errors:
+        500: Retrieval failure
+    """
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        pbs = get_personal_bests(user_id)
+        return http_200_dict({"personal_bests": pbs})
+    except PBResolverError as exc:
+        logger.error("PB retrieval failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to retrieve personal bests")
+    except Exception as exc:
+        logger.error("Unexpected error retrieving PBs for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to retrieve personal bests")
 
 
 # ---------------------------------------------------------------------------

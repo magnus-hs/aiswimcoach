@@ -9,6 +9,9 @@ import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ActivityDetailPage } from './pages/ActivityDetailPage';
 import { TrainingPlansPage } from './pages/TrainingPlansPage';
+import { NewPlanPage } from './pages/NewPlanPage';
+import { PersonalBestsPage } from './pages/PersonalBestsPage';
+import { PlanDetailView } from './components/PlanDetailView';
 
 /**
  * Redirect component for backward compatibility.
@@ -82,6 +85,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <TrainingPlansPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/plans/new"
+            element={
+              <ProtectedRoute>
+                <NewPlanPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/plans/:planId"
+            element={
+              <ProtectedRoute>
+                <PlanDetailView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/personal-bests"
+            element={
+              <ProtectedRoute>
+                <PersonalBestsPage />
               </ProtectedRoute>
             }
           />
