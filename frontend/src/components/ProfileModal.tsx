@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback, FormEvent, ChangeEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { saveProfile, getProfile, uploadProfilePicture, UserProfile } from '../api/profileService';
+import { useAuth } from '../hooks/useAuth';
 import { ApiError } from '../types';
 import './ProfileModal.css';
 
@@ -22,6 +24,8 @@ interface ProfileModalProps {
  */
 export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
   // Form state
   const [age, setAge] = useState<string>('');
@@ -32,6 +36,15 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
   // Profile picture state
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [picturePreview, setPicturePreview] = useState<string>('');
+
+  // Ability assessment state
+  const [assessment, setAssessment] = useState<{
+    percentile_estimate: string;
+    local_ranking: string;
+    national_ranking: string;
+    competitive_analysis: string;
+  } | null>(null);
+  const [showAssessment, setShowAssessment] = useState(false);
 
   // UI state
   const [loading, setLoading] = useState<boolean>(false);
@@ -47,6 +60,7 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
     setLoadingProfile(true);
     setSuccessMessage('');
     setErrorMessage('');
+    setShowAssessment(false);
 
     async function loadProfile() {
       try {
@@ -66,7 +80,32 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
       }
     }
 
+    // Load latest ability assessment from most recent session
+    async function loadAssessment() {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+        const response = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/sessions`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const sessions = data.sessions ?? data;
+          // Find most recent session with ability assessment
+          for (const session of sessions) {
+            if (session.ability_assessment) {
+              setAssessment(session.ability_assessment);
+              break;
+            }
+          }
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+
     loadProfile();
+    loadAssessment();
   }, [isOpen]);
 
   // Focus trap and keyboard handling
@@ -344,6 +383,60 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
             </button>
           </form>
         )}
+
+        {/* Competitive Ability Assessment Section */}
+        <div className="modal__section">
+          <button
+            type="button"
+            className="modal__section-toggle"
+            onClick={() => setShowAssessment(!showAssessment)}
+          >
+            📊 Competitive Ability Assessment {showAssessment ? '▾' : '▸'}
+          </button>
+          {showAssessment && (
+            <div className="modal__assessment">
+              {assessment ? (
+                <>
+                  <div className="modal__assessment-item">
+                    <span className="modal__assessment-label">Percentile Ranking</span>
+                    <span className="modal__assessment-value">{assessment.percentile_estimate}</span>
+                  </div>
+                  <div className="modal__assessment-item">
+                    <span className="modal__assessment-label">Local Ranking</span>
+                    <span className="modal__assessment-value">{assessment.local_ranking}</span>
+                  </div>
+                  <div className="modal__assessment-item">
+                    <span className="modal__assessment-label">National Ranking</span>
+                    <span className="modal__assessment-value">{assessment.national_ranking}</span>
+                  </div>
+                  <div className="modal__assessment-item">
+                    <span className="modal__assessment-label">Competitive Analysis</span>
+                    <p className="modal__assessment-analysis">{assessment.competitive_analysis}</p>
+                  </div>
+                </>
+              ) : (
+                <p className="modal__assessment-empty">
+                  No assessment yet. Upload a FIT file with a completed profile to generate one.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Logout */}
+        <div className="modal__footer">
+          <button
+            type="button"
+            className="modal__logout-btn"
+            onClick={() => {
+              logout();
+              onClose();
+              navigate('/login');
+            }}
+          >
+            Log Out
+          </button>
+        </div>
       </div>
     </div>
   );
