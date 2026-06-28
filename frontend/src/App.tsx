@@ -11,6 +11,7 @@ import { ActivityDetailPage } from './pages/ActivityDetailPage';
 import { TrainingPlansPage } from './pages/TrainingPlansPage';
 import { NewPlanPage } from './pages/NewPlanPage';
 import { PersonalBestsPage } from './pages/PersonalBestsPage';
+import { AbilityAssessmentPage } from './pages/AbilityAssessmentPage';
 import { PlanDetailView } from './components/PlanDetailView';
 
 /**
@@ -109,6 +110,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <PersonalBestsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ability"
+            element={
+              <ProtectedRoute>
+                <AbilityAssessmentPage />
               </ProtectedRoute>
             }
           />

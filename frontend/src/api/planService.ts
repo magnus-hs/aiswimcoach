@@ -104,7 +104,7 @@ export async function getStructuredPlans(): Promise<StructuredPlan[]> {
 
   let response: Response;
   try {
-    response = await fetch(`${baseUrl()}/plans`, {
+    response = await fetch(`${baseUrl()}/plans/structured`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,

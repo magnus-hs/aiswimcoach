@@ -146,8 +146,8 @@ This plan implements a periodized multi-week training plan system for the AI Swi
   - Run `build-lambda.sh` to rebuild the Lambda package
   - Deploy updated Lambda to AWS
 
-- [ ] 9. Create frontend API service for plans
-  - [-] 9.1 Create `frontend/src/api/planService.ts` with API client functions
+- [x] 9. Create frontend API service for plans
+  - [x] 9.1 Create `frontend/src/api/planService.ts` with API client functions
     - Implement `generatePlan(params)` — POST /plans/generate
     - Implement `getPlans()` — GET /plans/structured
     - Implement `getPlanById(planId)` — GET /plans/:plan_id
@@ -158,8 +158,8 @@ This plan implements a periodized multi-week training plan system for the AI Swi
     - Follow existing patterns from `sessionService.ts` and `profileService.ts`
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.6, 8.7_
 
-- [ ] 10. Implement frontend components
-  - [-] 10.1 Create `StructuredPlanForm` component
+- [x] 10. Implement frontend components
+  - [x] 10.1 Create `StructuredPlanForm` component
     - Form inputs: event (text), target time (text), duration in weeks (number 4-12), sessions per week (number 3-5)
     - Client-side validation for range boundaries
     - Loading state during generation (skeleton UI with estimated wait)
@@ -168,7 +168,7 @@ This plan implements a periodized multi-week training plan system for the AI Swi
     - Create `StructuredPlanForm.css` with design tokens
     - _Requirements: 1.2, 1.4, 1.5, 8.1, 8.5_
 
-  - [-] 10.2 Create `PlanListView` component
+  - [x] 10.2 Create `PlanListView` component
     - Display all user plans as cards with event, duration, created date
     - Show status badges (draft, active, archived) with visual distinction for active
     - Activate button on draft plans, Archive button on active plans
@@ -177,7 +177,7 @@ This plan implements a periodized multi-week training plan system for the AI Swi
     - Create `PlanListView.css` with design tokens
     - _Requirements: 5.4, 5.5, 4.2, 4.5, 6.3_
 
-  - [-] 10.3 Create `PlanDetailView` component
+  - [x] 10.3 Create `PlanDetailView` component
     - Week-by-week expandable view showing all sessions
     - Each week section shows week number and session cards
     - Each session card shows title, type badge, warm-up, main set, cool-down, distance, focus notes
@@ -185,7 +185,7 @@ This plan implements a periodized multi-week training plan system for the AI Swi
     - Create `PlanDetailView.css` with design tokens
     - _Requirements: 5.1, 5.2, 5.3_
 
-  - [-] 10.4 Create `PersonalBestManager` component
+  - [x] 10.4 Create `PersonalBestManager` component
     - Form for manual PB entry (event name, time input)
     - Display list of all PBs with source indicator (manual/derived)
     - Validation for positive time values
@@ -193,8 +193,8 @@ This plan implements a periodized multi-week training plan system for the AI Swi
     - Create `PersonalBestManager.css` with design tokens
     - _Requirements: 3.1, 3.2, 8.6, 8.7_
 
-- [ ] 11. Wire frontend routing and navigation
-  - [~] 11.1 Add routes and navigation for training plans
+- [x] 11. Wire frontend routing and navigation
+  - [x] 11.1 Add routes and navigation for training plans
     - Add `/plans` route → PlanListView
     - Add `/plans/new` route → StructuredPlanForm
     - Add `/plans/:planId` route → PlanDetailView
@@ -211,7 +211,7 @@ This plan implements a periodized multi-week training plan system for the AI Swi
     - Test loading and error states render correctly
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [~] 12. Final checkpoint - Full integration verification
+- [x] 12. Final checkpoint - Full integration verification
   - Ensure all tests pass, ask the user if questions arise.
   - Push frontend to git for Amplify deploy
 
