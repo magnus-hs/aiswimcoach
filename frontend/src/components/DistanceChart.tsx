@@ -76,9 +76,6 @@ export function DistanceChart({ data, height = 100 }: DistanceChartProps) {
           />
         </BarChart>
       </ResponsiveContainer>
-      {showAsKm && (
-        <span className="distance-chart__unit">km</span>
-      )}
     </div>
   );
 }
