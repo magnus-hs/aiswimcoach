@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 
 describe('Sidebar', () => {
@@ -15,27 +16,33 @@ describe('Sidebar', () => {
     sessionsPerWeek: [2, 3, 1, 4],
   };
 
+  function renderSidebar(props = defaultProps) {
+    return render(
+      <MemoryRouter>
+        <Sidebar {...props} />
+      </MemoryRouter>
+    );
+  }
+
   it('renders display name and member-since date', () => {
-    render(<Sidebar {...defaultProps} />);
+    renderSidebar();
 
     expect(screen.getByText('Jane Swimmer')).toBeInTheDocument();
     expect(screen.getByText('Member since January 2024')).toBeInTheDocument();
   });
 
   it('renders placeholder avatar when no profile picture', () => {
-    render(<Sidebar {...defaultProps} />);
+    renderSidebar();
 
     expect(screen.getByText('👤')).toBeInTheDocument();
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
   it('renders profile picture when URL is provided', () => {
-    render(
-      <Sidebar
-        {...defaultProps}
-        profilePictureUrl="https://example.com/photo.jpg"
-      />
-    );
+    renderSidebar({
+      ...defaultProps,
+      profilePictureUrl: 'https://example.com/photo.jpg',
+    });
 
     const img = screen.getByRole('img');
     expect(img).toHaveAttribute('src', 'https://example.com/photo.jpg');
@@ -43,27 +50,27 @@ describe('Sidebar', () => {
   });
 
   it('renders total sessions stat', () => {
-    render(<Sidebar {...defaultProps} />);
+    renderSidebar();
 
-    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getAllByText('42').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Sessions')).toBeInTheDocument();
   });
 
   it('renders total distance formatted in km', () => {
-    render(<Sidebar {...defaultProps} />);
+    renderSidebar();
 
     expect(screen.getByText('52.5 km')).toBeInTheDocument();
     expect(screen.getByText('Total Distance')).toBeInTheDocument();
   });
 
   it('renders distance in meters when below 1000m', () => {
-    render(<Sidebar {...defaultProps} totalDistanceMeters={750} />);
+    renderSidebar({ ...defaultProps, totalDistanceMeters: 750 });
 
     expect(screen.getByText('750 m')).toBeInTheDocument();
   });
 
   it('renders swims per week, month, and year to date stats', () => {
-    render(<Sidebar {...defaultProps} />);
+    renderSidebar();
 
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByText('Swims / Week')).toBeInTheDocument();
@@ -73,7 +80,7 @@ describe('Sidebar', () => {
   });
 
   it('renders stat values with large bold typography', () => {
-    render(<Sidebar {...defaultProps} />);
+    renderSidebar();
 
     const statValues = document.querySelectorAll('.sidebar__stat-value');
     expect(statValues.length).toBe(5);
@@ -85,7 +92,7 @@ describe('Sidebar', () => {
   });
 
   it('has accessible structure with aria-label', () => {
-    render(<Sidebar {...defaultProps} />);
+    renderSidebar();
 
     expect(screen.getByLabelText('Profile summary')).toBeInTheDocument();
     expect(screen.getByLabelText('Training statistics')).toBeInTheDocument();

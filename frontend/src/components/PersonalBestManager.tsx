@@ -1,5 +1,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { savePersonalBest, getPersonalBests, PersonalBest } from '../api/planService';
+import { STROKES, DISTANCES, StrokeType, DistanceOption, buildEventName, validateTimeInput, validateCustomDistance } from '../utils/pbValidation';
+import { groupPersonalBests, formatTimeDiff } from '../utils/pbGrouping';
 import './PersonalBestManager.css';
 
 /**
@@ -10,7 +12,9 @@ export function PersonalBestManager() {
   const [pbs, setPbs] = useState<PersonalBest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [event, setEvent] = useState('');
+  const [stroke, setStroke] = useState<StrokeType | ''>('');
+  const [distance, setDistance] = useState<DistanceOption | ''>('');
+  const [customDistance, setCustomDistance] = useState('');
   const [timeInput, setTimeInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -31,43 +35,41 @@ export function PersonalBestManager() {
     loadPBs();
   }, []);
 
-  /**
-   * Parse time input in "M:SS", "M:SS.f", or raw seconds format.
-   */
-  const parseTime = (input: string): number | null => {
-    const trimmed = input.trim();
-
-    // M:SS or M:SS.f format
-    const timeMatch = trimmed.match(/^(\d+):(\d{1,2}(?:\.\d+)?)$/);
-    if (timeMatch) {
-      const minutes = parseInt(timeMatch[1], 10);
-      const seconds = parseFloat(timeMatch[2]);
-      return minutes * 60 + seconds;
-    }
-
-    // Raw seconds
-    const num = parseFloat(trimmed);
-    if (!isNaN(num) && num > 0) {
-      return num;
-    }
-
-    return null;
-  };
+  const isFormValid =
+    stroke !== '' &&
+    distance !== '' &&
+    timeInput.trim() !== '' &&
+    (distance !== 'Custom' || customDistance.trim() !== '');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSaveError(null);
 
-    const timeSeconds = parseTime(timeInput);
-    if (timeSeconds === null) {
-      setSaveError('Enter time as M:SS (e.g., 1:05) or seconds (e.g., 65).');
+    // Validate time
+    const timeResult = validateTimeInput(timeInput);
+    if (!timeResult.valid) {
+      setSaveError(timeResult.error || 'Enter time as M:SS (e.g., 1:05)');
       return;
     }
 
+    // Validate custom distance if applicable
+    if (distance === 'Custom') {
+      const distResult = validateCustomDistance(customDistance);
+      if (!distResult.valid) {
+        setSaveError(distResult.error || 'Distance must be between 25 and 5000 meters');
+        return;
+      }
+    }
+
+    const eventName = buildEventName(stroke as StrokeType, distance as DistanceOption, customDistance);
+    const timeSeconds = timeResult.seconds!;
+
     setSaving(true);
     try {
-      await savePersonalBest(event, timeSeconds);
-      setEvent('');
+      await savePersonalBest(eventName, timeSeconds);
+      setStroke('');
+      setDistance('');
+      setCustomDistance('');
       setTimeInput('');
       await loadPBs();
     } catch (err) {
@@ -86,19 +88,60 @@ export function PersonalBestManager() {
         <h2 className="pb-manager__form-title">Add Personal Best</h2>
         <form className="pb-manager__form" onSubmit={handleSubmit}>
           <div className="pb-manager__field">
-            <label className="pb-manager__label" htmlFor="pb-event">
-              Event
+            <label className="pb-manager__label" htmlFor="pb-stroke">
+              Stroke
             </label>
-            <input
-              id="pb-event"
-              className="pb-manager__input"
-              type="text"
-              value={event}
-              onChange={(e) => setEvent(e.target.value)}
-              placeholder="e.g., 100m Freestyle"
+            <select
+              id="pb-stroke"
+              className="pb-manager__select"
+              value={stroke}
+              onChange={(e) => setStroke(e.target.value as StrokeType | '')}
               required
-            />
+            >
+              <option value="">Select stroke</option>
+              {STROKES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
           </div>
+
+          <div className="pb-manager__field">
+            <label className="pb-manager__label" htmlFor="pb-distance">
+              Distance
+            </label>
+            <select
+              id="pb-distance"
+              className="pb-manager__select"
+              value={distance}
+              onChange={(e) => setDistance(e.target.value as DistanceOption | '')}
+              required
+            >
+              <option value="">Select distance</option>
+              {DISTANCES.map((d) => (
+                <option key={d} value={d}>{d === 'Custom' ? 'Custom' : `${d}m`}</option>
+              ))}
+            </select>
+          </div>
+
+          {distance === 'Custom' && (
+            <div className="pb-manager__field">
+              <label className="pb-manager__label" htmlFor="pb-custom-distance">
+                Custom Distance (meters)
+              </label>
+              <input
+                id="pb-custom-distance"
+                className="pb-manager__input"
+                type="number"
+                min={25}
+                max={5000}
+                step={1}
+                value={customDistance}
+                onChange={(e) => setCustomDistance(e.target.value)}
+                placeholder="25–5000"
+                required
+              />
+            </div>
+          )}
 
           <div className="pb-manager__field">
             <label className="pb-manager__label" htmlFor="pb-time">
@@ -110,7 +153,7 @@ export function PersonalBestManager() {
               type="text"
               value={timeInput}
               onChange={(e) => setTimeInput(e.target.value)}
-              placeholder="e.g., 1:05 or 65"
+              placeholder="M:SS (e.g., 1:05)"
               required
             />
           </div>
@@ -124,7 +167,7 @@ export function PersonalBestManager() {
           <button
             className="pb-manager__submit"
             type="submit"
-            disabled={saving}
+            disabled={saving || !isFormValid}
           >
             {saving ? 'Saving…' : 'Save Personal Best'}
           </button>
@@ -144,20 +187,33 @@ export function PersonalBestManager() {
           </p>
         ) : (
           <div className="pb-manager__list">
-            {pbs.map((pb) => (
-              <div key={pb.event} className="pb-manager__item">
-                <div className="pb-manager__item-main">
-                  <span className="pb-manager__item-event">{pb.event}</span>
-                  <span className="pb-manager__item-time">
-                    {formatPBTime(pb.time_seconds)}
-                  </span>
-                </div>
-                <div className="pb-manager__item-meta">
-                  <SourceBadge source={pb.source} />
-                  <time className="pb-manager__item-date" dateTime={pb.updated_at}>
-                    {new Date(pb.updated_at).toLocaleDateString()}
-                  </time>
-                </div>
+            {groupPersonalBests(pbs).map((group) => (
+              <div key={group.stroke} className="pb-manager__group">
+                <h3 className="pb-manager__group-heading">{group.stroke}</h3>
+                {group.events.map((entry) => (
+                  <div key={`${group.stroke}-${entry.event}`} className="pb-manager__event-row">
+                    <span className="pb-manager__item-event">{entry.event}</span>
+                    <div className="pb-manager__times">
+                      {entry.manual && (
+                        <div className="pb-manager__time-entry">
+                          <span className="pb-manager__item-time">{formatPBTime(entry.manual.time_seconds)}</span>
+                          <SourceBadge source="manual" />
+                        </div>
+                      )}
+                      {entry.derived && (
+                        <div className="pb-manager__time-entry">
+                          <span className="pb-manager__item-time">{formatPBTime(entry.derived.time_seconds)}</span>
+                          <SourceBadge source="derived" />
+                        </div>
+                      )}
+                      {entry.manual && entry.derived && (
+                        <span className={`pb-manager__diff pb-manager__diff--${formatTimeDiff(entry.manual.time_seconds, entry.derived.time_seconds).label}`}>
+                          {formatTimeDiff(entry.manual.time_seconds, entry.derived.time_seconds).diff}s {formatTimeDiff(entry.manual.time_seconds, entry.derived.time_seconds).label}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             ))}
           </div>

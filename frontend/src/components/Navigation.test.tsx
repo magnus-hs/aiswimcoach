@@ -12,10 +12,10 @@ const renderNavigation = (initialRoute = '/', onProfileClick = vi.fn()) => {
 };
 
 describe('Navigation', () => {
-  it('renders the app name and logo', () => {
+  it('renders the app name and SVG logo', () => {
     renderNavigation();
     expect(screen.getByText('AI Swim Coach')).toBeInTheDocument();
-    expect(screen.getByText('🏊')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'AI Swim Coach' })).toBeInTheDocument();
   });
 
   it('renders Dashboard and Training Plans nav links', () => {
@@ -26,10 +26,10 @@ describe('Navigation', () => {
 
   it('renders Profile as a button (not a link)', () => {
     renderNavigation();
-    const profileBtn = screen.getByRole('button', { name: 'Profile' });
+    const profileBtn = screen.getByRole('button', { name: /Profile/ });
     expect(profileBtn).toBeInTheDocument();
     // Verify it's not a link
-    expect(screen.queryByRole('link', { name: 'Profile' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Profile/ })).not.toBeInTheDocument();
   });
 
   it('applies active class to Dashboard link when on /', () => {
@@ -53,8 +53,11 @@ describe('Navigation', () => {
   it('calls onProfileClick when Profile button is clicked', () => {
     const onProfileClick = vi.fn();
     renderNavigation('/', onProfileClick);
-    const profileBtn = screen.getByRole('button', { name: 'Profile' });
+    const profileBtn = screen.getByRole('button', { name: /Profile/ });
     fireEvent.click(profileBtn);
+    // Clicking opens the dropdown; click "Edit Profile" to trigger onProfileClick
+    const editProfileItem = screen.getByRole('menuitem', { name: 'Edit Profile' });
+    fireEvent.click(editProfileItem);
     expect(onProfileClick).toHaveBeenCalledTimes(1);
   });
 

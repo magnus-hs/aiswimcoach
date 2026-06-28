@@ -28,8 +28,9 @@
 }
 
 .nav__logo-img {
-  height: 36px;
+  max-height: 40px;
   width: auto;
+  aspect-ratio: 48 / 36;
   border-radius: var(--radius-sm);
 }
 
@@ -106,6 +107,13 @@
   .nav__link {
     font-size: var(--font-size-sm);
     padding: var(--space-2);
+  }
+}
+
+/* Responsive: ensure logo min-height at narrow viewports */
+@media (max-width: 599px) {
+  .nav__logo-img {
+    min-height: 24px;
   }
 }
 

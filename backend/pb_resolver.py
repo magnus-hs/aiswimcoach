@@ -166,8 +166,9 @@ def get_personal_bests(user_id: str) -> list[dict]:
     """Return all PBs (manual + derived) for a user.
 
     Retrieves manually entered PBs from the UserProfiles table, then
-    augments with derived PBs from session history for events that don't
-    have a manual entry.
+    derives PBs from session history. Returns BOTH manual and derived
+    entries even when they exist for the same event, enabling side-by-side
+    comparison in the frontend.
 
     Args:
         user_id: User identifier (UUID v4)
@@ -178,11 +179,13 @@ def get_personal_bests(user_id: str) -> list[dict]:
             - time_seconds: float
             - source: str ("manual" or "derived")
             - updated_at: str (ISO 8601)
+        Note: Multiple entries may exist for the same event (one manual,
+        one derived).
 
     Raises:
         PBResolverError: If DynamoDB operation fails
 
-    Requirements: 3.2, 8.7
+    Requirements: 3.2, 4.3, 4.8, 8.7
     """
     table = _get_profiles_table()
 
@@ -209,16 +212,12 @@ def get_personal_bests(user_id: str) -> list[dict]:
             "updated_at": pb_data["updated_at"],
         }
 
-    # Derive PBs from session history for stroke types not covered by manual entries
+    # Derive PBs from session history
     derived_pbs = _derive_all_pbs_from_history(user_id)
 
-    # Merge: manual entries take priority
-    all_pbs = dict(manual_pbs)
-    for event_name, pb_data in derived_pbs.items():
-        if event_name not in all_pbs:
-            all_pbs[event_name] = pb_data
-
-    return list(all_pbs.values())
+    # Return ALL PBs — both manual and derived (even for same event)
+    all_pbs = list(manual_pbs.values()) + list(derived_pbs.values())
+    return all_pbs
 
 
 def resolve_personal_best(user_id: str, event: str) -> float | None:

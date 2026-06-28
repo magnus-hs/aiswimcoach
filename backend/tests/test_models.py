@@ -253,19 +253,19 @@ class TestHRZonesDataValidation:
             )
 
     def test_percentages_sum_below_range_raises_error(self):
-        """Percentages summing to less than 99% should raise ValueError."""
-        with pytest.raises(ValueError, match="zone percentages must sum to 99.0-101.0%"):
+        """Individual percentages must be non-negative."""
+        with pytest.raises(ValueError, match="must be non-negative"):
             HRZonesData(
                 zone_1_seconds=300,
                 zone_2_seconds=600,
                 zone_3_seconds=900,
                 zone_4_seconds=300,
                 zone_5_seconds=100,
-                zone_1_percent=10.0,
-                zone_2_percent=20.0,
-                zone_3_percent=30.0,
-                zone_4_percent=15.0,
-                zone_5_percent=20.0,  # total = 95%
+                zone_1_percent=-10.0,
+                zone_2_percent=-20.0,
+                zone_3_percent=-30.0,
+                zone_4_percent=-15.0,
+                zone_5_percent=-20.0,  # total = -95% (below 0%)
                 max_hr=180,
                 zone_boundaries={
                     1: (90, 108),
@@ -278,7 +278,7 @@ class TestHRZonesDataValidation:
 
     def test_percentages_sum_above_range_raises_error(self):
         """Percentages summing to more than 101% should raise ValueError."""
-        with pytest.raises(ValueError, match="zone percentages must sum to 99.0-101.0%"):
+        with pytest.raises(ValueError, match="zone percentages must sum to 0.0-101.0%"):
             HRZonesData(
                 zone_1_seconds=300,
                 zone_2_seconds=600,

@@ -382,8 +382,8 @@ class TestGetPersonalBests:
 
     @patch("pb_resolver._get_sessions_table")
     @patch("pb_resolver._get_profiles_table")
-    def test_manual_overrides_derived(self, mock_profiles, mock_sessions):
-        """Manual PBs take priority over derived ones for same event."""
+    def test_returns_both_manual_and_derived_for_same_event(self, mock_profiles, mock_sessions):
+        """Returns both manual and derived PBs for the same event."""
         mock_profile_table = MagicMock()
         mock_profiles.return_value = mock_profile_table
         mock_profile_table.get_item.return_value = {
@@ -400,7 +400,7 @@ class TestGetPersonalBests:
 
         mock_session_table = MagicMock()
         mock_sessions.return_value = mock_session_table
-        # Session history shows a faster pace, but manual should still win
+        # Session history shows a faster pace — both should be returned
         mock_session_table.query.return_value = {
             "Items": [
                 {
@@ -412,11 +412,15 @@ class TestGetPersonalBests:
         }
 
         result = get_personal_bests("user1")
-        # Should only have manual entry for 100m Freestyle, not derived
+        # Should have both manual AND derived entries for 100m Freestyle
         freestyle_pbs = [pb for pb in result if pb["event"] == "100m Freestyle"]
-        assert len(freestyle_pbs) == 1
-        assert freestyle_pbs[0]["source"] == "manual"
-        assert freestyle_pbs[0]["time_seconds"] == 65.5
+        assert len(freestyle_pbs) == 2
+        sources = {pb["source"] for pb in freestyle_pbs}
+        assert sources == {"manual", "derived"}
+        manual_pb = next(pb for pb in freestyle_pbs if pb["source"] == "manual")
+        derived_pb = next(pb for pb in freestyle_pbs if pb["source"] == "derived")
+        assert manual_pb["time_seconds"] == 65.5
+        assert derived_pb["time_seconds"] == 60.0
 
     @patch("pb_resolver._get_sessions_table")
     @patch("pb_resolver._get_profiles_table")

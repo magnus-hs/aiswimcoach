@@ -161,8 +161,8 @@ class TestUploadProfilePicture:
             assert key.startswith("user-123_")
             assert key.endswith(".jpg")
     
-    def test_uploads_to_s3_with_public_read_acl(self):
-        """Test that S3 upload sets public-read ACL."""
+    def test_uploads_to_s3_with_correct_content_type(self):
+        """Test that S3 upload sets correct ContentType."""
         with patch("profile_manager._get_s3_client") as mock_s3, \
              patch("profile_manager._get_dynamodb") as mock_dynamodb:
             
@@ -176,10 +176,10 @@ class TestUploadProfilePicture:
             
             upload_profile_picture("user-123", VALID_PNG_BYTES, "image/png")
             
-            # Verify S3 put_object was called with ACL='public-read'
+            # Verify S3 put_object was called with correct ContentType
             mock_s3_instance.put_object.assert_called_once()
             call_args = mock_s3_instance.put_object.call_args
-            assert call_args[1]["ACL"] == "public-read"
+            assert call_args[1]["ContentType"] == "image/png"
     
     def test_updates_users_table_with_url(self):
         """Test that Users table is updated with profile_picture_url."""

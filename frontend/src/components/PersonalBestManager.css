@@ -63,6 +63,28 @@
   box-shadow: 0 0 0 3px hsla(215, 35%, 45%, 0.1);
 }
 
+.pb-manager__select {
+  padding: var(--space-3);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  color: var(--color-text);
+  background: var(--color-surface);
+  transition: border-color 0.15s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  padding-right: calc(var(--space-3) * 2 + 12px);
+}
+
+.pb-manager__select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px hsla(215, 35%, 45%, 0.1);
+}
+
 .pb-manager__error {
   color: var(--color-error);
   font-size: var(--font-size-sm);
@@ -175,5 +197,55 @@
 
 .pb-manager__item-date {
   font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Grouped PB display */
+.pb-manager__group {
+  margin-bottom: var(--space-6);
+}
+
+.pb-manager__group-heading {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-gray-300);
+}
+
+.pb-manager__event-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-2);
+}
+
+.pb-manager__times {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.pb-manager__time-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pb-manager__diff {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.pb-manager__diff--faster {
+  color: var(--color-success);
+}
+
+.pb-manager__diff--slower {
   color: var(--color-text-muted);
 }
