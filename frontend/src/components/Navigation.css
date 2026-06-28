@@ -29,19 +29,19 @@
 }
 
 .nav__logo-img {
-  max-height: 40px;
+  max-height: 32px;
   width: auto;
-  aspect-ratio: 48 / 36;
 }
 
 .nav__app-name {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: var(--font-size-xl);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
-  font-style: italic;
   color: #ffffff;
-  line-height: var(--line-height-tight);
-  letter-spacing: -0.02em;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* Right section: nav links */
@@ -100,7 +100,7 @@
   }
 
   .nav__app-name {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-base);
   }
 
   .nav__links {
