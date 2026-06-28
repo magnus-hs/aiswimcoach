@@ -21,19 +21,19 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
           className="nav__logo-img"
           role="img"
           aria-label="AI Swim Coach"
-          viewBox="0 0 56 28"
+          viewBox="0 0 48 24"
           xmlns="http://www.w3.org/2000/svg"
         >
-          {/* Swim goggles silhouette */}
-          <ellipse cx="18" cy="14" rx="10" ry="8" fill="none" stroke="#ffffff" strokeWidth="2" />
-          <ellipse cx="38" cy="14" rx="10" ry="8" fill="none" stroke="#ffffff" strokeWidth="2" />
-          {/* Bridge between lenses */}
-          <path d="M28 12 C29 10, 27 10, 28 12" stroke="#ffffff" strokeWidth="2" fill="none" />
-          <path d="M28 14 Q28 10, 28 14" stroke="#ffffff" strokeWidth="1.5" fill="none" />
-          <line x1="26" y1="11" x2="30" y2="11" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
-          {/* Strap */}
-          <path d="M8 13 Q4 14, 4 14" stroke="hsla(200,60%,75%,0.7)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-          <path d="M48 13 Q52 14, 52 14" stroke="hsla(200,60%,75%,0.7)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          {/* Left lens */}
+          <ellipse cx="14" cy="12" rx="9" ry="7" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+          {/* Right lens */}
+          <ellipse cx="34" cy="12" rx="9" ry="7" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+          {/* Bridge */}
+          <path d="M23 10 C24 8, 24 8, 25 10" stroke="#ffffff" strokeWidth="2" fill="none" strokeLinecap="round" />
+          {/* Left strap */}
+          <line x1="5" y1="11" x2="2" y2="11" stroke="hsla(200,70%,80%,0.9)" strokeWidth="2" strokeLinecap="round" />
+          {/* Right strap */}
+          <line x1="43" y1="11" x2="46" y2="11" stroke="hsla(200,70%,80%,0.9)" strokeWidth="2" strokeLinecap="round" />
         </svg>
         <span className="nav__app-name">AI Swim Coach</span>
       </Link>
