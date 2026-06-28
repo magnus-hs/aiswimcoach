@@ -70,7 +70,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
             swolf: (flat.swolf_score as number) || 0,
             stroke_rate: (flat.stroke_rate as number) || 0,
           },
-          coaching: { tips: [], drill: '' },
+          coaching: { tips: ['', '', ''], drill: '' },
           hr_zones: flat.hr_zones as SessionDetail['hr_zones'],
           ability_assessment: flat.ability_assessment as SessionDetail['ability_assessment'],
           session_id: (flat.session_id as string) || sessionId,

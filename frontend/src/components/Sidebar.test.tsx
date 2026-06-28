@@ -9,7 +9,9 @@ describe('Sidebar', () => {
     memberSince: 'January 2024',
     totalSessions: 42,
     totalDistanceMeters: 52500,
-    currentStreakDays: 7,
+    swimsThisWeek: 3,
+    swimsThisMonth: 12,
+    swimsYTD: 42,
     sessionsPerWeek: [2, 3, 1, 4],
   };
 
@@ -60,18 +62,21 @@ describe('Sidebar', () => {
     expect(screen.getByText('750 m')).toBeInTheDocument();
   });
 
-  it('renders streak days stat', () => {
+  it('renders swims per week, month, and year to date stats', () => {
     render(<Sidebar {...defaultProps} />);
 
-    expect(screen.getByText('7')).toBeInTheDocument();
-    expect(screen.getByText('Day Streak')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Swims / Week')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByText('Swims / Month')).toBeInTheDocument();
+    expect(screen.getByText('Swims Year to Date')).toBeInTheDocument();
   });
 
   it('renders stat values with large bold typography', () => {
     render(<Sidebar {...defaultProps} />);
 
     const statValues = document.querySelectorAll('.sidebar__stat-value');
-    expect(statValues.length).toBe(4);
+    expect(statValues.length).toBe(5);
 
     // Verify the CSS class is applied (actual computed style requires browser rendering)
     statValues.forEach((el) => {

@@ -4,7 +4,6 @@ import { useAuth } from '../hooks/useAuth';
 import { getUserSessions, SessionSummary } from '../api/sessionService';
 import { Sidebar } from '../components/Sidebar';
 import { ActivityFeed } from '../components/ActivityFeed';
-import { computeStreak } from '../utils/computeStreak';
 import './DashboardPage.css';
 
 /**
@@ -105,8 +104,21 @@ export function DashboardPage() {
   // Compute aggregate stats from sessions
   const totalSessions = sessions.length;
   const totalDistance = sessions.reduce((sum, s) => sum + s.total_distance_meters, 0);
-  const streak = computeStreak(sessions.map((s) => s.session_date));
   const sessionsPerWeek = computeSessionsPerWeek(sessions);
+
+  // Compute swims this week, this month, and year to date
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  const dayOfWeek = (now.getDay() + 6) % 7; // Mon=0
+  startOfWeek.setDate(now.getDate() - dayOfWeek);
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+  const swimsThisWeek = sessions.filter(s => new Date(s.session_date) >= startOfWeek).length;
+  const swimsThisMonth = sessions.filter(s => new Date(s.session_date) >= startOfMonth).length;
+  const swimsYTD = sessions.filter(s => new Date(s.session_date) >= startOfYear).length;
 
   // Derive display name from email (use part before @)
   const displayName = email ? email.split('@')[0] : 'Swimmer';
@@ -120,7 +132,9 @@ export function DashboardPage() {
           memberSince={memberSince}
           totalSessions={totalSessions}
           totalDistanceMeters={totalDistance}
-          currentStreakDays={streak}
+          swimsThisWeek={swimsThisWeek}
+          swimsThisMonth={swimsThisMonth}
+          swimsYTD={swimsYTD}
           sessionsPerWeek={sessionsPerWeek}
         />
       </aside>

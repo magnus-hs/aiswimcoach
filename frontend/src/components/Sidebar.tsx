@@ -6,7 +6,9 @@ export interface SidebarProps {
   memberSince: string;
   totalSessions: number;
   totalDistanceMeters: number;
-  currentStreakDays: number;
+  swimsThisWeek: number;
+  swimsThisMonth: number;
+  swimsYTD: number;
   sessionsPerWeek: number[];
 }
 
@@ -24,11 +26,12 @@ export function Sidebar({
   memberSince,
   totalSessions,
   totalDistanceMeters,
-  currentStreakDays,
+  swimsThisWeek,
+  swimsThisMonth,
+  swimsYTD,
   sessionsPerWeek,
 }: SidebarProps) {
   const formattedDistance = formatDistance(totalDistanceMeters);
-  const currentWeekCount = sessionsPerWeek.length > 0 ? sessionsPerWeek[sessionsPerWeek.length - 1] : 0;
   const maxWeekCount = Math.max(...sessionsPerWeek, 1);
 
   return (
@@ -61,11 +64,7 @@ export function Sidebar({
           <span className="sidebar__stat-label">Total Distance</span>
         </div>
         <div className="sidebar__stat" role="listitem">
-          <span className="sidebar__stat-value">{currentStreakDays}</span>
-          <span className="sidebar__stat-label">Day Streak</span>
-        </div>
-        <div className="sidebar__stat" role="listitem">
-          <span className="sidebar__stat-value">{currentWeekCount}</span>
+          <span className="sidebar__stat-value">{swimsThisWeek}</span>
           <span className="sidebar__stat-label">Swims / Week</span>
           <div className="sidebar__mini-chart" aria-label={`Weekly swim trend: ${sessionsPerWeek.join(', ')} sessions over last 4 weeks`}>
             {sessionsPerWeek.map((count, i) => (
@@ -77,6 +76,14 @@ export function Sidebar({
               />
             ))}
           </div>
+        </div>
+        <div className="sidebar__stat" role="listitem">
+          <span className="sidebar__stat-value">{swimsThisMonth}</span>
+          <span className="sidebar__stat-label">Swims / Month</span>
+        </div>
+        <div className="sidebar__stat" role="listitem">
+          <span className="sidebar__stat-value">{swimsYTD}</span>
+          <span className="sidebar__stat-label">Swims Year to Date</span>
         </div>
       </div>
     </aside>
