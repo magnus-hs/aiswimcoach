@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useLocation, useParams } from 'react-router-do
 import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Navigation } from './components/Navigation';
+import { SideNav } from './components/SideNav';
 import { ProfileModal } from './components/ProfileModal';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -50,7 +51,9 @@ function App() {
       {showNavigation && (
         <Navigation onProfileClick={handleProfileClick} profileButtonRef={profileTriggerRef} />
       )}
-      <main className={`app-main ${showSidebar ? 'app-main--with-sidebar' : ''}`}>
+      <div className="app__body">
+        {showSidebar && <SideNav />}
+        <main className={`app-main ${showSidebar ? 'app-main--with-sidebar' : ''}`}>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -133,6 +136,7 @@ function App() {
           />
         </Routes>
       </main>
+      </div>
       <ProfileModal
         isOpen={isProfileOpen}
         onClose={handleProfileClose}

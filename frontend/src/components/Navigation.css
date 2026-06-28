@@ -1,6 +1,5 @@
 /* Navigation — Top header bar
- * Clean, flat design with token-based styling.
- * Validates: Requirements 7.1, 7.2, 7.3, 7.5, 11.4
+ * Professional blue banner with white text.
  */
 
 .nav {
@@ -8,7 +7,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-3) var(--space-5);
-  background: var(--color-surface);
+  background: var(--color-primary-dark);
   box-shadow: var(--shadow-subtle);
   position: sticky;
   top: 0;
@@ -19,7 +18,7 @@
 .nav__left {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   text-decoration: none;
   color: inherit;
 }
@@ -33,15 +32,16 @@
   max-height: 40px;
   width: auto;
   aspect-ratio: 48 / 36;
-  border-radius: var(--radius-sm);
 }
 
 .nav__app-name {
-  font-family: var(--font-family);
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  font-style: italic;
+  color: #ffffff;
   line-height: var(--line-height-tight);
+  letter-spacing: -0.02em;
 }
 
 /* Right section: nav links */
@@ -55,7 +55,7 @@
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
-  color: var(--color-text-muted);
+  color: hsla(0, 0%, 100%, 0.75);
   text-decoration: none;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
@@ -64,13 +64,13 @@
 }
 
 .nav__link:hover {
-  color: var(--color-text);
-  background-color: var(--color-gray-100);
+  color: #ffffff;
+  background-color: hsla(0, 0%, 100%, 0.1);
 }
 
 /* Active route indicator — bottom border accent */
 .nav__link--active {
-  color: var(--color-primary);
+  color: #ffffff;
   font-weight: var(--font-weight-semibold);
 }
 
@@ -81,7 +81,7 @@
   left: var(--space-3);
   right: var(--space-3);
   height: 2px;
-  background: var(--color-primary);
+  background: #ffffff;
   border-radius: 1px;
 }
 
@@ -90,6 +90,7 @@
   background: none;
   border: none;
   cursor: pointer;
+  color: inherit;
 }
 
 /* Responsive: compact format below 768px */
@@ -99,7 +100,7 @@
   }
 
   .nav__app-name {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-lg);
   }
 
   .nav__links {

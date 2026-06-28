@@ -25,13 +25,13 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
           xmlns="http://www.w3.org/2000/svg"
         >
           {/* Lane lines */}
-          <rect y="8" width="48" height="2" fill="var(--color-primary-light)" rx="1" />
-          <rect y="16" width="48" height="2" fill="var(--color-primary-light)" rx="1" />
-          <rect y="24" width="48" height="2" fill="var(--color-primary-light)" rx="1" />
+          <rect y="8" width="48" height="2" fill="hsla(0,0%,100%,0.25)" rx="1" />
+          <rect y="16" width="48" height="2" fill="hsla(0,0%,100%,0.25)" rx="1" />
+          <rect y="24" width="48" height="2" fill="hsla(0,0%,100%,0.25)" rx="1" />
           {/* Swimmer silhouette / wave */}
           <path
             d="M6 18 C12 14, 18 22, 24 18 C30 14, 36 22, 42 18"
-            stroke="var(--color-primary)"
+            stroke="#ffffff"
             strokeWidth="2.5"
             fill="none"
             strokeLinecap="round"
@@ -39,7 +39,7 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
           {/* Water accent */}
           <path
             d="M2 30 C8 27, 14 33, 20 30 C26 27, 32 33, 38 30 C44 27, 46 30, 48 30"
-            stroke="var(--color-secondary)"
+            stroke="hsla(200,60%,75%,0.8)"
             strokeWidth="1.5"
             fill="none"
             strokeLinecap="round"
