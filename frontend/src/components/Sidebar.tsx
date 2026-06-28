@@ -11,6 +11,9 @@ export interface SidebarProps {
   swimsThisMonth: number;
   swimsYTD: number;
   sessionsPerWeek: number[];
+  distanceThisWeekMeters: number;
+  distanceThisMonthMeters: number;
+  distanceYTDMeters: number;
 }
 
 /**
@@ -31,6 +34,9 @@ export function Sidebar({
   swimsThisMonth,
   swimsYTD,
   sessionsPerWeek,
+  distanceThisWeekMeters,
+  distanceThisMonthMeters,
+  distanceYTDMeters,
 }: SidebarProps) {
   const formattedDistance = formatDistance(totalDistanceMeters);
   const maxWeekCount = Math.max(...sessionsPerWeek, 1);
@@ -79,12 +85,24 @@ export function Sidebar({
           </div>
         </div>
         <div className="sidebar__stat" role="listitem">
+          <span className="sidebar__stat-value">{formatDistance(distanceThisWeekMeters)}</span>
+          <span className="sidebar__stat-label">Distance / Week</span>
+        </div>
+        <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{swimsThisMonth}</span>
           <span className="sidebar__stat-label">Swims / Month</span>
         </div>
         <div className="sidebar__stat" role="listitem">
+          <span className="sidebar__stat-value">{formatDistance(distanceThisMonthMeters)}</span>
+          <span className="sidebar__stat-label">Distance / Month</span>
+        </div>
+        <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{swimsYTD}</span>
           <span className="sidebar__stat-label">Swims Year to Date</span>
+        </div>
+        <div className="sidebar__stat" role="listitem">
+          <span className="sidebar__stat-value">{formatDistance(distanceYTDMeters)}</span>
+          <span className="sidebar__stat-label">Distance Year to Date</span>
         </div>
       </div>
 

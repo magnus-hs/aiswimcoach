@@ -120,6 +120,17 @@ export function DashboardPage() {
   const swimsThisMonth = sessions.filter(s => new Date(s.session_date) >= startOfMonth).length;
   const swimsYTD = sessions.filter(s => new Date(s.session_date) >= startOfYear).length;
 
+  // Compute distance this week, this month, and year to date
+  const distanceThisWeek = sessions
+    .filter(s => new Date(s.session_date) >= startOfWeek)
+    .reduce((sum, s) => sum + s.total_distance_meters, 0);
+  const distanceThisMonth = sessions
+    .filter(s => new Date(s.session_date) >= startOfMonth)
+    .reduce((sum, s) => sum + s.total_distance_meters, 0);
+  const distanceYTD = sessions
+    .filter(s => new Date(s.session_date) >= startOfYear)
+    .reduce((sum, s) => sum + s.total_distance_meters, 0);
+
   // Derive display name from email (use part before @)
   const displayName = email ? email.split('@')[0] : 'Swimmer';
 
@@ -136,6 +147,9 @@ export function DashboardPage() {
           swimsThisMonth={swimsThisMonth}
           swimsYTD={swimsYTD}
           sessionsPerWeek={sessionsPerWeek}
+          distanceThisWeekMeters={distanceThisWeek}
+          distanceThisMonthMeters={distanceThisMonth}
+          distanceYTDMeters={distanceYTD}
         />
       </aside>
       <section className="dashboard__feed">
