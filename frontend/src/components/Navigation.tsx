@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import './Navigation.css';
 
 interface NavigationProps {
@@ -16,7 +16,7 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
 
   return (
     <header className="nav">
-      <div className="nav__left">
+      <Link to="/" className="nav__left">
         <svg
           className="nav__logo-img"
           role="img"
@@ -46,7 +46,7 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
           />
         </svg>
         <span className="nav__app-name">AI Swim Coach</span>
-      </div>
+      </Link>
       <nav className="nav__links" aria-label="Main navigation">
         <NavLink
           to="/"
