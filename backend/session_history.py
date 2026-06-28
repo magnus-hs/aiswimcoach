@@ -259,9 +259,15 @@ def get_user_sessions(
     response = table.query(**query_params)
     items = response.get("Items", [])
     
-    # Deserialize items into Session objects
+    # Deserialize items into Session objects (skip PLAN items)
     sessions = []
     for item in items:
+        # Skip training plan items stored in the same table
+        if item.get("session_date", "").startswith("PLAN#"):
+            continue
+        # Skip items that don't have session_id (safety check)
+        if "session_id" not in item:
+            continue
         session = Session(
             session_id=item["session_id"],
             user_id=item["user_id"],

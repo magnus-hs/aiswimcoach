@@ -92,3 +92,22 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
+/* Mini bar chart for swims per week */
+.sidebar__mini-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 32px;
+  margin-top: var(--space-2);
+}
+
+.sidebar__mini-chart-bar {
+  flex: 1;
+  min-width: 8px;
+  max-width: 16px;
+  min-height: 3px;
+  background: var(--color-primary);
+  border-radius: var(--radius-sm);
+  transition: height 0.2s ease;
+}

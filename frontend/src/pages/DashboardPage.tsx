@@ -8,6 +8,40 @@ import { computeStreak } from '../utils/computeStreak';
 import './DashboardPage.css';
 
 /**
+ * Compute session counts for the last 4 ISO weeks (most recent last).
+ */
+function computeSessionsPerWeek(sessions: SessionSummary[]): number[] {
+  const now = new Date();
+  const weekCounts = [0, 0, 0, 0]; // 4 weeks: [3 weeks ago, 2 weeks ago, 1 week ago, this week]
+
+  for (const session of sessions) {
+    const sessionDate = new Date(session.session_date);
+    const diffMs = now.getTime() - sessionDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    // Day of week (0=Monday, 6=Sunday) for calculating week start
+    const todayDay = (now.getDay() + 6) % 7; // Convert Sun=0 to Mon=0
+    const daysSinceThisWeekStart = todayDay;
+    const daysIntoWeek = diffDays - daysSinceThisWeekStart;
+
+    if (diffDays <= daysSinceThisWeekStart) {
+      // Current week
+      weekCounts[3]++;
+    } else if (daysIntoWeek <= 7) {
+      // 1 week ago
+      weekCounts[2]++;
+    } else if (daysIntoWeek <= 14) {
+      // 2 weeks ago
+      weekCounts[1]++;
+    } else if (daysIntoWeek <= 21) {
+      // 3 weeks ago
+      weekCounts[0]++;
+    }
+  }
+
+  return weekCounts;
+}
+
+/**
  * Dashboard page — two-column layout with Sidebar (profile + stats) and ActivityFeed.
  * Fetches sessions on mount, computes aggregate stats, and passes data to children.
  * Read-only feed with no inline upload capability.
@@ -20,6 +54,8 @@ export function DashboardPage() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
+  const [memberSince, setMemberSince] = useState('');
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
@@ -40,10 +76,37 @@ export function DashboardPage() {
     fetchSessions();
   }, [fetchSessions]);
 
+  // Fetch user profile info (profile picture, member since)
+  useEffect(() => {
+    async function fetchUserInfo() {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/auth/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.profile_picture_url) {
+            setProfilePictureUrl(data.profile_picture_url);
+          }
+          if (data.created_at) {
+            const date = new Date(data.created_at);
+            setMemberSince(date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+          }
+        }
+      } catch {
+        // Non-critical — silently ignore profile fetch failures
+      }
+    }
+    fetchUserInfo();
+  }, []);
+
   // Compute aggregate stats from sessions
   const totalSessions = sessions.length;
   const totalDistance = sessions.reduce((sum, s) => sum + s.total_distance_meters, 0);
   const streak = computeStreak(sessions.map((s) => s.session_date));
+  const sessionsPerWeek = computeSessionsPerWeek(sessions);
 
   // Derive display name from email (use part before @)
   const displayName = email ? email.split('@')[0] : 'Swimmer';
@@ -52,12 +115,13 @@ export function DashboardPage() {
     <div className="dashboard">
       <aside className="dashboard__sidebar">
         <Sidebar
-          profilePictureUrl={null}
+          profilePictureUrl={profilePictureUrl}
           displayName={displayName}
-          memberSince=""
+          memberSince={memberSince}
           totalSessions={totalSessions}
           totalDistanceMeters={totalDistance}
           currentStreakDays={streak}
+          sessionsPerWeek={sessionsPerWeek}
         />
       </aside>
       <section className="dashboard__feed">

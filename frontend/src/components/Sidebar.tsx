@@ -7,6 +7,7 @@ export interface SidebarProps {
   totalSessions: number;
   totalDistanceMeters: number;
   currentStreakDays: number;
+  sessionsPerWeek: number[];
 }
 
 /**
@@ -24,8 +25,11 @@ export function Sidebar({
   totalSessions,
   totalDistanceMeters,
   currentStreakDays,
+  sessionsPerWeek,
 }: SidebarProps) {
   const formattedDistance = formatDistance(totalDistanceMeters);
+  const currentWeekCount = sessionsPerWeek.length > 0 ? sessionsPerWeek[sessionsPerWeek.length - 1] : 0;
+  const maxWeekCount = Math.max(...sessionsPerWeek, 1);
 
   return (
     <aside className="sidebar" aria-label="Profile summary">
@@ -59,6 +63,20 @@ export function Sidebar({
         <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{currentStreakDays}</span>
           <span className="sidebar__stat-label">Day Streak</span>
+        </div>
+        <div className="sidebar__stat" role="listitem">
+          <span className="sidebar__stat-value">{currentWeekCount}</span>
+          <span className="sidebar__stat-label">Swims / Week</span>
+          <div className="sidebar__mini-chart" aria-label={`Weekly swim trend: ${sessionsPerWeek.join(', ')} sessions over last 4 weeks`}>
+            {sessionsPerWeek.map((count, i) => (
+              <div
+                key={i}
+                className="sidebar__mini-chart-bar"
+                style={{ height: `${(count / maxWeekCount) * 100}%` }}
+                aria-hidden="true"
+              />
+            ))}
+          </div>
         </div>
       </div>
     </aside>

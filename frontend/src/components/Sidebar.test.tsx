@@ -10,6 +10,7 @@ describe('Sidebar', () => {
     totalSessions: 42,
     totalDistanceMeters: 52500,
     currentStreakDays: 7,
+    sessionsPerWeek: [2, 3, 1, 4],
   };
 
   it('renders display name and member-since date', () => {
@@ -70,7 +71,7 @@ describe('Sidebar', () => {
     render(<Sidebar {...defaultProps} />);
 
     const statValues = document.querySelectorAll('.sidebar__stat-value');
-    expect(statValues.length).toBe(3);
+    expect(statValues.length).toBe(4);
 
     // Verify the CSS class is applied (actual computed style requires browser rendering)
     statValues.forEach((el) => {
