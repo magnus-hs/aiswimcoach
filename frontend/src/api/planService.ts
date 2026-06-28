@@ -233,3 +233,29 @@ export async function getPersonalBests(): Promise<PersonalBest[]> {
   const data = await response.json();
   return (data.personal_bests ?? data) as PersonalBest[];
 }
+
+/**
+ * Delete a personal best entry by event name.
+ */
+export async function deletePersonalBest(event: string): Promise<void> {
+  const token = getAuthToken();
+
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl()}/personal-bests`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ event }),
+    });
+  } catch {
+    throw new ApiError(0, 'Could not reach the server. Check your connection and retry.');
+  }
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new ApiError(response.status, text || 'Failed to delete personal best.');
+  }
+}

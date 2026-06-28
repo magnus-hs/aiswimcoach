@@ -21,12 +21,16 @@ export interface StrokeGroup {
 }
 
 /**
- * Parse stroke type from event string.
+ * Parse stroke type from event string (case-normalized to title case).
  * "100m Freestyle" → "Freestyle"
+ * "100m freestyle" → "Freestyle"
  */
 export function parseStrokeFromEvent(event: string): string {
   const match = event.match(/^\d+m\s+(.+)$/);
-  return match ? match[1] : 'Other';
+  if (!match) return 'Other';
+  const raw = match[1].trim();
+  // Normalize to title case
+  return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
 }
 
 /**
@@ -53,17 +57,19 @@ export function groupPersonalBests(pbs: PersonalBest[]): StrokeGroup[] {
   for (const pb of pbs) {
     const stroke = parseStrokeFromEvent(pb.event);
     const distance = parseDistanceFromEvent(pb.event);
+    // Use lowercase event key for case-insensitive merging
+    const eventKey = pb.event.toLowerCase();
 
     if (!strokeMap.has(stroke)) {
       strokeMap.set(stroke, new Map());
     }
 
     const eventMap = strokeMap.get(stroke)!;
-    if (!eventMap.has(pb.event)) {
-      eventMap.set(pb.event, { event: pb.event, distance });
+    if (!eventMap.has(eventKey)) {
+      eventMap.set(eventKey, { event: `${distance}m ${stroke}`, distance });
     }
 
-    const entry = eventMap.get(pb.event)!;
+    const entry = eventMap.get(eventKey)!;
     if (pb.source === 'manual') {
       entry.manual = pb;
     } else if (pb.source === 'derived') {

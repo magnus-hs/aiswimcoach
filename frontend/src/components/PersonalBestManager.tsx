@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { savePersonalBest, getPersonalBests, PersonalBest } from '../api/planService';
+import { savePersonalBest, getPersonalBests, deletePersonalBest, PersonalBest } from '../api/planService';
 import { STROKES, DISTANCES, StrokeType, DistanceOption, buildEventName, validateTimeInput, validateCustomDistance } from '../utils/pbValidation';
 import { groupPersonalBests, formatTimeDiff } from '../utils/pbGrouping';
 import './PersonalBestManager.css';
@@ -18,6 +18,7 @@ export function PersonalBestManager() {
   const [timeInput, setTimeInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   const loadPBs = async () => {
     try {
@@ -80,6 +81,20 @@ export function PersonalBestManager() {
     }
   };
 
+  const handleDelete = async (event: string) => {
+    if (!confirm(`Delete personal best for "${event}"?`)) return;
+    setDeleting(event);
+    try {
+      await deletePersonalBest(event);
+      await loadPBs();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete.';
+      setSaveError(message);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
   return (
     <div className="pb-manager">
       <h1 className="pb-manager__heading">Personal Bests</h1>
@@ -105,6 +120,7 @@ export function PersonalBestManager() {
                       <th className="pb-manager__th">Entered</th>
                       <th className="pb-manager__th">Derived</th>
                       <th className="pb-manager__th">Diff</th>
+                      <th className="pb-manager__th"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -123,6 +139,18 @@ export function PersonalBestManager() {
                               {formatTimeDiff(entry.manual.time_seconds, entry.derived.time_seconds).diff}s {formatTimeDiff(entry.manual.time_seconds, entry.derived.time_seconds).label}
                             </span>
                           ) : '—'}
+                        </td>
+                        <td className="pb-manager__td pb-manager__td--actions">
+                          {entry.manual && (
+                            <button
+                              className="pb-manager__delete-btn"
+                              onClick={() => handleDelete(entry.manual!.event)}
+                              disabled={deleting === entry.manual!.event}
+                              title="Remove entered PB"
+                            >
+                              ✕
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

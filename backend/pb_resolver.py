@@ -162,6 +162,39 @@ def save_personal_best(user_id: str, event: str, time_seconds: float) -> None:
             ) from e
 
 
+def delete_personal_best(user_id: str, event: str) -> None:
+    """Delete a manually entered personal best.
+
+    Removes the PB entry from the `personal_bests` map attribute on the
+    UserProfiles table item.
+
+    Args:
+        user_id: User identifier (UUID v4)
+        event: Event name (e.g., "100m Freestyle")
+
+    Raises:
+        ValueError: If event is empty
+        PBResolverError: If DynamoDB operation fails
+    """
+    if not event or not event.strip():
+        raise ValueError("Event name must be non-empty")
+
+    table = _get_profiles_table()
+
+    try:
+        table.update_item(
+            Key={"user_id": user_id},
+            UpdateExpression="REMOVE personal_bests.#event",
+            ExpressionAttributeNames={
+                "#event": event,
+            },
+        )
+    except ClientError as e:
+        raise PBResolverError(
+            f"Failed to delete personal best: {e}"
+        ) from e
+
+
 def get_personal_bests(user_id: str) -> list[dict]:
     """Return all PBs (manual + derived) for a user.
 

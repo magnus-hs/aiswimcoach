@@ -195,3 +195,30 @@
 .pb-manager__diff--slower {
   color: var(--color-text-muted);
 }
+
+.pb-manager__td--actions {
+  width: 40px;
+  text-align: center;
+}
+
+.pb-manager__delete-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease, background 0.15s ease;
+  line-height: 1;
+}
+
+.pb-manager__delete-btn:hover {
+  color: var(--color-error);
+  background: hsl(0, 60%, 97%);
+}
+
+.pb-manager__delete-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

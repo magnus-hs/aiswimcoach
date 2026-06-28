@@ -35,7 +35,7 @@ from middleware import require_auth
 from session_history import get_user_sessions, get_session_by_id, save_session
 from training_plan_store import save_training_plan, get_user_plans
 from plan_generator import generate_multi_week_plan, PlanGenerationError
-from pb_resolver import save_personal_best, get_personal_bests, PBResolverError
+from pb_resolver import save_personal_best, get_personal_bests, delete_personal_best, PBResolverError
 from plan_lifecycle import activate_plan, archive_plan
 from structured_plan_store import get_user_structured_plans, get_plan_by_id
 
@@ -123,6 +123,8 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_save_personal_best(event, context)
     elif path == "/personal-bests" and http_method == "GET":
         return _handle_get_personal_bests(event, context)
+    elif path == "/personal-bests" and http_method == "DELETE":
+        return _handle_delete_personal_best(event, context)
 
     # Training plans route (auth required)
     elif path == "/plans" and http_method == "GET":
@@ -1134,6 +1136,41 @@ def _handle_get_personal_bests(event: dict[str, Any], context: Any) -> dict[str,
     except Exception as exc:
         logger.error("Unexpected error retrieving PBs for user %s: %s", user_id, exc)
         return _error_response(500, "Failed to retrieve personal bests")
+
+
+@require_auth
+def _handle_delete_personal_best(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle DELETE /personal-bests endpoint.
+
+    Deletes a manually entered personal best by event name.
+
+    Request body:
+        { "event": "100m Freestyle" }
+
+    Errors:
+        400: Missing event field
+        500: Deletion failure
+    """
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return _error_response(400, "Invalid JSON body")
+
+    event_name = body.get("event", "").strip()
+    if not event_name:
+        return _error_response(400, "Missing required field: event")
+
+    try:
+        delete_personal_best(user_id, event_name)
+        return http_200_dict({"message": "Personal best deleted"})
+    except PBResolverError as exc:
+        logger.error("PB deletion failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to delete personal best")
+    except Exception as exc:
+        logger.error("Unexpected error deleting PB for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to delete personal best")
 
 
 # ---------------------------------------------------------------------------
