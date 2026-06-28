@@ -416,6 +416,8 @@ class Session:
     s3_key: str
     hr_zones: HRZonesData | None = None
     ability_assessment: AbilityAssessment | None = None
+    splits: list | None = None
+    coaching: dict | None = None
 
     def __post_init__(self) -> None:
         # Validate session_id

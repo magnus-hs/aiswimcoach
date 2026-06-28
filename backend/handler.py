@@ -599,6 +599,8 @@ def _handle_file_upload(event: dict[str, Any], context: Any) -> dict[str, Any]:
                     s3_key=s3_key,
                     hr_zones=hr_zones,
                     ability_assessment=ability_assessment,
+                    splits=[dataclasses.asdict(s) for s in splits] if splits else None,
+                    coaching=dataclasses.asdict(coaching) if coaching else None,
                 )
                 logger.info("Session saved successfully: %s for user %s", session_id, user_id)
             

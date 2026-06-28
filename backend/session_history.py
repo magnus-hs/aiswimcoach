@@ -138,6 +138,29 @@ def _deserialize_ability_assessment(assessment_dict: dict | None) -> AbilityAsse
     )
 
 
+def _deserialize_splits(splits_list: list | None) -> list | None:
+    """Deserialize splits from DynamoDB list.
+
+    Args:
+        splits_list: list of dicts from DynamoDB or None
+
+    Returns:
+        list of split dicts with native Python types, or None
+    """
+    if splits_list is None:
+        return None
+
+    return [
+        {
+            "length_number": int(s.get("length_number", 0)),
+            "time_seconds": float(s.get("time_seconds", 0)),
+            "strokes": int(s.get("strokes", 0)),
+            "stroke": str(s.get("stroke", "unknown")),
+        }
+        for s in splits_list
+    ]
+
+
 def save_session(
     user_id: str,
     session_info: SessionInfo,
@@ -145,6 +168,8 @@ def save_session(
     s3_key: str,
     hr_zones: HRZonesData | None = None,
     ability_assessment: AbilityAssessment | None = None,
+    splits: list | None = None,
+    coaching: dict | None = None,
 ) -> str:
     """Persist session to Sessions table.
     
@@ -159,6 +184,8 @@ def save_session(
         s3_key: S3 key for the FIT file
         hr_zones: Optional HR zones data
         ability_assessment: Optional ability assessment
+        splits: Optional list of per-length split dicts
+        coaching: Optional coaching tips dict (tips + drill)
     
     Returns:
         session_id (UUID v4 string)
@@ -195,6 +222,21 @@ def save_session(
     
     if ability_assessment is not None:
         item["ability_assessment"] = _serialize_ability_assessment(ability_assessment)
+    
+    if splits is not None and len(splits) > 0:
+        # Store splits as a list of dicts with Decimal for numeric values
+        item["splits"] = [
+            {
+                "length_number": int(s.get("length_number", i + 1)),
+                "time_seconds": Decimal(str(round(float(s.get("time_seconds", 0)), 1))),
+                "strokes": int(s.get("strokes", 0)),
+                "stroke": str(s.get("stroke", "unknown")),
+            }
+            for i, s in enumerate(splits)
+        ]
+    
+    if coaching is not None:
+        item["coaching"] = coaching
     
     # Get table name from environment
     table_name = os.environ.get("SESSIONS_TABLE", "Sessions")
@@ -283,6 +325,8 @@ def get_user_sessions(
             s3_key=item["s3_key"],
             hr_zones=_deserialize_hr_zones(item.get("hr_zones")),
             ability_assessment=_deserialize_ability_assessment(item.get("ability_assessment")),
+            splits=_deserialize_splits(item.get("splits")),
+            coaching=item.get("coaching"),
         )
         sessions.append(session)
     
@@ -344,6 +388,8 @@ def get_session_by_id(session_id: str) -> Session:
         s3_key=item["s3_key"],
         hr_zones=hr_zones,
         ability_assessment=ability_assessment,
+        splits=_deserialize_splits(item.get("splits")),
+        coaching=item.get("coaching"),
     )
 
 
