@@ -28,11 +28,13 @@ export function DistanceChart({ data, height = 100 }: DistanceChartProps) {
   }
 
   const maxDistance = Math.max(...data.map(d => d.distance));
+  const showAsKm = maxDistance >= 1000;
 
-  // Format Y-axis values as km or m
+  // Format Y-axis tick values
   const formatYAxis = (value: number): string => {
-    if (maxDistance >= 1000) {
-      return `${(value / 1000).toFixed(0)}`;
+    if (showAsKm) {
+      const km = value / 1000;
+      return km % 1 === 0 ? `${km.toFixed(0)}` : `${km.toFixed(1)}`;
     }
     return `${value}`;
   };
@@ -40,7 +42,7 @@ export function DistanceChart({ data, height = 100 }: DistanceChartProps) {
   return (
     <div className="distance-chart" aria-label="Distance chart">
       <ResponsiveContainer width="100%" height={height}>
-        <BarChart data={data} margin={{ top: 4, right: 0, left: -20, bottom: 0 }}>
+        <BarChart data={data} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
           <XAxis
             dataKey="label"
             tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }}
@@ -52,7 +54,8 @@ export function DistanceChart({ data, height = 100 }: DistanceChartProps) {
             axisLine={false}
             tickLine={false}
             tickFormatter={formatYAxis}
-            width={30}
+            width={35}
+            domain={[0, 'auto']}
           />
           <Tooltip
             formatter={(value: number) =>
@@ -73,7 +76,7 @@ export function DistanceChart({ data, height = 100 }: DistanceChartProps) {
           />
         </BarChart>
       </ResponsiveContainer>
-      {maxDistance >= 1000 && (
+      {showAsKm && (
         <span className="distance-chart__unit">km</span>
       )}
     </div>
