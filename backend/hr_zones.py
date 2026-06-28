@@ -233,7 +233,7 @@ def calculate_hr_zones(
         - Validates: Requirements 2.9, 2.10, 2.11, 2.12
     """
     # Import HRZonesData here to avoid circular import
-    from backend.models import HRZonesData
+    from models import HRZonesData
 
     # Requirement 2.10: Validate we have heart rate data
     if not hr_samples:
