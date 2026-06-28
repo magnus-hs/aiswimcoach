@@ -80,28 +80,31 @@ export function Sidebar({
           <span className="sidebar__stat-label">Swims / Week</span>
         </div>
         <div className="sidebar__stat" role="listitem">
-          <span className="sidebar__stat-value">{formatDistance(distanceThisWeekMeters)}</span>
-          <span className="sidebar__stat-label">Distance / Week</span>
-          <DistanceChart data={weeklyDistanceChart} height={80} />
-        </div>
-        <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{swimsThisMonth}</span>
           <span className="sidebar__stat-label">Swims / Month</span>
-        </div>
-        <div className="sidebar__stat" role="listitem">
-          <span className="sidebar__stat-value">{formatDistance(distanceThisMonthMeters)}</span>
-          <span className="sidebar__stat-label">Distance / Month</span>
-          <DistanceChart data={monthlyDistanceChart} height={80} />
         </div>
         <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{swimsYTD}</span>
           <span className="sidebar__stat-label">Swims Year to Date</span>
         </div>
-        <div className="sidebar__stat" role="listitem">
-          <span className="sidebar__stat-value">{formatDistance(distanceYTDMeters)}</span>
-          <span className="sidebar__stat-label">Distance Year to Date</span>
-          <DistanceChart data={yearlyDistanceChart} height={80} />
-        </div>
+      </div>
+
+      <div className="sidebar__chart-section">
+        <h3 className="sidebar__section-title">Distance This Week</h3>
+        <span className="sidebar__section-value">{formatDistance(distanceThisWeekMeters)}</span>
+        <DistanceChart data={weeklyDistanceChart} height={90} />
+      </div>
+
+      <div className="sidebar__chart-section">
+        <h3 className="sidebar__section-title">Distance This Month</h3>
+        <span className="sidebar__section-value">{formatDistance(distanceThisMonthMeters)}</span>
+        <DistanceChart data={monthlyDistanceChart} height={90} />
+      </div>
+
+      <div className="sidebar__chart-section">
+        <h3 className="sidebar__section-title">Distance Year to Date</h3>
+        <span className="sidebar__section-value">{formatDistance(distanceYTDMeters)}</span>
+        <DistanceChart data={yearlyDistanceChart} height={90} />
       </div>
 
       <div className="sidebar__links">

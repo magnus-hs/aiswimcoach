@@ -109,7 +109,7 @@ describe('Sidebar', () => {
     renderSidebar();
 
     const statValues = document.querySelectorAll('.sidebar__stat-value');
-    expect(statValues.length).toBe(8);
+    expect(statValues.length).toBe(5);
 
     // Verify the CSS class is applied (actual computed style requires browser rendering)
     statValues.forEach((el) => {

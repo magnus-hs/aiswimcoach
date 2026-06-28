@@ -93,23 +93,27 @@
   letter-spacing: 0.05em;
 }
 
-/* Mini bar chart for swims per week */
-.sidebar__mini-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 32px;
-  margin-top: var(--space-2);
+/* Chart sections — separated distance charts */
+.sidebar__chart-section {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-gray-200);
 }
 
-.sidebar__mini-chart-bar {
-  flex: 1;
-  min-width: 8px;
-  max-width: 16px;
-  min-height: 3px;
-  background: var(--color-primary);
-  border-radius: var(--radius-sm);
-  transition: height 0.2s ease;
+.sidebar__section-title {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--space-1);
+}
+
+.sidebar__section-value {
+  display: block;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
 }
 
 /* Links section */
