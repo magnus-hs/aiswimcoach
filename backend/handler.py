@@ -33,6 +33,7 @@ from profile_manager import (
 from auth import AuthenticationError, ConflictError, register_user, login_user, verify_token, get_user_info
 from middleware import require_auth
 from session_history import get_user_sessions, get_session_by_id, save_session
+from training_plan_store import save_training_plan, get_user_plans
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -97,6 +98,10 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_get_profile(event, context)
     elif path == "/profile/picture" and http_method == "POST":
         return _handle_upload_profile_picture(event, context)
+    
+    # Training plans route (auth required)
+    elif path == "/plans" and http_method == "GET":
+        return _handle_get_plans(event, context)
     
     # Session history routes (auth required)
     elif path == "/sessions" and http_method == "GET":
@@ -386,6 +391,17 @@ def _handle_training_plan(event: dict[str, Any], context: Any) -> dict[str, Any]
     except BedrockError as exc:
         logger.error("Bedrock training plan failed: %s", exc)
         return _error_response(502, str(exc))
+
+    # Save the plan to DynamoDB (best-effort, don't fail if save fails)
+    if auth_context and auth_context.get("user_id"):
+        try:
+            import dataclasses as dc
+            plan_dict = dc.asdict(plan)
+            goal_dict = dc.asdict(goal)
+            save_training_plan(auth_context["user_id"], goal_dict, plan_dict)
+            logger.info("Training plan saved for user %s", auth_context["user_id"])
+        except Exception as exc:
+            logger.warning("Failed to save training plan for user %s: %s", auth_context["user_id"], exc)
 
     return http_200(plan)
 
@@ -737,6 +753,43 @@ def _handle_upload_profile_picture(event: dict[str, Any], context: Any) -> dict[
     except Exception as exc:
         logger.error("Profile picture upload failed for user %s: %s", user_id, exc)
         return _error_response(500, "Internal server error")
+
+
+# ---------------------------------------------------------------------------
+# Training plan history handler (requires authentication)
+# ---------------------------------------------------------------------------
+
+
+@require_auth
+def _handle_get_plans(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /plans endpoint.
+
+    Retrieves user's saved training plans ordered by created_at descending.
+
+    Response (200):
+        {
+            "plans": [
+                {
+                    "plan_id": "uuid",
+                    "created_at": "2024-01-15T10:00:00+00:00",
+                    "goal": {"event": "100m freestyle", "target_time": "1:00", ...},
+                    "plan": {"session_title": "...", "warm_up": [...], ...}
+                },
+                ...
+            ]
+        }
+
+    Errors:
+        500: Plan retrieval failure
+    """
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        plans = get_user_plans(user_id)
+        return http_200_dict({"plans": plans})
+    except Exception as exc:
+        logger.error("Plan retrieval failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Plan retrieval failure")
 
 
 # ---------------------------------------------------------------------------

@@ -169,6 +169,16 @@ export async function getUserSessions(
 }
 
 /**
+ * Saved training plan from the backend.
+ */
+export interface SavedPlan {
+  plan_id: string;
+  created_at: string;
+  goal: { event: string; target_time: string; volume_meters: number; timeframe: string };
+  plan: { session_title: string; warm_up: string[]; main_set: string[]; cool_down: string[]; total_distance: number; focus_notes: string; goal_likelihood?: string };
+}
+
+/**
  * Retrieve single session by ID with full details.
  *
  * @param sessionId - Session identifier (UUID v4).
@@ -196,4 +206,35 @@ export async function getSessionById(sessionId: string): Promise<SessionDetail> 
   }
 
   return response.json() as Promise<SessionDetail>;
+}
+
+
+/**
+ * Retrieve user's saved training plans.
+ *
+ * @returns List of saved plans ordered by created_at descending.
+ * @throws {ApiError} When the server returns a non-2xx response.
+ */
+export async function getUserPlans(): Promise<SavedPlan[]> {
+  const token = getAuthToken();
+
+  let response: Response;
+  try {
+    response = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/plans`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch {
+    throw new ApiError(0, 'Could not reach the server. Check your connection and retry.');
+  }
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new ApiError(response.status, errorMessageForStatus(response.status, text));
+  }
+
+  const data = await response.json();
+  return (data.plans ?? []) as SavedPlan[];
 }

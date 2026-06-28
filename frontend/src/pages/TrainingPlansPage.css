@@ -29,3 +29,81 @@
   background: hsl(0, 60%, 97%);
   border-radius: var(--radius-md);
 }
+
+/* Saved Plans section */
+.training-plans-page__saved {
+  margin-top: var(--space-8);
+}
+
+.training-plans-page__section-heading {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-4);
+  line-height: var(--line-height-tight);
+}
+
+.training-plans-page__loading,
+.training-plans-page__empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: var(--space-4);
+}
+
+.training-plans-page__plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.training-plans-page__plan-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+  transition: box-shadow 0.15s ease;
+}
+
+.training-plans-page__plan-card:hover {
+  box-shadow: var(--shadow-card-hover, var(--shadow-card));
+}
+
+.training-plans-page__plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-2);
+}
+
+.training-plans-page__plan-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0;
+}
+
+.training-plans-page__plan-date {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.training-plans-page__plan-meta {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.training-plans-page__plan-event {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary, var(--color-text));
+}
+
+.training-plans-page__plan-likelihood {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: var(--space-2) 0 0;
+  font-style: italic;
+}
