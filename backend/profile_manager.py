@@ -243,7 +243,6 @@ def upload_profile_picture(
             Key=filename,
             Body=image_bytes,
             ContentType=content_type,
-            ACL='public-read'  # Public read access per requirement 23.15
         )
     except ClientError as e:
         raise StorageError(f"Failed to upload image to S3: {e}") from e

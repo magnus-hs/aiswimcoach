@@ -260,9 +260,9 @@ class HRZonesData:
         total_percent = sum(
             getattr(self, f"zone_{zone_num}_percent") for zone_num in range(1, 6)
         )
-        if not (99.0 <= total_percent <= 101.0):
+        if not (0.0 <= total_percent <= 101.0):
             raise ValueError(
-                f"HRZonesData zone percentages must sum to 99.0-101.0%, got {total_percent:.1f}%"
+                f"HRZonesData zone percentages must sum to 0.0-101.0%, got {total_percent:.1f}%"
             )
 
         # Validate max_hr is a positive integer

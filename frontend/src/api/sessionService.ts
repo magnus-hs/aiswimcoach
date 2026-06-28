@@ -164,7 +164,8 @@ export async function getUserSessions(
     throw new ApiError(response.status, errorMessageForStatus(response.status, text));
   }
 
-  return response.json() as Promise<SessionSummary[]>;
+  const data = await response.json();
+  return (data.sessions ?? data) as SessionSummary[];
 }
 
 /**

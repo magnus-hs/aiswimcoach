@@ -424,9 +424,9 @@ def _parse_training_plan_response(response_body: dict[str, Any]) -> TrainingPlan
         if not isinstance(goal_likelihood, str) or not goal_likelihood:
             logger.warning("goal_likelihood missing or empty in training plan response")
             return None
-        if len(goal_likelihood) > 300:
-            logger.warning("goal_likelihood exceeds 300 characters in training plan response")
-            return None
+        
+        # Truncate field if it exceeds max length (defensive coding against AI over-generation)
+        goal_likelihood = goal_likelihood[:300]
 
         return TrainingPlan(
             session_title=session_title,
