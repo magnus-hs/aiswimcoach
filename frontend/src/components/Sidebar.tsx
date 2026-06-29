@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { DistanceChart, DistanceChartPoint } from './DistanceChart';
 import './Sidebar.css';
 
@@ -8,6 +7,7 @@ export interface SidebarProps {
   memberSince: string;
   totalSessions: number;
   totalDistanceMeters: number;
+  totalTimeSeconds: number;
   swimsThisWeek: number;
   swimsThisMonth: number;
   swimsYTD: number;
@@ -34,6 +34,7 @@ export function Sidebar({
   memberSince,
   totalSessions,
   totalDistanceMeters,
+  totalTimeSeconds,
   swimsThisWeek,
   swimsThisMonth,
   swimsYTD,
@@ -45,6 +46,7 @@ export function Sidebar({
   yearlyDistanceChart,
 }: SidebarProps) {
   const formattedDistance = formatDistance(totalDistanceMeters);
+  const formattedTime = formatDuration(totalTimeSeconds);
 
   return (
     <aside className="sidebar" aria-label="Profile summary">
@@ -70,10 +72,6 @@ export function Sidebar({
         <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{totalSessions}</span>
           <span className="sidebar__stat-label">Sessions</span>
-        </div>
-        <div className="sidebar__stat" role="listitem">
-          <span className="sidebar__stat-value">{formattedDistance}</span>
-          <span className="sidebar__stat-label">Total Distance</span>
         </div>
         <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{swimsThisWeek}</span>
@@ -107,13 +105,15 @@ export function Sidebar({
         <DistanceChart data={yearlyDistanceChart} height={90} />
       </div>
 
-      <div className="sidebar__links">
-        <Link to="/plans" className="sidebar__link">
-          📋 Training Plans
-        </Link>
-        <Link to="/personal-bests" className="sidebar__link">
-          🏆 Personal Bests
-        </Link>
+      <div className="sidebar__totals">
+        <div className="sidebar__total">
+          <span className="sidebar__total-value">{formattedDistance}</span>
+          <span className="sidebar__total-label">Total Distance</span>
+        </div>
+        <div className="sidebar__total">
+          <span className="sidebar__total-value">{formattedTime}</span>
+          <span className="sidebar__total-label">Total Time</span>
+        </div>
       </div>
     </aside>
   );
@@ -129,4 +129,18 @@ function formatDistance(meters: number): string {
     return `${km % 1 === 0 ? km.toFixed(0) : km.toFixed(1)} km`;
   }
   return `${meters} m`;
+}
+
+/**
+ * Format total time in seconds to a human-readable string.
+ * Shows hours and minutes (e.g., "12h 45m" or "45m").
+ */
+function formatDuration(seconds: number): string {
+  if (seconds <= 0) return '0m';
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.round((seconds % 3600) / 60);
+  if (hours > 0) {
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  }
+  return `${mins}m`;
 }

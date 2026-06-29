@@ -116,26 +116,34 @@
   margin-bottom: var(--space-2);
 }
 
-/* Links section */
-.sidebar__links {
+/* Totals section */
+.sidebar__totals {
+  display: flex;
+  gap: var(--space-4);
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-gray-200);
 }
 
-.sidebar__link {
+.sidebar__total {
+  flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
-  text-decoration: none;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  transition: background-color 0.15s ease, color 0.15s ease;
+  text-align: center;
+  gap: var(--space-1);
 }
 
-.sidebar__link:hover {
-  background-color: var(--color-gray-100);
+.sidebar__total-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
   color: var(--color-primary);
+  line-height: var(--line-height-tight);
+}
+
+.sidebar__total-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }

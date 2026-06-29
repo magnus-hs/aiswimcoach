@@ -10,6 +10,7 @@ describe('Sidebar', () => {
     memberSince: 'January 2024',
     totalSessions: 42,
     totalDistanceMeters: 52500,
+    totalTimeSeconds: 75600,
     swimsThisWeek: 3,
     swimsThisMonth: 12,
     swimsYTD: 42,
@@ -109,7 +110,7 @@ describe('Sidebar', () => {
     renderSidebar();
 
     const statValues = document.querySelectorAll('.sidebar__stat-value');
-    expect(statValues.length).toBe(5);
+    expect(statValues.length).toBe(4);
 
     // Verify the CSS class is applied (actual computed style requires browser rendering)
     statValues.forEach((el) => {

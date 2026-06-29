@@ -104,6 +104,7 @@ export function DashboardPage() {
   // Compute aggregate stats from sessions
   const totalSessions = sessions.length;
   const totalDistance = sessions.reduce((sum, s) => sum + s.total_distance_meters, 0);
+  const totalTime = sessions.reduce((sum, s) => sum + s.total_time_seconds, 0);
   const sessionsPerWeek = computeSessionsPerWeek(sessions);
 
   // Compute swims this week, this month, and year to date
@@ -206,6 +207,7 @@ export function DashboardPage() {
           memberSince={memberSince}
           totalSessions={totalSessions}
           totalDistanceMeters={totalDistance}
+          totalTimeSeconds={totalTime}
           swimsThisWeek={swimsThisWeek}
           swimsThisMonth={swimsThisMonth}
           swimsYTD={swimsYTD}
