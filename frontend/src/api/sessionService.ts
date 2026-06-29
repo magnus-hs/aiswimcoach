@@ -88,6 +88,7 @@ export interface SessionDetail {
   ability_assessment?: AbilityAssessment;
   training_plan?: TrainingPlan;
   session_id: string;
+  hr_timeseries?: { t: number; hr: number }[] | null;
 }
 
 /**

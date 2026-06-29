@@ -420,6 +420,7 @@ class Session:
     ability_assessment: AbilityAssessment | None = None
     splits: list | None = None
     coaching: dict | None = None
+    hr_timeseries: list | None = None
 
     def __post_init__(self) -> None:
         # Validate session_id

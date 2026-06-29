@@ -8,51 +8,35 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import { LengthSplit } from '../types';
 import './HRTimeGraph.css';
 
-interface HRTimeGraphProps {
-  splits: LengthSplit[];
+interface HRTimePoint {
+  t: number;
+  hr: number;
 }
 
-interface HRDataPoint {
-  timeMinutes: number;
-  hr: number;
-  label: string;
+interface HRTimeGraphProps {
+  hrTimeseries?: HRTimePoint[] | null;
 }
 
 /**
- * Heart rate over time graph built from per-length avg_hr data.
- * X-axis: cumulative session time (minutes)
+ * Heart rate over time graph using per-second HR data from the FIT file.
+ * X-axis: session time (minutes)
  * Y-axis: heart rate (bpm)
  */
-export function HRTimeGraph({ splits }: HRTimeGraphProps) {
-  // Only render if we have HR data
-  const splitsWithHR = splits.filter(s => s.avg_hr != null);
-  if (splitsWithHR.length < 2) return null;
+export function HRTimeGraph({ hrTimeseries }: HRTimeGraphProps) {
+  if (!hrTimeseries || hrTimeseries.length < 2) return null;
 
-  // Build data points: cumulative time → HR
-  let cumulativeSeconds = 0;
-  const data: HRDataPoint[] = [];
+  // Convert seconds to minutes for display
+  const data = hrTimeseries.map(p => ({
+    timeMin: Math.round((p.t / 60) * 10) / 10,
+    hr: p.hr,
+  }));
 
-  for (const split of splits) {
-    cumulativeSeconds += split.time_seconds;
-    if (split.avg_hr != null) {
-      data.push({
-        timeMinutes: Math.round((cumulativeSeconds / 60) * 10) / 10,
-        hr: split.avg_hr,
-        label: `Length ${split.length_number}`,
-      });
-    }
-    // Add rest time to cumulative
-    if (split.rest_after_seconds) {
-      cumulativeSeconds += split.rest_after_seconds;
-    }
-  }
-
-  const minHR = Math.min(...data.map(d => d.hr));
-  const maxHR = Math.max(...data.map(d => d.hr));
-  const avgHR = Math.round(data.reduce((sum, d) => sum + d.hr, 0) / data.length);
+  const hrs = data.map(d => d.hr);
+  const minHR = Math.min(...hrs);
+  const maxHR = Math.max(...hrs);
+  const avgHR = Math.round(hrs.reduce((a, b) => a + b, 0) / hrs.length);
 
   return (
     <section className="hr-time-graph" aria-label="Heart rate over time">
@@ -73,7 +57,7 @@ export function HRTimeGraph({ splits }: HRTimeGraphProps) {
           <LineChart data={data} margin={{ top: 10, right: 20, left: 10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-gray-200)" />
             <XAxis
-              dataKey="timeMinutes"
+              dataKey="timeMin"
               tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }}
               label={{ value: 'Time (min)', position: 'insideBottom', offset: -2, fontSize: 10, fill: 'var(--color-text-muted)' }}
             />
@@ -99,8 +83,8 @@ export function HRTimeGraph({ splits }: HRTimeGraphProps) {
               dataKey="hr"
               stroke="#ef4444"
               strokeWidth={2}
-              dot={{ fill: '#ef4444', r: 3 }}
-              activeDot={{ r: 5 }}
+              dot={false}
+              activeDot={{ r: 4 }}
             />
           </LineChart>
         </ResponsiveContainer>

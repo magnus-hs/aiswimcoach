@@ -75,6 +75,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
           hr_zones: flat.hr_zones as SessionDetail['hr_zones'],
           ability_assessment: flat.ability_assessment as SessionDetail['ability_assessment'],
           session_id: (flat.session_id as string) || sessionId,
+          hr_timeseries: flat.hr_timeseries as any,
         };
         setSessionDetail(adapted);
       }
@@ -124,7 +125,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
         <SessionSummary session={data.session} />
         {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         <HRZonesCard hrZones={data.hr_zones ?? null} />
-        {data.splits && data.splits.length > 0 && <HRTimeGraph splits={data.splits} />}
+        <HRTimeGraph hrTimeseries={(data as any).hr_timeseries} />
         {data.coaching && data.coaching.tips && data.coaching.tips.length > 0 && (
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
         )}

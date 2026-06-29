@@ -139,14 +139,7 @@ def _deserialize_ability_assessment(assessment_dict: dict | None) -> AbilityAsse
 
 
 def _deserialize_splits(splits_list: list | None) -> list | None:
-    """Deserialize splits from DynamoDB list.
-
-    Args:
-        splits_list: list of dicts from DynamoDB or None
-
-    Returns:
-        list of split dicts with native Python types, or None
-    """
+    """Deserialize splits from DynamoDB list."""
     if splits_list is None:
         return None
 
@@ -163,6 +156,24 @@ def _deserialize_splits(splits_list: list | None) -> list | None:
     ]
 
 
+def _deserialize_hr_timeseries(ts_list: list | None) -> list | None:
+    """Deserialize HR time series from DynamoDB list.
+
+    Args:
+        ts_list: list of {t, hr} dicts from DynamoDB or None
+
+    Returns:
+        list of {t: int, hr: int} dicts, or None
+    """
+    if ts_list is None:
+        return None
+
+    return [
+        {"t": int(p.get("t", 0)), "hr": int(p.get("hr", 0))}
+        for p in ts_list
+    ]
+
+
 def save_session(
     user_id: str,
     session_info: SessionInfo,
@@ -172,6 +183,7 @@ def save_session(
     ability_assessment: AbilityAssessment | None = None,
     splits: list | None = None,
     coaching: dict | None = None,
+    hr_timeseries: list | None = None,
 ) -> str:
     """Persist session to Sessions table.
     
@@ -244,6 +256,12 @@ def save_session(
     
     if coaching is not None:
         item["coaching"] = coaching
+    
+    if hr_timeseries is not None and len(hr_timeseries) > 0:
+        item["hr_timeseries"] = [
+            {"t": int(p["t"]), "hr": int(p["hr"])}
+            for p in hr_timeseries
+        ]
     
     # Get table name from environment
     table_name = os.environ.get("SESSIONS_TABLE", "Sessions")
@@ -334,6 +352,7 @@ def get_user_sessions(
             ability_assessment=_deserialize_ability_assessment(item.get("ability_assessment")),
             splits=_deserialize_splits(item.get("splits")),
             coaching=item.get("coaching"),
+            hr_timeseries=_deserialize_hr_timeseries(item.get("hr_timeseries")),
         )
         sessions.append(session)
     
@@ -397,6 +416,7 @@ def get_session_by_id(session_id: str) -> Session:
         ability_assessment=ability_assessment,
         splits=_deserialize_splits(item.get("splits")),
         coaching=item.get("coaching"),
+        hr_timeseries=_deserialize_hr_timeseries(item.get("hr_timeseries")),
     )
 
 
