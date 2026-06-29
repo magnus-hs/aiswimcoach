@@ -157,6 +157,7 @@ def _deserialize_splits(splits_list: list | None) -> list | None:
             "strokes": int(s.get("strokes", 0)),
             "stroke": str(s.get("stroke", "unknown")),
             "rest_after_seconds": float(s["rest_after_seconds"]) if s.get("rest_after_seconds") is not None else None,
+            "avg_hr": int(s["avg_hr"]) if s.get("avg_hr") is not None else None,
         }
         for s in splits_list
     ]
@@ -226,15 +227,20 @@ def save_session(
     
     if splits is not None and len(splits) > 0:
         # Store splits as a list of dicts with Decimal for numeric values
-        item["splits"] = [
-            {
+        serialized_splits = []
+        for i, s in enumerate(splits):
+            split_item: dict = {
                 "length_number": int(s.get("length_number", i + 1)),
                 "time_seconds": Decimal(str(round(float(s.get("time_seconds", 0)), 1))),
                 "strokes": int(s.get("strokes", 0)),
                 "stroke": str(s.get("stroke", "unknown")),
             }
-            for i, s in enumerate(splits)
-        ]
+            if s.get("rest_after_seconds") is not None:
+                split_item["rest_after_seconds"] = Decimal(str(round(float(s["rest_after_seconds"]), 2)))
+            if s.get("avg_hr") is not None:
+                split_item["avg_hr"] = int(s["avg_hr"])
+            serialized_splits.append(split_item)
+        item["splits"] = serialized_splits
     
     if coaching is not None:
         item["coaching"] = coaching

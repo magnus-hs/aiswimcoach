@@ -6,6 +6,7 @@ import { FullResponse } from '../types';
 import { SessionSummary } from '../components/SessionSummary';
 import { GroupedSplitsTable } from '../components/GroupedSplitsTable';
 import { HRZonesCard } from '../components/HRZonesCard';
+import { HRTimeGraph } from '../components/HRTimeGraph';
 import { CoachingResult } from '../components/CoachingResult';
 import { AbilityAssessmentCard } from '../components/AbilityAssessmentCard';
 import { TrainingPlanResult } from '../components/TrainingPlanResult';
@@ -123,6 +124,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
         <SessionSummary session={data.session} />
         {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         <HRZonesCard hrZones={data.hr_zones ?? null} />
+        {data.splits && data.splits.length > 0 && <HRTimeGraph splits={data.splits} />}
         {data.coaching && data.coaching.tips && data.coaching.tips.length > 0 && (
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
         )}

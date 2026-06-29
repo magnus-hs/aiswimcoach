@@ -48,6 +48,7 @@ class LengthSplit:
     stroke: str
     strokes: int
     rest_after_seconds: float | None = None
+    avg_hr: int | None = None
 
 
 @dataclass

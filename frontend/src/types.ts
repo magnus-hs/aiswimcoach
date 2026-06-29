@@ -8,6 +8,7 @@ export interface LengthSplit {
   stroke: string;
   strokes: number;
   rest_after_seconds?: number | null;
+  avg_hr?: number | null;
 }
 
 export interface SessionInfo {

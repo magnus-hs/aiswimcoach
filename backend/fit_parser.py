@@ -289,6 +289,7 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
                         stroke=splits[-1].stroke,
                         strokes=splits[-1].strokes,
                         rest_after_seconds=round(float(elapsed), 2),
+                        avg_hr=splits[-1].avg_hr,
                     )
                 continue
 
@@ -298,12 +299,15 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
         stroke = _stroke_name(stroke_val)
         total_strokes = data.get("total_strokes")
         strokes = int(total_strokes) if total_strokes is not None else 0
+        avg_hr_val = data.get("avg_heart_rate")
+        avg_hr = int(avg_hr_val) if avg_hr_val is not None and avg_hr_val > 0 else None
 
         splits.append(LengthSplit(
             length_number=length_number,
             time_seconds=round(float(elapsed), 2),
             stroke=stroke,
             strokes=strokes,
+            avg_hr=avg_hr,
         ))
 
         stroke_counts[stroke] = stroke_counts.get(stroke, 0) + 1

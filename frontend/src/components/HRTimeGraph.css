@@ -1,0 +1,42 @@
+/* HRTimeGraph — Heart rate over time line chart */
+
+.hr-time-graph {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+}
+
+.hr-time-graph__heading {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-3);
+}
+
+.hr-time-graph__summary {
+  display: flex;
+  gap: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.hr-time-graph__stat {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.hr-time-graph__stat strong {
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.hr-time-graph__chart {
+  width: 100%;
+}
+
+@media (max-width: 599px) {
+  .hr-time-graph__summary {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+}

@@ -14,6 +14,7 @@ function capitalize(s: string): string {
 
 /**
  * Grouped splits view: shows reps as expandable rows with rest between.
+ * Includes cumulative distance and optional heart rate.
  */
 export function GroupedSplitsTable({ splits, poolLengthM }: GroupedSplitsTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
@@ -21,6 +22,16 @@ export function GroupedSplitsTable({ splits, poolLengthM }: GroupedSplitsTablePr
   if (splits.length === 0) return null;
 
   const groups = groupSplits(splits, poolLengthM);
+
+  // Check if any split has HR data
+  const hasHR = splits.some(s => s.avg_hr != null);
+
+  // Compute cumulative distance for each group
+  let cumulativeDistance = 0;
+  const groupCumulatives = groups.map((group) => {
+    cumulativeDistance += group.totalDistance;
+    return cumulativeDistance;
+  });
 
   const toggleGroup = (id: number) => {
     setExpandedGroups((prev) => {
@@ -42,32 +53,18 @@ export function GroupedSplitsTable({ splits, poolLengthM }: GroupedSplitsTablePr
           <div key={group.id}>
             <GroupRow
               group={group}
+              cumulativeDistance={groupCumulatives[idx]}
+              hasHR={hasHR}
               expanded={expandedGroups.has(group.id)}
               onToggle={() => toggleGroup(group.id)}
             />
             {expandedGroups.has(group.id) && (
-              <div className="grouped-splits__detail">
-                <table className="grouped-splits__detail-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Time</th>
-                      <th>Strokes</th>
-                      <th>Stroke</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {group.splits.map((split) => (
-                      <tr key={split.length_number}>
-                        <td>{split.length_number}</td>
-                        <td>{split.time_seconds.toFixed(1)}s</td>
-                        <td>{split.strokes}</td>
-                        <td>{capitalize(split.stroke)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DetailRows
+                group={group}
+                poolLengthM={poolLengthM}
+                startCumulative={groupCumulatives[idx] - group.totalDistance}
+                hasHR={hasHR}
+              />
             )}
             {group.restAfter != null && idx < groups.length - 1 && (
               <div className="grouped-splits__rest" aria-label={`Rest ${formatRest(group.restAfter)}`}>
@@ -81,20 +78,31 @@ export function GroupedSplitsTable({ splits, poolLengthM }: GroupedSplitsTablePr
           </div>
         ))}
       </div>
+      <div className="grouped-splits__session-total">
+        Total: {cumulativeDistance}m
+      </div>
     </section>
   );
 }
 
 function GroupRow({
   group,
+  cumulativeDistance,
+  hasHR,
   expanded,
   onToggle,
 }: {
   group: SplitGroup;
+  cumulativeDistance: number;
+  hasHR: boolean;
   expanded: boolean;
   onToggle: () => void;
 }) {
   const hasMultiple = group.splits.length > 1;
+
+  // Calculate average HR for the group
+  const hrsInGroup = group.splits.filter(s => s.avg_hr != null).map(s => s.avg_hr!);
+  const avgHR = hrsInGroup.length > 0 ? Math.round(hrsInGroup.reduce((a, b) => a + b, 0) / hrsInGroup.length) : null;
 
   return (
     <div
@@ -119,7 +127,54 @@ function GroupRow({
       <span className="grouped-splits__distance">{group.totalDistance}m</span>
       <span className="grouped-splits__time">{formatTime(group.totalTime)}</span>
       <span className="grouped-splits__stroke">{capitalize(group.stroke)}</span>
+      {hasHR && (
+        <span className="grouped-splits__hr">
+          {avgHR != null ? `${avgHR} bpm` : '—'}
+        </span>
+      )}
+      <span className="grouped-splits__cumulative">{cumulativeDistance}m</span>
       <span className="grouped-splits__pace">{formatTime(group.avgPacePer100m)}/100m</span>
+    </div>
+  );
+}
+
+function DetailRows({
+  group,
+  poolLengthM,
+  startCumulative,
+  hasHR,
+}: {
+  group: SplitGroup;
+  poolLengthM: number;
+  startCumulative: number;
+  hasHR: boolean;
+}) {
+  return (
+    <div className="grouped-splits__detail">
+      <table className="grouped-splits__detail-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Time</th>
+            <th>Strokes</th>
+            <th>Stroke</th>
+            {hasHR && <th>HR</th>}
+            <th>Cum.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {group.splits.map((split, i) => (
+            <tr key={split.length_number}>
+              <td>{split.length_number}</td>
+              <td>{split.time_seconds.toFixed(1)}s</td>
+              <td>{split.strokes}</td>
+              <td>{capitalize(split.stroke)}</td>
+              {hasHR && <td>{split.avg_hr != null ? `${split.avg_hr}` : '—'}</td>}
+              <td className="grouped-splits__cum-cell">{startCumulative + (i + 1) * poolLengthM}m</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
