@@ -4,7 +4,7 @@ import { getSessionById, SessionDetail } from '../api/sessionService';
 import { ApiError } from '../types';
 import { LoadingIndicator } from '../components/LoadingIndicator';
 import { SessionSummary } from '../components/SessionSummary';
-import { SplitsTable } from '../components/SplitsTable';
+import { GroupedSplitsTable } from '../components/GroupedSplitsTable';
 import { HRZonesCard } from '../components/HRZonesCard';
 import { CoachingResult } from '../components/CoachingResult';
 import { AbilityAssessmentCard } from '../components/AbilityAssessmentCard';
@@ -103,7 +103,7 @@ export function SessionDetailPage() {
 
       <div className="session-detail-page__results">
         <SessionSummary session={sessionDetail.session} />
-        <SplitsTable splits={sessionDetail.splits} />
+        <GroupedSplitsTable splits={sessionDetail.splits} poolLengthM={sessionDetail.session.pool_length_m} />
         <HRZonesCard hrZones={sessionDetail.hr_zones} />
         <CoachingResult tips={sessionDetail.coaching.tips} drill={sessionDetail.coaching.drill} />
         <AbilityAssessmentCard assessment={sessionDetail.ability_assessment} />

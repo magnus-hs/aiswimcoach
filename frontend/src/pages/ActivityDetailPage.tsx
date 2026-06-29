@@ -4,7 +4,7 @@ import { getSessionById, SessionDetail } from '../api/sessionService';
 import { uploadFitFile } from '../api/upload';
 import { FullResponse } from '../types';
 import { SessionSummary } from '../components/SessionSummary';
-import { SplitsTable } from '../components/SplitsTable';
+import { GroupedSplitsTable } from '../components/GroupedSplitsTable';
 import { HRZonesCard } from '../components/HRZonesCard';
 import { CoachingResult } from '../components/CoachingResult';
 import { AbilityAssessmentCard } from '../components/AbilityAssessmentCard';
@@ -121,7 +121,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
     return (
       <div className="activity-detail__sections">
         <SessionSummary session={data.session} />
-        {data.splits && data.splits.length > 0 && <SplitsTable splits={data.splits} />}
+        {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         <HRZonesCard hrZones={data.hr_zones ?? null} />
         {data.coaching && data.coaching.tips && data.coaching.tips.length > 0 && (
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />

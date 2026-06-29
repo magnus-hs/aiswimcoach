@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { FileDropZone } from '../components/FileDropZone';
 import { LoadingIndicator } from '../components/LoadingIndicator';
 import { SessionSummary } from '../components/SessionSummary';
-import { SplitsTable } from '../components/SplitsTable';
+import { GroupedSplitsTable } from '../components/GroupedSplitsTable';
 import { HRZonesCard } from '../components/HRZonesCard';
 import { CoachingResult } from '../components/CoachingResult';
 import { AbilityAssessmentCard } from '../components/AbilityAssessmentCard';
@@ -138,7 +138,7 @@ export function UploadPage() {
           )}
           
           <SessionSummary session={result.session} />
-          <SplitsTable splits={result.splits} />
+          <GroupedSplitsTable splits={result.splits} poolLengthM={result.session.pool_length_m} />
           <HRZonesCard hrZones={result.hr_zones} />
           <CoachingResult tips={result.coaching.tips} drill={result.coaching.drill} />
           <AbilityAssessmentCard assessment={result.ability_assessment} />

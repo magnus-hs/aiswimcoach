@@ -47,6 +47,7 @@ class LengthSplit:
     time_seconds: float
     stroke: str
     strokes: int
+    rest_after_seconds: float | None = None
 
 
 @dataclass

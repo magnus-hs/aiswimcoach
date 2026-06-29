@@ -7,6 +7,7 @@ export interface LengthSplit {
   time_seconds: number;
   stroke: string;
   strokes: number;
+  rest_after_seconds?: number | null;
 }
 
 export interface SessionInfo {

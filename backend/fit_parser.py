@@ -274,12 +274,22 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
     for record in fitfile.get_messages("length"):
         data = {f.name: f.value for f in record}
 
-        # Skip rest intervals (length_type == 1 means "idle")
+        # Check for rest intervals (length_type == 1 means "idle")
         length_type = data.get("length_type")
         if length_type is not None:
             # length_type can be an int or string
             lt_str = str(length_type).lower()
             if lt_str in ("1", "idle"):
+                # Capture rest duration and attach to preceding split
+                elapsed = data.get("total_elapsed_time") or data.get("total_timer_time") or 0.0
+                if splits and elapsed > 0:
+                    splits[-1] = LengthSplit(
+                        length_number=splits[-1].length_number,
+                        time_seconds=splits[-1].time_seconds,
+                        stroke=splits[-1].stroke,
+                        strokes=splits[-1].strokes,
+                        rest_after_seconds=round(float(elapsed), 2),
+                    )
                 continue
 
         length_number += 1

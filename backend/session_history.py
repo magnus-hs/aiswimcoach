@@ -156,6 +156,7 @@ def _deserialize_splits(splits_list: list | None) -> list | None:
             "time_seconds": float(s.get("time_seconds", 0)),
             "strokes": int(s.get("strokes", 0)),
             "stroke": str(s.get("stroke", "unknown")),
+            "rest_after_seconds": float(s["rest_after_seconds"]) if s.get("rest_after_seconds") is not None else None,
         }
         for s in splits_list
     ]
