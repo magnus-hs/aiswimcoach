@@ -33,6 +33,16 @@ export function GroupedSplitsTable({ splits, poolLengthM }: GroupedSplitsTablePr
     return cumulativeDistance;
   });
 
+  // Compute cumulative time (swim + rest) for each group
+  let cumulativeTime = 0;
+  const groupCumulativeTimes = groups.map((group) => {
+    cumulativeTime += group.totalTime;
+    if (group.restAfter != null) {
+      cumulativeTime += group.restAfter;
+    }
+    return cumulativeTime - (group.restAfter ?? 0); // time at end of swimming, before rest
+  });
+
   const toggleGroup = (id: number) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
@@ -54,6 +64,7 @@ export function GroupedSplitsTable({ splits, poolLengthM }: GroupedSplitsTablePr
             <GroupRow
               group={group}
               cumulativeDistance={groupCumulatives[idx]}
+              cumulativeTime={groupCumulativeTimes[idx]}
               hasHR={hasHR}
               expanded={expandedGroups.has(group.id)}
               onToggle={() => toggleGroup(group.id)}
@@ -88,12 +99,14 @@ export function GroupedSplitsTable({ splits, poolLengthM }: GroupedSplitsTablePr
 function GroupRow({
   group,
   cumulativeDistance,
+  cumulativeTime,
   hasHR,
   expanded,
   onToggle,
 }: {
   group: SplitGroup;
   cumulativeDistance: number;
+  cumulativeTime: number;
   hasHR: boolean;
   expanded: boolean;
   onToggle: () => void;
@@ -133,6 +146,7 @@ function GroupRow({
         </span>
       )}
       <span className="grouped-splits__cumulative">{cumulativeDistance}m</span>
+      <span className="grouped-splits__cumulative">{formatTime(cumulativeTime)}</span>
       <span className="grouped-splits__pace">{formatTime(group.avgPacePer100m)}/100m</span>
     </div>
   );
