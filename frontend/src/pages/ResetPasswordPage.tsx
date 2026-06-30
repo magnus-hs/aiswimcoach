@@ -31,8 +31,12 @@ export function ResetPasswordPage() {
         throw new Error(data.error || 'Failed to request reset');
       }
 
+      const data = await response.json();
+      if (data.token) {
+        setToken(data.token);
+      }
       setStep('reset');
-      setSuccess('If an account exists with that email, a reset token has been generated. Check below.');
+      setSuccess(`Reset token generated: ${data.token || 'check your email'}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed');
     } finally {
