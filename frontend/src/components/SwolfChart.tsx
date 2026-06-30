@@ -31,11 +31,15 @@ interface SwolfPoint {
  */
 export function SwolfChart({ splits, poolLengthM }: SwolfChartProps) {
   // Only render if we have meaningful data
-  const validSplits = splits.filter(s => s.strokes > 0 && s.time_seconds > 0);
-  if (validSplits.length < 3) return null;
+  const validSplits = splits.filter(s => s.time_seconds > 0);
+  if (validSplits.length < 2) return null;
+
+  // For SWOLF, only include lengths with strokes > 0
+  const swolfSplits = validSplits.filter(s => s.strokes > 0);
+  if (swolfSplits.length < 2) return null;
 
   let cumDistance = 0;
-  const data: SwolfPoint[] = validSplits.map(s => {
+  const data: SwolfPoint[] = swolfSplits.map(s => {
     cumDistance += poolLengthM;
     return {
       distance: cumDistance,

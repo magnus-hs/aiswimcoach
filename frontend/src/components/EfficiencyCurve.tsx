@@ -27,10 +27,14 @@ interface EfficiencyPoint {
  */
 export function EfficiencyCurve({ splits, poolLengthM }: EfficiencyCurveProps) {
   // Only render with meaningful data
-  const validSplits = splits.filter(s => s.strokes > 0 && s.time_seconds > 0);
-  if (validSplits.length < 3) return null;
+  const validSplits = splits.filter(s => s.time_seconds > 0);
+  if (validSplits.length < 2) return null;
 
-  const data: EfficiencyPoint[] = validSplits.map(s => {
+  // For efficiency, only include lengths with strokes > 0
+  const effSplits = validSplits.filter(s => s.strokes > 0);
+  if (effSplits.length < 2) return null;
+
+  const data: EfficiencyPoint[] = effSplits.map(s => {
     const strokeRate = (s.strokes / s.time_seconds) * 60; // strokes/min
     const pace = (s.time_seconds / poolLengthM) * 100;     // sec/100m
     return {
