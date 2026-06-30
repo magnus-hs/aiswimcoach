@@ -57,8 +57,12 @@ TOOL_SCHEMA: dict[str, Any] = {
 
 SYSTEM_PROMPT = (
     "You are an elite competitive swim coach with decades of experience at national and Olympic level.\n"
-    "Analyse the swimmer's metrics and respond by calling the submit_coaching_response tool with:\n"
-    "- tips: exactly three concise, actionable improvement tips (each ≤ 300 characters) based on the metrics\n"
+    "Analyse the swimmer's session data comprehensively — considering their pace, technique (SWOLF), "
+    "stroke mechanics, energy system distribution, and fatigue patterns.\n"
+    "Your analysis should reference specific findings from the data: technique drift, training load balance, "
+    "and areas where the swimmer can improve efficiency.\n"
+    "Respond by calling the submit_coaching_response tool with:\n"
+    "- tips: exactly three concise, actionable improvement tips (each ≤ 300 characters) based on the data\n"
     "- drill: exactly one specific drill recommendation (≤ 500 characters) that targets the swimmer's weakest area\n"
     "Do not add any other fields or commentary outside the tool call."
 )
@@ -84,11 +88,21 @@ class BedrockError(Exception):
 # ---------------------------------------------------------------------------
 
 
-def invoke_bedrock(metrics: Metrics) -> CoachingResponse:
+def invoke_bedrock(metrics: Metrics, session_context: dict | None = None) -> CoachingResponse:
     """Invoke Amazon Bedrock and return a structured CoachingResponse.
 
     Args:
         metrics: Swim metrics extracted from the uploaded FIT file.
+        session_context: Optional dict with additional session data for richer analysis:
+            - total_distance_m: total distance in meters
+            - total_time_seconds: total session time
+            - num_lengths: number of lengths swum
+            - num_sets: number of sets/reps
+            - swolf_drift: change in SWOLF from first to last set
+            - css_pace: user's CSS pace per 100m (if available)
+            - energy_breakdown: dict with sprint/threshold/aerobic percentages
+            - avg_hr: average heart rate (if available)
+            - max_hr: max heart rate (if available)
 
     Returns:
         A validated CoachingResponse with exactly 3 tips and 1 drill.
@@ -100,7 +114,7 @@ def invoke_bedrock(metrics: Metrics) -> CoachingResponse:
     region = os.environ.get("AWS_REGION", "us-east-1")
     client = boto3.client("bedrock-runtime", region_name=region)
 
-    request_body = _build_request_body(metrics)
+    request_body = _build_request_body(metrics, session_context)
 
     # First attempt
     raw_response = _call_bedrock(client, request_body)
@@ -122,15 +136,41 @@ def invoke_bedrock(metrics: Metrics) -> CoachingResponse:
 # ---------------------------------------------------------------------------
 
 
-def _build_request_body(metrics: Metrics) -> dict[str, Any]:
+def _build_request_body(metrics: Metrics, session_context: dict | None = None) -> dict[str, Any]:
     """Construct the Bedrock invoke_model request body."""
     user_message = (
         f"Here are my swim session metrics:\n"
-        f"- Pace: {metrics.pace:.1f} seconds per 100 m\n"
+        f"- Pace: {metrics.pace:.1f} seconds per 100m\n"
         f"- SWOLF: {metrics.swolf:.1f}\n"
-        f"- Stroke rate: {metrics.stroke_rate:.1f} strokes per minute\n\n"
-        "Please analyse these metrics and provide coaching feedback."
+        f"- Stroke rate: {metrics.stroke_rate:.1f} strokes per minute\n"
     )
+
+    if session_context:
+        if session_context.get("total_distance_m"):
+            user_message += f"- Total distance: {session_context['total_distance_m']}m\n"
+        if session_context.get("num_sets"):
+            user_message += f"- Number of sets: {session_context['num_sets']}\n"
+        if session_context.get("num_lengths"):
+            user_message += f"- Number of lengths: {session_context['num_lengths']}\n"
+        if session_context.get("swolf_drift") is not None:
+            drift = session_context["swolf_drift"]
+            user_message += f"- SWOLF drift (start to end): {'+' if drift > 0 else ''}{drift} (technique {'degraded' if drift > 2 else 'held steady'})\n"
+        if session_context.get("avg_hr"):
+            user_message += f"- Average heart rate: {session_context['avg_hr']} bpm\n"
+        if session_context.get("max_hr"):
+            user_message += f"- Max heart rate: {session_context['max_hr']} bpm\n"
+        if session_context.get("css_pace"):
+            user_message += f"- CSS (threshold) pace: {session_context['css_pace']:.1f} sec/100m\n"
+        if session_context.get("energy_breakdown"):
+            eb = session_context["energy_breakdown"]
+            user_message += (
+                f"\nTraining load by energy system:\n"
+                f"- Sprint (anaerobic): {eb.get('sprint_pct', 0):.0f}% of distance\n"
+                f"- Threshold (CSS): {eb.get('threshold_pct', 0):.0f}% of distance\n"
+                f"- Aerobic endurance: {eb.get('aerobic_pct', 0):.0f}% of distance\n"
+            )
+
+    user_message += "\nPlease analyse this session and provide specific coaching feedback."
 
     return {
         "anthropic_version": "bedrock-2023-05-31",

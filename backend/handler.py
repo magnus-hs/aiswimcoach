@@ -482,8 +482,29 @@ def _handle_file_upload(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _error_response(422, exc.message)
 
     try:
-        # 5. Invoke Bedrock
-        coaching = invoke_bedrock(metrics)
+        # 5. Build session context for richer AI coaching
+        session_context: dict[str, Any] = {
+            "total_distance_m": session_info.total_distance_m,
+            "total_time_seconds": session_info.total_time_seconds,
+            "num_lengths": session_info.num_lengths,
+        }
+        
+        # Compute SWOLF drift and set count from splits
+        if splits:
+            valid_splits = [s for s in splits if s.strokes > 0 and s.time_seconds > 0]
+            session_context["num_sets"] = sum(1 for s in splits if s.rest_after_seconds is not None) + 1
+            
+            if len(valid_splits) >= 4:
+                # SWOLF for first and last quarter
+                quarter = max(1, len(valid_splits) // 4)
+                first_swolfs = [s.time_seconds + s.strokes for s in valid_splits[:quarter]]
+                last_swolfs = [s.time_seconds + s.strokes for s in valid_splits[-quarter:]]
+                avg_first = sum(first_swolfs) / len(first_swolfs)
+                avg_last = sum(last_swolfs) / len(last_swolfs)
+                session_context["swolf_drift"] = round(avg_last - avg_first, 1)
+
+        # Invoke Bedrock with enriched context
+        coaching = invoke_bedrock(metrics, session_context)
     except BedrockError as exc:
         logger.error("Bedrock invocation failed: %s", exc)
         return _error_response(502, str(exc))

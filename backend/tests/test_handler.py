@@ -247,7 +247,10 @@ class TestSuccessPipeline:
         mock_parse.assert_called_once_with(MOCK_EVENT)
         mock_s3.assert_called_once_with(b"fitbytes")
         mock_fit.assert_called_once_with(b"fitbytes")
-        mock_bedrock.assert_called_once_with(SAMPLE_METRICS)
+        mock_bedrock.assert_called_once()
+        # Verify metrics is the first argument
+        call_args = mock_bedrock.call_args
+        assert call_args[0][0] == SAMPLE_METRICS
         mock_dynamo.assert_called_once_with("uploads/uuid.fit", SAMPLE_METRICS, SAMPLE_COACHING)
 
 
