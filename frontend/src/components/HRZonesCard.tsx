@@ -28,6 +28,13 @@ const ZONE_DESCRIPTIONS = {
   5: 'Anaerobic / Sprint',
 };
 
+function formatZoneTime(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 /**
  * Renders heart rate zone analysis with zone list and horizontal bar chart.
  *
@@ -131,7 +138,7 @@ export function HRZonesCard({ hrZones }: HRZonesCardProps) {
               </span>
             </div>
             <div className="hr-zones-card__item-stats">
-              <span className="hr-zones-card__time">{zone.seconds}s</span>
+              <span className="hr-zones-card__time">{formatZoneTime(zone.seconds)}</span>
               <span className="hr-zones-card__percent">
                 {zone.percent.toFixed(1)}%
               </span>
