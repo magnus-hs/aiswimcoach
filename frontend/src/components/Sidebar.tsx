@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { DistanceChart, DistanceChartPoint } from './DistanceChart';
 import './Sidebar.css';
 
@@ -49,6 +50,7 @@ export function Sidebar({
 }: SidebarProps) {
   const formattedDistance = formatDistance(totalDistanceMeters);
   const formattedTime = formatDuration(totalTimeSeconds);
+  const [mobileExpanded, setMobileExpanded] = useState(false);
 
   return (
     <aside className="sidebar" aria-label="Profile summary">
@@ -69,6 +71,17 @@ export function Sidebar({
         <h2 className="sidebar__name">{displayName}</h2>
         <p className="sidebar__member-since">Member since {memberSince}</p>
       </div>
+
+      <button
+        className="sidebar__mobile-toggle"
+        onClick={() => setMobileExpanded(!mobileExpanded)}
+        aria-expanded={mobileExpanded}
+      >
+        <span className={`sidebar__mobile-arrow ${mobileExpanded ? 'sidebar__mobile-arrow--open' : ''}`}>▶</span>
+        {mobileExpanded ? 'Hide stats' : 'Show stats & charts'}
+      </button>
+
+      <div className={`sidebar__collapsible ${mobileExpanded ? 'sidebar__collapsible--open' : ''}`}>
 
       <div className="sidebar__stats" role="list" aria-label="Training statistics">
         <div className="sidebar__stat" role="listitem">
@@ -116,6 +129,7 @@ export function Sidebar({
           <span className="sidebar__total-value">{formattedTime}</span>
           <span className="sidebar__total-label">Total Time</span>
         </div>
+      </div>
       </div>
     </aside>
   );

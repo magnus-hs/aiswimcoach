@@ -147,3 +147,49 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+
+/* Mobile collapsible stats */
+.sidebar__mobile-toggle {
+  display: none;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.sidebar__mobile-arrow {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  transition: transform 0.15s ease;
+}
+
+.sidebar__mobile-arrow--open {
+  transform: rotate(90deg);
+}
+
+.sidebar__collapsible {
+  display: contents;
+}
+
+@media (max-width: 767px) {
+  .sidebar__mobile-toggle {
+    display: flex;
+  }
+
+  .sidebar__collapsible {
+    display: none;
+  }
+
+  .sidebar__collapsible--open {
+    display: contents;
+  }
+}
