@@ -8,9 +8,12 @@
   background: hsl(220, 18%, 11%);
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   width: 200px;
-  min-height: calc(100vh - 56px);
+  height: calc(100vh - 56px);
   position: sticky;
   top: 56px;
+  align-self: flex-start;
+  overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .sidenav__link {
