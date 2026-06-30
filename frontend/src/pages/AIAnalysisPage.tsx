@@ -32,41 +32,41 @@ export function AIAnalysisPage() {
       <div className="ai-analysis-page__what-it-does">
         <h2>What the AI Coach Can Do</h2>
         <div className="ai-analysis-page__capabilities">
-          <div className="ai-analysis-page__capability">
+          <button className="ai-analysis-page__capability" onClick={() => setSelectedPrompt('How is my pace trending over recent sessions?')}>
             <span className="ai-analysis-page__capability-icon">📈</span>
             <div>
               <h3>Trend Analysis</h3>
               <p>Identifies patterns in your pace, SWOLF, and stroke rate across sessions.</p>
             </div>
-          </div>
-          <div className="ai-analysis-page__capability">
+          </button>
+          <button className="ai-analysis-page__capability" onClick={() => setSelectedPrompt('Am I on track to hit my targets?')}>
             <span className="ai-analysis-page__capability-icon">🎯</span>
             <div>
               <h3>Goal Tracking</h3>
               <p>Evaluates progress towards your targets and what to adjust.</p>
             </div>
-          </div>
-          <div className="ai-analysis-page__capability">
+          </button>
+          <button className="ai-analysis-page__capability" onClick={() => setSelectedPrompt('What should I focus on in my next session?')}>
             <span className="ai-analysis-page__capability-icon">💡</span>
             <div>
               <h3>Personalised Recommendations</h3>
               <p>Suggests specific sets, paces, and focus areas based on your data.</p>
             </div>
-          </div>
-          <div className="ai-analysis-page__capability">
+          </button>
+          <button className="ai-analysis-page__capability" onClick={() => setSelectedPrompt('Am I swimming enough threshold work to improve my CSS?')}>
             <span className="ai-analysis-page__capability-icon">⚡</span>
             <div>
               <h3>Training Load Insight</h3>
               <p>Analyses energy system balance and work-to-rest ratios.</p>
             </div>
-          </div>
-          <div className="ai-analysis-page__capability">
+          </button>
+          <button className="ai-analysis-page__capability" onClick={() => setSelectedPrompt('How do I compare to others in my age group?')}>
             <span className="ai-analysis-page__capability-icon">🏅</span>
             <div>
               <h3>Age Group Comparison</h3>
               <p>Compares against Masters Swimming standards for your age group.</p>
             </div>
-          </div>
+          </button>
         </div>
       </div>
 
