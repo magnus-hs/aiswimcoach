@@ -16,6 +16,7 @@ import { ApiError } from '../types';
  */
 export function ProfilePage() {
   // Form state
+  const [dateOfBirth, setDateOfBirth] = useState<string>('');
   const [age, setAge] = useState<string>('');
   const [nationality, setNationality] = useState<string>('');
   const [locality, setLocality] = useState<string>('');
@@ -42,6 +43,10 @@ export function ProfilePage() {
           setNationality(profile.nationality || '');
           setLocality(profile.locality || '');
           setAbilityLevel(profile.ability_level);
+          // If DOB is stored, load it
+          if ((profile as any).date_of_birth) {
+            setDateOfBirth((profile as any).date_of_birth);
+          }
         }
       } catch (err: unknown) {
         if (err instanceof ApiError && err.status !== 404) {
@@ -56,19 +61,30 @@ export function ProfilePage() {
     loadProfile();
   }, []);
 
-  // Validate age on change
-  const handleAgeChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+  // Compute age from date of birth
+  const handleDobChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setAge(value);
+    setDateOfBirth(value);
     setAgeError('');
 
-    if (value === '') {
+    if (!value) {
+      setAge('');
       return;
     }
 
-    const ageNum = parseInt(value, 10);
-    if (isNaN(ageNum) || ageNum < 10 || ageNum > 100) {
+    const dob = new Date(value);
+    const today = new Date();
+    let computedAge = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      computedAge--;
+    }
+
+    if (computedAge < 10 || computedAge > 100) {
       setAgeError('Age must be between 10 and 100');
+      setAge('');
+    } else {
+      setAge(computedAge.toString());
     }
   }, []);
 
@@ -217,23 +233,25 @@ export function ProfilePage() {
             )}
           </div>
 
-          {/* Age Field */}
+          {/* Date of Birth Field */}
           <div className="auth-form__field">
-            <label htmlFor="age" className="auth-form__label">
-              Age <span style={{ color: '#ef4444' }}>*</span>
+            <label htmlFor="dob" className="auth-form__label">
+              Date of Birth <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <input
-              id="age"
-              type="number"
-              min="10"
-              max="100"
-              value={age}
-              onChange={handleAgeChange}
+              id="dob"
+              type="date"
+              value={dateOfBirth}
+              onChange={handleDobChange}
               disabled={loading}
               className="auth-form__input"
-              placeholder="Enter your age (10-100)"
               required
             />
+            {age && !ageError && (
+              <div style={{ fontSize: '0.8125rem', color: '#64748b', marginTop: '0.25rem' }}>
+                Age: {age} years
+              </div>
+            )}
             {ageError && (
               <div style={{
                 fontSize: '0.8125rem',

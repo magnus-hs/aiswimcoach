@@ -55,6 +55,14 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
         >
           Training Plans
         </NavLink>
+        <NavLink
+          to="/ai-coach"
+          className={({ isActive }) =>
+            `nav__link${isActive ? ' nav__link--active' : ''}`
+          }
+        >
+          AI Coach
+        </NavLink>
         <div className="nav__profile-menu">
           <button
             type="button"

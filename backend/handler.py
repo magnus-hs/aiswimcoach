@@ -857,15 +857,28 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     except Exception:
         sessions = []
     
-    # Fetch CSS pace
+    # Fetch CSS pace and profile
     css_pace = None
+    profile_info = ""
     try:
         table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
         table = boto3.resource("dynamodb").Table(table_name)
-        response = table.get_item(Key={"user_id": user_id}, ProjectionExpression="css_pace_per_100m")
-        css_val = response.get("Item", {}).get("css_pace_per_100m")
+        response = table.get_item(Key={"user_id": user_id})
+        item = response.get("Item", {})
+        css_val = item.get("css_pace_per_100m")
         if css_val is not None:
             css_pace = float(css_val)
+        # Get profile info for age group comparisons
+        age = item.get("age")
+        nationality = item.get("nationality")
+        ability_level = item.get("ability_level")
+        if age:
+            profile_info = f"\nSwimmer Profile: Age {age}"
+            if nationality:
+                profile_info += f", Nationality: {nationality}"
+            if ability_level:
+                profile_info += f", Level: {ability_level}"
+            profile_info += "\n"
     except Exception:
         pass
     
@@ -900,15 +913,22 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # Call Bedrock
     system_prompt = (
         "You are an elite competitive swim coach analysing a swimmer's training data.\n"
-        "You have access to their full session history, current session details, and CSS pace.\n"
+        "You have access to their full session history, current session details, profile, and CSS pace.\n"
         "Provide insightful, specific analysis based on the data. Identify trends, strengths, "
-        "weaknesses, and give concrete advice on how to improve and reach their targets.\n"
+        "weaknesses, and give concrete advice on how to improve and reach their targets.\n\n"
+        "When asked about comparisons to others in their age group, use your knowledge of:\n"
+        "- Masters Swimming time standards (FINA/World Aquatics points)\n"
+        "- Typical performance bands for recreational, club, county, regional, and national swimmers\n"
+        "- Age-graded performance tables for swimming\n"
+        "Provide honest, specific comparisons like percentile estimates and what level their times "
+        "correspond to (e.g., 'Your 100m pace of 1:25 is approximately top 30% for male 40-44 age group "
+        "in Masters Swimming').\n\n"
         "Keep your response concise (2-4 paragraphs) but data-driven. Reference specific numbers "
         "from their sessions when making points.\n"
         "Do not use markdown formatting — respond in plain text with line breaks for readability."
     )
     
-    user_message = f"{prompt}{css_info}{session_detail}{history_summary}"
+    user_message = f"{prompt}{profile_info}{css_info}{session_detail}{history_summary}"
     
     try:
         region = os.environ.get("AWS_REGION", "us-east-1")

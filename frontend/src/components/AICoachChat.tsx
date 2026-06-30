@@ -19,9 +19,10 @@ interface Message {
 const QUICK_PROMPTS = [
   'How is my pace trending over recent sessions?',
   'What are my strengths and weaknesses?',
-  'How can I improve my SWOLF score?',
+  'How do I compare to others in my age group?',
   'Am I on track to hit my targets?',
   'What should I focus on in my next session?',
+  'What level swimmer am I — club, county, or regional?',
 ];
 
 /**

@@ -44,6 +44,13 @@ export function AIAnalysisPage() {
               <p>Analyses your energy system balance, work-to-rest ratios, and whether you're training the right systems for your goals.</p>
             </div>
           </div>
+          <div className="ai-analysis-page__capability">
+            <span className="ai-analysis-page__capability-icon">🏅</span>
+            <div>
+              <h3>Age Group Comparison</h3>
+              <p>Compares your times against Masters Swimming standards and age-graded performance tables. Shows where you rank in your age group — club, county, regional, or national level.</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -57,6 +64,9 @@ export function AIAnalysisPage() {
           <li>"Compare my last 5 sessions — what's improving and what's not?"</li>
           <li>"I want to break 1:20/100m — what does my data say about how close I am?"</li>
           <li>"What's my biggest limiter right now — fitness or technique?"</li>
+          <li>"How do I compare to others in my age group?"</li>
+          <li>"What level swimmer am I — club, county, or regional?"</li>
+          <li>"Where would my times place me in Masters Swimming?"</li>
         </ul>
       </div>
 
