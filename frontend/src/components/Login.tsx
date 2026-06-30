@@ -1,8 +1,23 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, FormEvent, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import * as authService from '../api/authService';
 import { ApiError } from '../types';
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          renderButton: (element: HTMLElement, config: any) => void;
+        };
+      };
+    };
+  }
+}
+
+const GOOGLE_CLIENT_ID = '315548660280-922flu5u39917s66qn51fu0u1s0gelrc.apps.googleusercontent.com';
 
 /**
  * Login component with email and password authentication.
@@ -26,6 +41,52 @@ export function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  // Google Sign-In callback
+  const handleGoogleResponse = useCallback(async (response: any) => {
+    setError('');
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: response.credential }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Google sign-in failed');
+      }
+      const data = await res.json();
+      login(data.token);
+      navigate('/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [login, navigate]);
+
+  // Initialize Google Sign-In button
+  useEffect(() => {
+    const initGoogle = () => {
+      if (window.google && googleBtnRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleResponse,
+        });
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'outline',
+          size: 'large',
+          width: '100%',
+          text: 'signin_with',
+        });
+      }
+    };
+    // Script might not be loaded yet
+    const timer = setTimeout(initGoogle, 500);
+    return () => clearTimeout(timer);
+  }, [handleGoogleResponse]);
 
   // Check for success message from registration
   useEffect(() => {
@@ -83,6 +144,14 @@ export function Login() {
           <span className="auth-card__icon" aria-hidden="true">🏊</span>
           <h1 className="auth-card__title">Welcome Back</h1>
           <p className="auth-card__subtitle">Sign in to continue to AI Swim Coach</p>
+        </div>
+
+        <div ref={googleBtnRef} style={{ marginBottom: '1.5rem' }} />
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--color-gray-300)' }} />
+          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>or sign in with email</span>
+          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--color-gray-300)' }} />
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">

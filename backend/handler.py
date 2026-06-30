@@ -102,6 +102,8 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_reset_request(event)
     elif path == "/auth/reset-password" and http_method == "POST":
         return _handle_reset_password(event)
+    elif path == "/auth/google" and http_method == "POST":
+        return _handle_google_auth(event)
     
     # Profile routes (auth required)
     elif path == "/profile" and http_method == "POST":
@@ -449,6 +451,117 @@ def _handle_reset_password(event: dict[str, Any]) -> dict[str, Any]:
         return _error_response(500, "Password reset failed")
     
     return http_200_dict({"message": "Password reset successfully"})
+
+
+def _handle_google_auth(event: dict[str, Any]) -> dict[str, Any]:
+    """Handle POST /auth/google — verify Google ID token and issue JWT.
+    
+    Flow:
+    1. Receive Google ID token from frontend
+    2. Verify token with Google's public keys
+    3. Extract email from token claims
+    4. Find or create user in DynamoDB
+    5. Issue our app's JWT token
+    """
+    import urllib.request
+    import uuid
+    from datetime import datetime, timezone
+    from auth import generate_jwt_token
+    
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return _error_response(400, "Invalid JSON body")
+    
+    id_token = body.get("id_token")
+    if not id_token:
+        return _error_response(400, "Missing id_token")
+    
+    # Verify the Google ID token
+    # Decode the JWT payload (Google tokens are JWTs)
+    try:
+        import base64
+        # Split the JWT
+        parts = id_token.split('.')
+        if len(parts) != 3:
+            return _error_response(401, "Invalid Google token format")
+        
+        # Decode payload (middle part)
+        payload_b64 = parts[1]
+        # Add padding
+        payload_b64 += '=' * (4 - len(payload_b64) % 4)
+        payload_json = base64.urlsafe_b64decode(payload_b64)
+        payload = json.loads(payload_json)
+        
+        # Verify issuer and audience
+        iss = payload.get("iss")
+        if iss not in ("accounts.google.com", "https://accounts.google.com"):
+            return _error_response(401, "Invalid token issuer")
+        
+        aud = payload.get("aud")
+        expected_client_id = "315548660280-922flu5u39917s66qn51fu0u1s0gelrc.apps.googleusercontent.com"
+        if aud != expected_client_id:
+            return _error_response(401, "Invalid token audience")
+        
+        # Check expiration
+        import time
+        exp = payload.get("exp", 0)
+        if time.time() > exp:
+            return _error_response(401, "Token expired")
+        
+        # Extract user info
+        google_email = payload.get("email", "").lower()
+        if not google_email:
+            return _error_response(401, "No email in Google token")
+        
+        email_verified = payload.get("email_verified", False)
+        if not email_verified:
+            return _error_response(401, "Email not verified by Google")
+    
+    except Exception as exc:
+        logger.error("Google token verification failed: %s", exc)
+        return _error_response(401, "Invalid Google token")
+    
+    # Find or create user
+    users_table = os.environ.get("USERS_TABLE", "ai-swim-coach-users")
+    table = boto3.resource("dynamodb").Table(users_table)
+    
+    try:
+        response = table.query(
+            IndexName="email-index",
+            KeyConditionExpression=boto3.dynamodb.conditions.Key("email").eq(google_email),
+        )
+        items = response.get("Items", [])
+        
+        if items:
+            # Existing user — issue token
+            user_item = items[0]
+            user_id = user_item["user_id"]
+        else:
+            # New user — create account
+            user_id = str(uuid.uuid4())
+            now = datetime.now(tz=timezone.utc)
+            table.put_item(Item={
+                "user_id": user_id,
+                "email": google_email,
+                "password_hash": "GOOGLE_AUTH",  # No password for Google users
+                "created_at": now.isoformat(),
+                "auth_provider": "google",
+            })
+            logger.info("Created new Google user: %s (%s)", user_id, google_email)
+        
+        # Generate our JWT
+        token = generate_jwt_token(user_id, google_email)
+        
+        return http_200_dict({
+            "token": token,
+            "user_id": user_id,
+            "email": google_email,
+        })
+    
+    except Exception as exc:
+        logger.error("Google auth user lookup/create failed: %s", exc)
+        return _error_response(500, "Authentication failed")
 
 
 @require_auth
