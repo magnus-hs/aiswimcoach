@@ -27,6 +27,7 @@ const QUICK_PROMPTS = [
 
 /**
  * AI coaching chat — interactive analysis of current session and historical trends.
+ * Clicking a suggestion populates the input box for the user to edit or send.
  */
 export function AICoachChat({ currentSession }: AICoachChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -79,23 +80,35 @@ export function AICoachChat({ currentSession }: AICoachChatProps) {
     <section className="ai-chat" aria-label="AI Coach Analysis">
       <h2 className="ai-chat__heading">AI Coach</h2>
       <p className="ai-chat__subtitle">
-        Ask about your performance, trends, or how to improve
+        Ask about your performance, trends, or how you compare to others in your age group
       </p>
 
-      {messages.length === 0 && (
-        <div className="ai-chat__prompts">
-          {QUICK_PROMPTS.map((prompt, i) => (
-            <button
-              key={i}
-              className="ai-chat__prompt-btn"
-              onClick={() => sendMessage(prompt)}
-              disabled={loading}
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
-      )}
+      <form className="ai-chat__form" onSubmit={handleSubmit}>
+        <input
+          className="ai-chat__input"
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask your AI coach..."
+          disabled={loading}
+        />
+        <button className="ai-chat__send" type="submit" disabled={loading || !input.trim()}>
+          Send
+        </button>
+      </form>
+
+      <div className="ai-chat__prompts">
+        {QUICK_PROMPTS.map((prompt, i) => (
+          <button
+            key={i}
+            className="ai-chat__prompt-btn"
+            onClick={() => setInput(prompt)}
+            disabled={loading}
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
 
       {messages.length > 0 && (
         <div className="ai-chat__messages">
@@ -116,19 +129,10 @@ export function AICoachChat({ currentSession }: AICoachChatProps) {
         </div>
       )}
 
-      <form className="ai-chat__form" onSubmit={handleSubmit}>
-        <input
-          className="ai-chat__input"
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask your AI coach..."
-          disabled={loading}
-        />
-        <button className="ai-chat__send" type="submit" disabled={loading || !input.trim()}>
-          Send
-        </button>
-      </form>
+      <p className="ai-chat__disclaimer">
+        Comparisons use British Masters Swimming & World Aquatics time standards (2024/2025 season).
+        Standards are updated annually and may change in the next version of AI Swim Coach.
+      </p>
     </section>
   );
 }

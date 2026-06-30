@@ -903,6 +903,12 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
             if ability_level:
                 profile_info += f", Level: {ability_level}"
             profile_info += "\n"
+            
+            # Add swimming time standards for their age group
+            from swim_standards import get_standards_for_swimmer
+            standards_text = get_standards_for_swimmer(int(age), "male")
+            if standards_text:
+                profile_info += standards_text + "\n"
     except Exception:
         pass
     

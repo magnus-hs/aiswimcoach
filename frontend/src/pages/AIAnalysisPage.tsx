@@ -54,6 +54,10 @@ export function AIAnalysisPage() {
         </div>
       </div>
 
+      <div className="ai-analysis-page__chat-section">
+        <AICoachChat />
+      </div>
+
       <div className="ai-analysis-page__examples">
         <h2>Example Questions</h2>
         <ul>
@@ -68,10 +72,6 @@ export function AIAnalysisPage() {
           <li>"What level swimmer am I — club, county, or regional?"</li>
           <li>"Where would my times place me in Masters Swimming?"</li>
         </ul>
-      </div>
-
-      <div className="ai-analysis-page__chat-section">
-        <AICoachChat />
       </div>
     </div>
   );
