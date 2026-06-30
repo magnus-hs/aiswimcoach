@@ -142,10 +142,12 @@ export function Login() {
       <div className="auth-card">
         <div className="auth-card__header">
           <span className="auth-card__icon" aria-hidden="true">
-            <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="24" cy="16" r="8" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
-              <path d="M8 42 C8 32, 16 26, 24 26 C32 26, 40 32, 40 42" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinecap="round"/>
-              <path d="M30 38 C33 35, 38 36, 40 34" fill="none" stroke="var(--color-secondary)" strokeWidth="2" strokeLinecap="round"/>
+            <svg width="56" height="28" viewBox="0 0 56 28" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="18" cy="14" rx="10" ry="8" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
+              <ellipse cx="38" cy="14" rx="10" ry="8" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
+              <line x1="26" y1="11" x2="30" y2="11" stroke="var(--color-primary)" strokeWidth="1.5" strokeLinecap="round"/>
+              <line x1="5" y1="13" x2="2" y2="13" stroke="var(--color-secondary)" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="51" y1="13" x2="54" y2="13" stroke="var(--color-secondary)" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </span>
           <h1 className="auth-card__title">Welcome Back</h1>

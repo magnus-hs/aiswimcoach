@@ -7,15 +7,25 @@ export interface HRZonesCardProps {
 }
 
 /**
- * Zone color mapping following requirements:
- * Zone 1: light blue, Zone 2: green, Zone 3: yellow, Zone 4: orange, Zone 5: red
+ * Zone color mapping — updated for dark theme with vibrant contrast.
  */
 const ZONE_COLORS = {
-  1: '#60a5fa', // light blue
-  2: '#34d399', // green
-  3: '#fbbf24', // yellow
-  4: '#fb923c', // orange
-  5: '#ef4444', // red
+  1: '#60a5fa', // blue — recovery
+  2: '#34d399', // green — aerobic endurance
+  3: '#fbbf24', // amber — tempo/threshold
+  4: '#f97316', // orange — VO2 max
+  5: '#ef4444', // red — anaerobic/sprint
+};
+
+/**
+ * Zone descriptions for context.
+ */
+const ZONE_DESCRIPTIONS = {
+  1: 'Recovery',
+  2: 'Aerobic Endurance',
+  3: 'Tempo / Threshold',
+  4: 'VO₂ Max',
+  5: 'Anaerobic / Sprint',
 };
 
 /**
@@ -112,6 +122,9 @@ export function HRZonesCard({ hrZones }: HRZonesCardProps) {
               />
               <span className="hr-zones-card__zone-label">
                 Zone {zone.number}
+              </span>
+              <span className="hr-zones-card__zone-desc">
+                {ZONE_DESCRIPTIONS[zone.number as keyof typeof ZONE_DESCRIPTIONS]}
               </span>
               <span className="hr-zones-card__zone-range">
                 {zone.bounds[0]}-{zone.bounds[1]} bpm

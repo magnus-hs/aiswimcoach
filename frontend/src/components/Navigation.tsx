@@ -27,15 +27,15 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
           xmlns="http://www.w3.org/2000/svg"
         >
           {/* Left lens */}
-          <ellipse cx="14" cy="12" rx="9" ry="7" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+          <ellipse cx="14" cy="12" rx="9" ry="7" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" />
           {/* Right lens */}
-          <ellipse cx="34" cy="12" rx="9" ry="7" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+          <ellipse cx="34" cy="12" rx="9" ry="7" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" />
           {/* Bridge */}
-          <path d="M23 10 C24 8, 24 8, 25 10" stroke="#ffffff" strokeWidth="2" fill="none" strokeLinecap="round" />
+          <path d="M23 10 C24 8, 24 8, 25 10" stroke="var(--color-primary)" strokeWidth="2" fill="none" strokeLinecap="round" />
           {/* Left strap */}
-          <line x1="5" y1="11" x2="2" y2="11" stroke="hsla(200,70%,80%,0.9)" strokeWidth="2" strokeLinecap="round" />
+          <line x1="5" y1="11" x2="2" y2="11" stroke="var(--color-primary-light)" strokeWidth="2" strokeLinecap="round" />
           {/* Right strap */}
-          <line x1="43" y1="11" x2="46" y2="11" stroke="hsla(200,70%,80%,0.9)" strokeWidth="2" strokeLinecap="round" />
+          <line x1="43" y1="11" x2="46" y2="11" stroke="var(--color-primary-light)" strokeWidth="2" strokeLinecap="round" />
         </svg>
         <span className="nav__app-name">AI Swim Coach</span>
       </Link>

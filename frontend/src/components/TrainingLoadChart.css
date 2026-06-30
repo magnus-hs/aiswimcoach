@@ -108,3 +108,35 @@
     gap: var(--space-3);
   }
 }
+
+.training-load__expand-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: var(--space-4);
+  transition: background 0.15s ease;
+}
+
+.training-load__expand-btn:hover {
+  background: var(--color-gray-100);
+}
+
+.training-load__expand-arrow {
+  font-size: var(--font-size-xs);
+  transition: transform 0.15s ease;
+  color: var(--color-text-muted);
+}
+
+.training-load__expand-arrow--open {
+  transform: rotate(90deg);
+}

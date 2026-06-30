@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { LengthSplit } from '../types';
 import { groupSplits, SplitGroup } from '../utils/groupSplits';
 import './TrainingLoadChart.css';
@@ -5,7 +6,7 @@ import './TrainingLoadChart.css';
 interface TrainingLoadChartProps {
   splits: LengthSplit[];
   poolLengthM: number;
-  cssPace: number | null;  // sec/100m
+  cssPace: number | null;
 }
 
 type EnergySystem = 'sprint' | 'threshold' | 'aerobic';
@@ -38,7 +39,7 @@ function categorize(pace: number, css: number): EnergySystem {
 }
 
 function computeRestMultiplier(totalTime: number, restAfter: number | null): number {
-  if (!restAfter || restAfter <= 0) return 1.5; // No rest = max stress
+  if (!restAfter || restAfter <= 0) return 1.5;
   const workToRest = totalTime / restAfter;
   return Math.min(1.5, 0.8 + workToRest * 0.2);
 }
@@ -49,11 +50,9 @@ function formatPace(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-/**
- * Training Load analysis: categorizes sets by energy system relative to CSS
- * and computes rest-adjusted training load.
- */
 export function TrainingLoadChart({ splits, poolLengthM, cssPace }: TrainingLoadChartProps) {
+  const [showSets, setShowSets] = useState(false);
+
   if (!cssPace || splits.length === 0) return null;
 
   const groups = groupSplits(splits, poolLengthM);
@@ -66,7 +65,6 @@ export function TrainingLoadChart({ splits, poolLengthM, cssPace }: TrainingLoad
     const restMultiplier = computeRestMultiplier(group.totalTime, group.restAfter);
     const baseLoad = (group.totalDistance / 100) * intensityFactor;
     const setLoad = Math.round(baseLoad * restMultiplier * 10) / 10;
-
     return { group, energySystem, intensityFactor, restMultiplier, setLoad, pace };
   });
 
@@ -78,7 +76,7 @@ export function TrainingLoadChart({ splits, poolLengthM, cssPace }: TrainingLoad
   return (
     <section className="training-load" aria-label="Training load analysis">
       <h2 className="training-load__heading">Training Load Analysis</h2>
-      <p className="training-load__css-ref">CSS pace: {formatPace(cssPace)} /100m ({cssPace.toFixed(1)}s)</p>
+      <p className="training-load__css-ref">CSS pace: {formatPace(cssPace)} /100m</p>
 
       <div className="training-load__summary">
         <div className="training-load__total">
@@ -98,45 +96,56 @@ export function TrainingLoadChart({ splits, poolLengthM, cssPace }: TrainingLoad
         </div>
       </div>
 
-      <div className="training-load__sets">
-        <table className="training-load__table">
-          <thead>
-            <tr>
-              <th>Set</th>
-              <th>Distance</th>
-              <th>Pace</th>
-              <th>vs CSS</th>
-              <th>Zone</th>
-              <th>Load</th>
-            </tr>
-          </thead>
-          <tbody>
-            {analysis.map((a, idx) => {
-              const diff = a.pace - cssPace;
-              const diffLabel = diff > 0 ? `+${diff.toFixed(0)}s` : `${diff.toFixed(0)}s`;
-              return (
-                <tr key={idx}>
-                  <td>{idx + 1}</td>
-                  <td>{a.group.totalDistance}m</td>
-                  <td>{formatPace(a.pace)}</td>
-                  <td className={`training-load__diff training-load__diff--${a.energySystem}`}>
-                    {diffLabel}
-                  </td>
-                  <td>
-                    <span
-                      className="training-load__zone-badge"
-                      style={{ background: ENERGY_COLORS[a.energySystem] }}
-                    >
-                      {ENERGY_LABELS[a.energySystem]}
-                    </span>
-                  </td>
-                  <td className="training-load__load-value">{a.setLoad}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <button
+        className="training-load__expand-btn"
+        onClick={() => setShowSets(!showSets)}
+        aria-expanded={showSets}
+      >
+        <span className={`training-load__expand-arrow ${showSets ? 'training-load__expand-arrow--open' : ''}`}>▶</span>
+        {showSets ? 'Hide' : 'Show'} per-set breakdown ({analysis.length} sets)
+      </button>
+
+      {showSets && (
+        <div className="training-load__sets">
+          <table className="training-load__table">
+            <thead>
+              <tr>
+                <th>Set</th>
+                <th>Distance</th>
+                <th>Pace</th>
+                <th>vs CSS</th>
+                <th>Zone</th>
+                <th>Load</th>
+              </tr>
+            </thead>
+            <tbody>
+              {analysis.map((a, idx) => {
+                const diff = a.pace - cssPace;
+                const diffLabel = diff > 0 ? `+${diff.toFixed(0)}s` : `${diff.toFixed(0)}s`;
+                return (
+                  <tr key={idx}>
+                    <td>{idx + 1}</td>
+                    <td>{a.group.totalDistance}m</td>
+                    <td>{formatPace(a.pace)}</td>
+                    <td className={`training-load__diff training-load__diff--${a.energySystem}`}>
+                      {diffLabel}
+                    </td>
+                    <td>
+                      <span
+                        className="training-load__zone-badge"
+                        style={{ background: ENERGY_COLORS[a.energySystem] }}
+                      >
+                        {ENERGY_LABELS[a.energySystem]}
+                      </span>
+                    </td>
+                    <td className="training-load__load-value">{a.setLoad}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }

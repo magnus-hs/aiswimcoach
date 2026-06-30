@@ -86,6 +86,12 @@
   font-weight: var(--font-weight-medium);
 }
 
+.hr-zones-card__zone-desc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
 .hr-zones-card__item-stats {
   display: flex;
   gap: var(--space-4);
