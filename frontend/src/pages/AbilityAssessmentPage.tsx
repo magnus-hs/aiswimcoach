@@ -17,30 +17,39 @@ interface TimeStandard {
   club: string;
 }
 
+const STROKES = ['Freestyle', 'Backstroke', 'Breaststroke', 'Butterfly', 'IM'];
+const POOL_DISTANCES = ['50m', '100m', '200m', '400m', '800m', '1500m'];
+const OPEN_WATER_DISTANCES = ['1 mile', '2km', '3km', '5km', '10km'];
+
+type Category = 'pool' | 'openwater';
+
 /**
- * Ability Assessment page — shows the user's competitive assessment
- * (updated after each upload based on last 10 sessions) and time standards.
+ * Ability Assessment page — shows competitive assessment, time standards by stroke/distance,
+ * and open water standards.
  */
 export function AbilityAssessmentPage() {
   const [assessment, setAssessment] = useState<Assessment | null>(null);
-  const [standards, setStandards] = useState<{ british: TimeStandard[]; scottish: TimeStandard[] } | null>(null);
+  const [allStandards, setAllStandards] = useState<any>(null);
   const [ageGroup, setAgeGroup] = useState<string>('');
   const [loading, setLoading] = useState(true);
+
+  // Filter state
+  const [category, setCategory] = useState<Category>('pool');
+  const [stroke, setStroke] = useState('Freestyle');
+  const [distance, setDistance] = useState('100m');
 
   useEffect(() => {
     async function loadData() {
       const token = localStorage.getItem('auth_token');
       if (!token) { setLoading(false); return; }
-
       try {
-        // Fetch assessment and standards from profile
         const response = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/profile/assessment`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.ok) {
           const data = await response.json();
           if (data.assessment) setAssessment(data.assessment);
-          if (data.standards) setStandards(data.standards);
+          if (data.standards) setAllStandards(data.standards);
           if (data.age_group) setAgeGroup(data.age_group);
         }
       } catch {
@@ -52,6 +61,31 @@ export function AbilityAssessmentPage() {
     loadData();
   }, []);
 
+  // Get the specific standard for selected stroke + distance
+  const getStandard = (): TimeStandard | null => {
+    if (!allStandards) return null;
+    const eventName = `${distance} ${stroke}`;
+    const british = allStandards.british?.find((s: TimeStandard) => s.event === eventName);
+    return british || null;
+  };
+
+  const getScottishStandard = (): TimeStandard | null => {
+    if (!allStandards) return null;
+    const eventName = `${distance} ${stroke}`;
+    const scottish = allStandards.scottish?.find((s: TimeStandard) => s.event === eventName);
+    return scottish || null;
+  };
+
+  const getOpenWaterStandard = (): TimeStandard | null => {
+    if (!allStandards) return null;
+    const eventName = `Open Water ${distance}`;
+    const ow = allStandards.openwater?.find((s: TimeStandard) => s.event === eventName);
+    return ow || null;
+  };
+
+  const selectedStandard = category === 'pool' ? getStandard() : getOpenWaterStandard();
+  const scottishStandard = category === 'pool' ? getScottishStandard() : null;
+
   return (
     <div className="ability-page">
       <Link to="/" className="ability-page__back">← Back to Dashboard</Link>
@@ -60,12 +94,12 @@ export function AbilityAssessmentPage() {
         Based on your last 10 sessions. Updated after each upload.
       </p>
 
-      {loading && <p className="ability-page__loading">Loading assessment…</p>}
+      {loading && <p className="ability-page__loading">Loading…</p>}
 
       {!loading && !assessment && (
         <div className="ability-page__empty">
           <p>No assessment available yet.</p>
-          <p>Upload a FIT file with a completed profile (date of birth, nationality, locality, ability level) to generate your competitive assessment.</p>
+          <p>Upload a FIT file with a completed profile to generate your competitive assessment.</p>
         </div>
       )}
 
@@ -90,61 +124,110 @@ export function AbilityAssessmentPage() {
         </div>
       )}
 
-      {!loading && standards && (
+      {!loading && allStandards && (
         <div className="ability-page__standards">
           <h2>Time Standards — {ageGroup} Male</h2>
           <p className="ability-page__standards-note">
             Source: British Masters Swimming & Scottish Swimming (2024/2025 season).
-            Updated annually.
+            Updated annually. This may change in the next version of AI Swim Coach.
           </p>
 
-          <h3>British Masters Standards</h3>
-          <table className="ability-page__table">
-            <thead>
-              <tr>
-                <th>Event</th>
-                <th>National</th>
-                <th>Regional</th>
-                <th>County</th>
-                <th>Club</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standards.british.map(s => (
-                <tr key={s.event}>
-                  <td className="ability-page__event-cell">{s.event}</td>
-                  <td>{s.national}</td>
-                  <td>{s.regional}</td>
-                  <td>{s.county}</td>
-                  <td>{s.club}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="ability-page__filters">
+            <div className="ability-page__filter-group">
+              <label>Category</label>
+              <div className="ability-page__toggle">
+                <button
+                  className={`ability-page__toggle-btn ${category === 'pool' ? 'ability-page__toggle-btn--active' : ''}`}
+                  onClick={() => setCategory('pool')}
+                >
+                  Pool
+                </button>
+                <button
+                  className={`ability-page__toggle-btn ${category === 'openwater' ? 'ability-page__toggle-btn--active' : ''}`}
+                  onClick={() => setCategory('openwater')}
+                >
+                  Open Water
+                </button>
+              </div>
+            </div>
 
-          <h3>Scottish Masters Standards</h3>
-          <table className="ability-page__table">
-            <thead>
-              <tr>
-                <th>Event</th>
-                <th>National</th>
-                <th>Regional</th>
-                <th>County</th>
-                <th>Club</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standards.scottish.map(s => (
-                <tr key={s.event}>
-                  <td className="ability-page__event-cell">{s.event}</td>
-                  <td>{s.national}</td>
-                  <td>{s.regional}</td>
-                  <td>{s.county}</td>
-                  <td>{s.club}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            {category === 'pool' && (
+              <>
+                <div className="ability-page__filter-group">
+                  <label>Stroke</label>
+                  <select
+                    className="ability-page__select"
+                    value={stroke}
+                    onChange={(e) => setStroke(e.target.value)}
+                  >
+                    {STROKES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div className="ability-page__filter-group">
+                  <label>Distance</label>
+                  <select
+                    className="ability-page__select"
+                    value={distance}
+                    onChange={(e) => setDistance(e.target.value)}
+                  >
+                    {POOL_DISTANCES.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                </div>
+              </>
+            )}
+
+            {category === 'openwater' && (
+              <div className="ability-page__filter-group">
+                <label>Distance</label>
+                <select
+                  className="ability-page__select"
+                  value={distance}
+                  onChange={(e) => setDistance(e.target.value)}
+                >
+                  {OPEN_WATER_DISTANCES.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {selectedStandard ? (
+            <div className="ability-page__standard-result">
+              <h3>{category === 'pool' ? `${distance} ${stroke}` : `Open Water ${distance}`}</h3>
+              <table className="ability-page__table">
+                <thead>
+                  <tr>
+                    <th>Organisation</th>
+                    <th>National</th>
+                    <th>Regional</th>
+                    <th>County</th>
+                    <th>Club</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="ability-page__event-cell">British Masters</td>
+                    <td>{selectedStandard.national}</td>
+                    <td>{selectedStandard.regional}</td>
+                    <td>{selectedStandard.county}</td>
+                    <td>{selectedStandard.club}</td>
+                  </tr>
+                  {scottishStandard && (
+                    <tr>
+                      <td className="ability-page__event-cell">Scottish Swimming</td>
+                      <td>{scottishStandard.national}</td>
+                      <td>{scottishStandard.regional}</td>
+                      <td>{scottishStandard.county}</td>
+                      <td>{scottishStandard.club}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="ability-page__no-standard">
+              No standards available for this combination. Try a different stroke or distance.
+            </p>
+          )}
         </div>
       )}
     </div>

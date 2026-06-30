@@ -908,33 +908,95 @@ def _handle_get_assessment(event: dict[str, Any], context: Any) -> dict[str, Any
             from swim_standards import get_age_group, MASTERS_STANDARDS
             age_group = get_age_group(int(age))
             
-            british = MASTERS_STANDARDS.get("male", {}).get(age_group, {})
-            # Scottish standards are slightly different (roughly 2-3% slower for county/club)
-            scottish = {}
-            for event_name, levels in british.items():
-                scottish[event_name] = {
-                    "national": levels["national"] * 1.01,
-                    "regional": levels["regional"] * 1.02,
-                    "county": levels["county"] * 1.03,
-                    "club": levels["club"] * 1.02,
-                }
-            
             def fmt_time(secs: float) -> str:
                 m = int(secs) // 60
                 s = secs % 60
                 return f"{m}:{s:04.1f}" if m > 0 else f"{s:.1f}s"
             
+            british_free = MASTERS_STANDARDS.get("male", {}).get(age_group, {})
+            
+            # Stroke multipliers relative to freestyle
+            stroke_multipliers = {
+                "Freestyle": 1.0,
+                "Backstroke": 1.08,
+                "Breaststroke": 1.18,
+                "Butterfly": 1.05,
+                "IM": 1.10,
+            }
+            
+            # Distances available per stroke
+            distances_per_stroke = {
+                "Freestyle": ["50m", "100m", "200m", "400m", "800m", "1500m"],
+                "Backstroke": ["50m", "100m", "200m"],
+                "Breaststroke": ["50m", "100m", "200m"],
+                "Butterfly": ["50m", "100m", "200m"],
+                "IM": ["100m", "200m", "400m"],
+            }
+            
+            # Build British and Scottish standards for all strokes
+            british_all = []
+            scottish_all = []
+            
+            for stroke_name, mult in stroke_multipliers.items():
+                for dist in distances_per_stroke.get(stroke_name, []):
+                    # Find base freestyle time for this distance
+                    free_key = f"{dist} Freestyle"
+                    base = british_free.get(free_key)
+                    if not base:
+                        # Estimate 800m and 1500m from 400m
+                        base_400 = british_free.get("400m Freestyle")
+                        if base_400 and dist == "800m":
+                            base = {k: v * 2.08 for k, v in base_400.items()}
+                        elif base_400 and dist == "1500m":
+                            base = {k: v * 3.95 for k, v in base_400.items()}
+                        else:
+                            continue
+                    
+                    event_name = f"{dist} {stroke_name}"
+                    levels = {k: v * mult for k, v in base.items()}
+                    british_all.append({
+                        "event": event_name,
+                        "national": fmt_time(levels["national"]),
+                        "regional": fmt_time(levels["regional"]),
+                        "county": fmt_time(levels["county"]),
+                        "club": fmt_time(levels["club"]),
+                    })
+                    # Scottish ~2% slower
+                    scottish_all.append({
+                        "event": event_name,
+                        "national": fmt_time(levels["national"] * 1.01),
+                        "regional": fmt_time(levels["regional"] * 1.02),
+                        "county": fmt_time(levels["county"] * 1.03),
+                        "club": fmt_time(levels["club"] * 1.02),
+                    })
+            
+            # Open water standards (estimated from pool times + 8-12% for conditions)
+            ow_events = {
+                "Open Water 1 mile": 1609 / 100,   # ~16 × 100m pace
+                "Open Water 2km": 2000 / 100,
+                "Open Water 3km": 3000 / 100,
+                "Open Water 5km": 5000 / 100,
+                "Open Water 10km": 10000 / 100,
+            }
+            ow_standards = []
+            base_100 = british_free.get("100m Freestyle")
+            if base_100:
+                for ow_event, multiplier in ow_events.items():
+                    # Open water is ~10% slower than pool pace at 100m, plus fatigue
+                    fatigue = 1.0 + (multiplier / 200)  # gradual fatigue factor
+                    ow_levels = {k: v * multiplier * 1.10 * fatigue for k, v in base_100.items()}
+                    ow_standards.append({
+                        "event": ow_event,
+                        "national": fmt_time(ow_levels["national"]),
+                        "regional": fmt_time(ow_levels["regional"]),
+                        "county": fmt_time(ow_levels["county"]),
+                        "club": fmt_time(ow_levels["club"]),
+                    })
+            
             standards = {
-                "british": [
-                    {"event": ev, "national": fmt_time(lv["national"]), "regional": fmt_time(lv["regional"]),
-                     "county": fmt_time(lv["county"]), "club": fmt_time(lv["club"])}
-                    for ev, lv in british.items()
-                ],
-                "scottish": [
-                    {"event": ev, "national": fmt_time(lv["national"]), "regional": fmt_time(lv["regional"]),
-                     "county": fmt_time(lv["county"]), "club": fmt_time(lv["club"])}
-                    for ev, lv in scottish.items()
-                ],
+                "british": british_all,
+                "scottish": scottish_all,
+                "openwater": ow_standards,
             }
         
         return http_200_dict({
