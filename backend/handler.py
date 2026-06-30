@@ -133,6 +133,10 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_get_personal_bests(event, context)
     elif path == "/personal-bests" and http_method == "DELETE":
         return _handle_delete_personal_best(event, context)
+    
+    # AI chat analysis (auth required)
+    elif path == "/ai/chat" and http_method == "POST":
+        return _handle_ai_chat(event, context)
 
     # Training plans route (auth required)
     elif path == "/plans" and http_method == "GET":
@@ -825,6 +829,117 @@ def _handle_get_css(event: dict[str, Any], context: Any) -> dict[str, Any]:
     except Exception as exc:
         logger.error("Failed to get CSS for user %s: %s", user_id, exc)
         return _error_response(500, "Failed to retrieve CSS")
+
+
+@require_auth
+def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle POST /ai/chat — interactive AI coaching chat.
+    
+    Accepts a user prompt and optional session context. Fetches all user sessions
+    to provide trend analysis. Returns AI-generated response text.
+    """
+    user_id = event["auth_context"]["user_id"]
+    
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return _error_response(400, "Invalid JSON body")
+    
+    prompt = body.get("prompt", "").strip()
+    if not prompt:
+        return _error_response(400, "Missing prompt")
+    
+    current_session = body.get("current_session")  # Optional: current session data
+    
+    # Fetch all user sessions for trend analysis
+    try:
+        sessions = get_user_sessions(user_id)
+    except Exception:
+        sessions = []
+    
+    # Fetch CSS pace
+    css_pace = None
+    try:
+        table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
+        table = boto3.resource("dynamodb").Table(table_name)
+        response = table.get_item(Key={"user_id": user_id}, ProjectionExpression="css_pace_per_100m")
+        css_val = response.get("Item", {}).get("css_pace_per_100m")
+        if css_val is not None:
+            css_pace = float(css_val)
+    except Exception:
+        pass
+    
+    # Build session history summary for the AI
+    history_summary = ""
+    if sessions:
+        history_summary = f"\n\nSession History ({len(sessions)} sessions):\n"
+        for s in sessions[:20]:  # Last 20 sessions
+            history_summary += (
+                f"- {s.session_date[:10]}: {s.total_distance_meters}m, "
+                f"pace {s.average_pace_per_100m:.1f}s/100m, "
+                f"SWOLF {s.swolf_score}, "
+                f"stroke rate {s.stroke_rate:.1f} spm, "
+                f"{s.stroke_type}\n"
+            )
+    
+    # Build current session context if provided
+    session_detail = ""
+    if current_session:
+        session_detail = f"\n\nCurrent Session Details:\n"
+        if current_session.get("total_distance_m"):
+            session_detail += f"- Distance: {current_session['total_distance_m']}m\n"
+        if current_session.get("pace"):
+            session_detail += f"- Pace: {current_session['pace']:.1f}s/100m\n"
+        if current_session.get("swolf"):
+            session_detail += f"- SWOLF: {current_session['swolf']}\n"
+        if current_session.get("stroke_rate"):
+            session_detail += f"- Stroke rate: {current_session['stroke_rate']:.1f} spm\n"
+    
+    css_info = f"\nCSS (threshold) pace: {css_pace:.1f}s/100m\n" if css_pace else ""
+    
+    # Call Bedrock
+    system_prompt = (
+        "You are an elite competitive swim coach analysing a swimmer's training data.\n"
+        "You have access to their full session history, current session details, and CSS pace.\n"
+        "Provide insightful, specific analysis based on the data. Identify trends, strengths, "
+        "weaknesses, and give concrete advice on how to improve and reach their targets.\n"
+        "Keep your response concise (2-4 paragraphs) but data-driven. Reference specific numbers "
+        "from their sessions when making points.\n"
+        "Do not use markdown formatting — respond in plain text with line breaks for readability."
+    )
+    
+    user_message = f"{prompt}{css_info}{session_detail}{history_summary}"
+    
+    try:
+        region = os.environ.get("AWS_REGION", "us-east-1")
+        client = boto3.client("bedrock-runtime", region_name=region)
+        
+        request_body = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "system": system_prompt,
+            "messages": [{"role": "user", "content": user_message}],
+            "max_tokens": 1024,
+        }
+        
+        response = client.invoke_model(
+            modelId="us.anthropic.claude-haiku-4-5-20251001-v1:0",
+            body=json.dumps(request_body),
+            contentType="application/json",
+            accept="application/json",
+        )
+        
+        result = json.loads(response["body"].read())
+        content = result.get("content", [])
+        text = ""
+        for block in content:
+            if block.get("type") == "text":
+                text += block.get("text", "")
+        
+        return http_200_dict({"response": text})
+    
+    except Exception as exc:
+        logger.error("AI chat failed for user %s: %s", user_id, exc)
+        return _error_response(502, "AI analysis unavailable")
 
 
 @require_auth

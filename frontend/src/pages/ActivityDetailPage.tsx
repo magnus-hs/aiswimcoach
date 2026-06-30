@@ -10,6 +10,7 @@ import { HRTimeGraph } from '../components/HRTimeGraph';
 import { SwolfChart } from '../components/SwolfChart';
 import { EfficiencyCurve } from '../components/EfficiencyCurve';
 import { TrainingLoadChart } from '../components/TrainingLoadChart';
+import { AICoachChat } from '../components/AICoachChat';
 import { CoachingResult } from '../components/CoachingResult';
 import { AbilityAssessmentCard } from '../components/AbilityAssessmentCard';
 import { TrainingPlanResult } from '../components/TrainingPlanResult';
@@ -153,6 +154,12 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
         {data.coaching && data.coaching.tips && data.coaching.tips.length > 0 && (
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
         )}
+        <AICoachChat currentSession={{
+          total_distance_m: data.session.total_distance_m,
+          pace: (data as any).metrics?.pace,
+          swolf: (data as any).metrics?.swolf,
+          stroke_rate: (data as any).metrics?.stroke_rate,
+        }} />
         <AbilityAssessmentCard assessment={data.ability_assessment ?? null} />
         {data.training_plan && <TrainingPlanResult plan={data.training_plan} />}
       </div>
