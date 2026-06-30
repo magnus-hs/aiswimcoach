@@ -12,7 +12,6 @@ import { EfficiencyCurve } from '../components/EfficiencyCurve';
 import { TrainingLoadChart } from '../components/TrainingLoadChart';
 import { AICoachChat } from '../components/AICoachChat';
 import { CoachingResult } from '../components/CoachingResult';
-import { AbilityAssessmentCard } from '../components/AbilityAssessmentCard';
 import { TrainingPlanResult } from '../components/TrainingPlanResult';
 import { FileDropZone } from '../components/FileDropZone';
 import { LoadingIndicator } from '../components/LoadingIndicator';
@@ -160,7 +159,6 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
         {data.coaching && data.coaching.tips && data.coaching.tips.length > 0 && (
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
         )}
-        <AbilityAssessmentCard assessment={data.ability_assessment ?? null} />
         {data.training_plan && <TrainingPlanResult plan={data.training_plan} />}
       </div>
     );

@@ -110,6 +110,8 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_save_css(event, context)
     elif path == "/profile/css" and http_method == "GET":
         return _handle_get_css(event, context)
+    elif path == "/profile/assessment" and http_method == "GET":
+        return _handle_get_assessment(event, context)
     
     # Structured training plans routes (auth required)
     elif path == "/plans/generate" and http_method == "POST":
@@ -597,33 +599,63 @@ def _handle_file_upload(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 # Requirement 7.1: Only generate if age, nationality, locality, ability_level all present
                 if profile and profile.age and profile.nationality and profile.locality and profile.ability_level:
                     # Check if metrics are valid (finite numbers)
-                    # Requirement 7.3: Skip if metrics contain non-finite values
                     import math
                     if (math.isfinite(metrics.pace) and 
                         math.isfinite(metrics.swolf) and 
                         math.isfinite(metrics.stroke_rate)):
                         
                         try:
-                            # Generate ability assessment
+                            # Compute average metrics from last 10 sessions + current for form-based assessment
+                            from models import Metrics as MetricsClass
+                            recent_sessions = get_user_sessions(user_id)[:9]  # Last 9 + current = 10
+                            
+                            paces = [metrics.pace]
+                            swolfs = [metrics.swolf]
+                            rates = [metrics.stroke_rate]
+                            for s in recent_sessions:
+                                if s.average_pace_per_100m > 0:
+                                    paces.append(s.average_pace_per_100m)
+                                if s.swolf_score > 0:
+                                    swolfs.append(float(s.swolf_score))
+                                if s.stroke_rate > 0:
+                                    rates.append(s.stroke_rate)
+                            
+                            avg_metrics = MetricsClass(
+                                pace=sum(paces) / len(paces),
+                                swolf=sum(swolfs) / len(swolfs),
+                                stroke_rate=sum(rates) / len(rates),
+                            )
+                            
+                            # Generate ability assessment based on recent form
                             ability_assessment = generate_ability_assessment(
-                                metrics=metrics,
+                                metrics=avg_metrics,
                                 age=profile.age,
                                 nationality=profile.nationality,
                                 locality=profile.locality,
                                 ability_level=profile.ability_level,
                             )
-                            logger.info("Ability assessment generated successfully for user %s", user_id)
+                            logger.info("Ability assessment generated (based on %d sessions) for user %s", len(paces), user_id)
+                            
+                            # Persist the assessment to the profile for the Ability Assessment page
+                            try:
+                                import dataclasses as dc
+                                table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
+                                table = boto3.resource("dynamodb").Table(table_name)
+                                table.update_item(
+                                    Key={"user_id": user_id},
+                                    UpdateExpression="SET ability_assessment = :aa",
+                                    ExpressionAttributeValues={":aa": dc.asdict(ability_assessment)},
+                                )
+                            except Exception as exc2:
+                                logger.warning("Failed to persist ability assessment: %s", exc2)
                         
                         except BedrockError as exc:
-                            # Bedrock invocation failed - log and continue without ability assessment
-                            # Requirement 7.11: Handle Bedrock failure gracefully
                             logger.warning("Ability assessment generation failed for user %s: %s", user_id, exc)
                     
                     else:
                         logger.info("Metrics contain non-finite values - skipping ability assessment for user %s", user_id)
                 
                 else:
-                    # Requirement 7.2: Skip if profile incomplete
                     logger.info("User %s has incomplete profile - skipping ability assessment", user_id)
             
             except ProfileStorageError as exc:
@@ -856,6 +888,66 @@ def _handle_get_css(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
 
 @require_auth
+def _handle_get_assessment(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /profile/assessment — retrieve ability assessment and time standards."""
+    user_id = event["auth_context"]["user_id"]
+    table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
+    
+    try:
+        table = boto3.resource("dynamodb").Table(table_name)
+        response = table.get_item(Key={"user_id": user_id})
+        item = response.get("Item", {})
+        
+        assessment = item.get("ability_assessment")
+        age = item.get("age")
+        
+        # Build time standards for the user's age group
+        standards = None
+        age_group = ""
+        if age:
+            from swim_standards import get_age_group, MASTERS_STANDARDS
+            age_group = get_age_group(int(age))
+            
+            british = MASTERS_STANDARDS.get("male", {}).get(age_group, {})
+            # Scottish standards are slightly different (roughly 2-3% slower for county/club)
+            scottish = {}
+            for event_name, levels in british.items():
+                scottish[event_name] = {
+                    "national": levels["national"] * 1.01,
+                    "regional": levels["regional"] * 1.02,
+                    "county": levels["county"] * 1.03,
+                    "club": levels["club"] * 1.02,
+                }
+            
+            def fmt_time(secs: float) -> str:
+                m = int(secs) // 60
+                s = secs % 60
+                return f"{m}:{s:04.1f}" if m > 0 else f"{s:.1f}s"
+            
+            standards = {
+                "british": [
+                    {"event": ev, "national": fmt_time(lv["national"]), "regional": fmt_time(lv["regional"]),
+                     "county": fmt_time(lv["county"]), "club": fmt_time(lv["club"])}
+                    for ev, lv in british.items()
+                ],
+                "scottish": [
+                    {"event": ev, "national": fmt_time(lv["national"]), "regional": fmt_time(lv["regional"]),
+                     "county": fmt_time(lv["county"]), "club": fmt_time(lv["club"])}
+                    for ev, lv in scottish.items()
+                ],
+            }
+        
+        return http_200_dict({
+            "assessment": assessment,
+            "standards": standards,
+            "age_group": age_group,
+        })
+    except Exception as exc:
+        logger.error("Failed to get assessment for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to retrieve assessment")
+
+
+@require_auth
 def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Handle POST /ai/chat — interactive AI coaching chat.
     
@@ -905,10 +997,24 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
             profile_info += "\n"
             
             # Add swimming time standards for their age group
-            from swim_standards import get_standards_for_swimmer
+            from swim_standards import get_standards_for_swimmer, classify_time
             standards_text = get_standards_for_swimmer(int(age), "male")
             if standards_text:
                 profile_info += standards_text + "\n"
+            
+            # Pre-compute classifications from their actual session data
+            if sessions:
+                avg_pace = sum(s.average_pace_per_100m for s in sessions[:10]) / min(len(sessions), 10)
+                # Estimate race times from training pace
+                est_100m = avg_pace - 5  # Race is faster than training
+                est_200m = (avg_pace - 2) * 2
+                est_400m = (avg_pace + 2) * 4
+                
+                profile_info += f"\nPRE-COMPUTED CLASSIFICATIONS (use these, do NOT recalculate):\n"
+                profile_info += f"  Average training pace: {avg_pace:.1f}s/100m ({int(avg_pace)//60}:{int(avg_pace)%60:02d}/100m)\n"
+                profile_info += f"  Estimated 100m race time: {est_100m:.0f}s ({int(est_100m)//60}:{int(est_100m)%60:02d}) → {classify_time(int(age), '100m Freestyle', est_100m)}\n"
+                profile_info += f"  Estimated 200m race time: {est_200m:.0f}s ({int(est_200m)//60}:{int(est_200m)%60:02d}) → {classify_time(int(age), '200m Freestyle', est_200m)}\n"
+                profile_info += f"  Estimated 400m race time: {est_400m:.0f}s ({int(est_400m)//60}:{int(est_400m)%60:02d}) → {classify_time(int(age), '400m Freestyle', est_400m)}\n"
     except Exception:
         pass
     
@@ -957,7 +1063,8 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
         "and official Masters Swimming time standards for their age group.\n\n"
         "CRITICAL: CSS pace is a TRAINING pace (threshold), NOT a race time. "
         "Race times are typically 3-8 seconds per 100m faster than CSS depending on distance. "
-        "When comparing to standards, use the ESTIMATED RACE TIMES provided, not the raw CSS pace.\n\n"
+        "When comparing to standards, use the ESTIMATED RACE TIMES and PRE-COMPUTED CLASSIFICATIONS provided. "
+        "Do NOT do your own time arithmetic or conversions — use the pre-computed values exactly as given.\n\n"
         "When the swimmer's time standards table is provided, use THOSE EXACT NUMBERS for comparisons. "
         "Do not invent or estimate different times — reference the table directly.\n\n"
         "Provide insightful, specific analysis based on the data. Identify trends, strengths, "
