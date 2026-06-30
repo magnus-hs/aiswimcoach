@@ -36,7 +36,7 @@ export function ResetPasswordPage() {
         setToken(data.token);
       }
       setStep('reset');
-      setSuccess(`Reset token generated: ${data.token || 'check your email'}`);
+      setSuccess('A reset token has been sent to your email. Enter it below with your new password.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed');
     } finally {

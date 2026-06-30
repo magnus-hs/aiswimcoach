@@ -380,11 +380,10 @@ def _handle_reset_request(event: dict[str, Any]) -> dict[str, Any]:
         logger.error("Failed to store reset token: %s", exc)
         return _error_response(500, "Failed to generate reset token")
     
-    # In production, this would be emailed. For now, log it.
+    # In production, this would be emailed.
     logger.info("Reset token for %s: %s (expires %s)", email, token, expiry.isoformat())
     
-    # Return token in response for testing (remove in production)
-    return http_200_dict({"message": "Reset token generated", "token": token})
+    return http_200_dict({"message": "Reset token generated"})
 
 
 def _handle_reset_password(event: dict[str, Any]) -> dict[str, Any]:
