@@ -115,11 +115,6 @@ export function AICoachChat({ currentSession, externalPrompt }: AICoachChatProps
           )}
         </div>
       )}
-
-      <p className="ai-chat__disclaimer">
-        Comparisons use British Masters Swimming & World Aquatics time standards (2024/2025 season).
-        Standards are updated annually and may change in the next version of AI Swim Coach.
-      </p>
     </section>
   );
 }

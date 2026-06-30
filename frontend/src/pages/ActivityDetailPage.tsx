@@ -165,13 +165,13 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
     return (
       <div className="activity-detail__sections">
         <SessionSummary session={data.session} />
-        {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         <AICoachChat currentSession={{
           total_distance_m: data.session.total_distance_m,
           pace: (data as any).metrics?.pace,
           swolf: (data as any).metrics?.swolf,
           stroke_rate: (data as any).metrics?.stroke_rate,
         }} />
+        {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         <HRZonesCard hrZones={data.hr_zones ?? null} />
         <HRTimeGraph
           hrTimeseries={data.hr_timeseries}
