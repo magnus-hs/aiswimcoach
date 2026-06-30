@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import './AICoachChat.css';
 
 interface AICoachChatProps {
@@ -9,6 +9,8 @@ interface AICoachChatProps {
     swolf?: number;
     stroke_rate?: number;
   } | null;
+  /** Externally set prompt (from parent clicking an example) */
+  externalPrompt?: string;
 }
 
 interface Message {
@@ -16,20 +18,21 @@ interface Message {
   text: string;
 }
 
-const QUICK_PROMPTS = [
-  'How did this session go compared to my recent ones?',
-  'What should I focus on next session?',
-  'How do I compare to others in my age group?',
-];
-
 /**
  * AI coaching chat — interactive analysis of current session and historical trends.
  * Clicking a suggestion populates the input box for the user to edit or send.
  */
-export function AICoachChat({ currentSession }: AICoachChatProps) {
+export function AICoachChat({ currentSession, externalPrompt }: AICoachChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // When an external prompt is set (from clicking an example), populate the input
+  useEffect(() => {
+    if (externalPrompt) {
+      setInput(externalPrompt);
+    }
+  }, [externalPrompt]);
 
   const sendMessage = async (prompt: string) => {
     if (!prompt.trim() || loading) return;
@@ -93,19 +96,6 @@ export function AICoachChat({ currentSession }: AICoachChatProps) {
           Send
         </button>
       </form>
-
-      <div className="ai-chat__prompts">
-        {QUICK_PROMPTS.map((prompt, i) => (
-          <button
-            key={i}
-            className="ai-chat__prompt-btn"
-            onClick={() => setInput(prompt)}
-            disabled={loading}
-          >
-            {prompt}
-          </button>
-        ))}
-      </div>
 
       {messages.length > 0 && (
         <div className="ai-chat__messages">

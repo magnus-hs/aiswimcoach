@@ -80,23 +80,31 @@
   margin: 0 0 var(--space-3);
 }
 
-.ai-analysis-page__examples ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.ai-analysis-page__example-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-.ai-analysis-page__examples li {
+.ai-analysis-page__example-btn {
+  text-align: left;
   font-size: var(--font-size-sm);
   color: var(--color-text);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
   background: var(--color-gray-50);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-gray-200);
   border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
   font-style: italic;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ai-analysis-page__example-btn:hover {
+  background: hsl(215, 30%, 95%);
+  border-left-color: var(--color-primary-dark);
+  color: var(--color-primary);
 }
 
 .ai-analysis-page__chat-section {
