@@ -270,6 +270,7 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
     splits: list[LengthSplit] = []
     stroke_counts: dict[str, int] = {}
     length_number = 0
+    prev_timestamp = None
 
     for record in fitfile.get_messages("length"):
         data = {f.name: f.value for f in record}
@@ -277,7 +278,6 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
         # Check for rest intervals (length_type == 1 means "idle")
         length_type = data.get("length_type")
         if length_type is not None:
-            # length_type can be an int or string
             lt_str = str(length_type).lower()
             if lt_str in ("1", "idle"):
                 # Capture rest duration and attach to preceding split
@@ -301,6 +301,30 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
         strokes = int(total_strokes) if total_strokes is not None else 0
         avg_hr_val = data.get("avg_heart_rate")
         avg_hr = int(avg_hr_val) if avg_hr_val is not None and avg_hr_val > 0 else None
+
+        # Detect rest from timestamp gaps (when no explicit idle records exist)
+        current_timestamp = data.get("timestamp")
+        if prev_timestamp is not None and current_timestamp is not None and splits:
+            try:
+                gap = (current_timestamp - prev_timestamp).total_seconds()
+                # Sum of elapsed times for lengths sharing the previous timestamp
+                # If gap > sum of their elapsed times + a small buffer, there's rest
+                # Simpler: if timestamp changed and gap > current length time + 5s, it's a new set
+                if gap > float(elapsed) + 5 and splits[-1].rest_after_seconds is None:
+                    rest_duration = gap - float(elapsed)
+                    if rest_duration > 3:  # At least 3 seconds to count as rest
+                        splits[-1] = LengthSplit(
+                            length_number=splits[-1].length_number,
+                            time_seconds=splits[-1].time_seconds,
+                            stroke=splits[-1].stroke,
+                            strokes=splits[-1].strokes,
+                            rest_after_seconds=round(rest_duration, 2),
+                            avg_hr=splits[-1].avg_hr,
+                        )
+            except (TypeError, AttributeError):
+                pass
+
+        prev_timestamp = current_timestamp
 
         splits.append(LengthSplit(
             length_number=length_number,
