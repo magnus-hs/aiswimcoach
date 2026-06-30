@@ -141,7 +141,13 @@ export function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-card__header">
-          <span className="auth-card__icon" aria-hidden="true">🏊</span>
+          <span className="auth-card__icon" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="24" cy="16" r="8" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
+              <path d="M8 42 C8 32, 16 26, 24 26 C32 26, 40 32, 40 42" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeLinecap="round"/>
+              <path d="M30 38 C33 35, 38 36, 40 34" fill="none" stroke="var(--color-secondary)" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </span>
           <h1 className="auth-card__title">Welcome Back</h1>
           <p className="auth-card__subtitle">Sign in to continue to AI Swim Coach</p>
         </div>

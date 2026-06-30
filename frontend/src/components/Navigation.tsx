@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import './Navigation.css';
 
 interface NavigationProps {
@@ -13,6 +14,7 @@ interface NavigationProps {
 export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps) {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   return (
     <header className="nav">
@@ -103,6 +105,13 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
                 onClick={() => { setProfileMenuOpen(false); navigate('/css'); }}
               >
                 Critical Swim Speed
+              </button>
+              <button
+                className="nav__dropdown-item nav__dropdown-item--logout"
+                role="menuitem"
+                onClick={() => { setProfileMenuOpen(false); logout(); navigate('/login'); }}
+              >
+                Log Out
               </button>
             </div>
           )}
