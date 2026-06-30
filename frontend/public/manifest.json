@@ -1,6 +1,6 @@
 {
   "name": "AI Swim Coach",
-  "short_name": "SwimCoach",
+  "short_name": "AI Swim Coach",
   "description": "Upload swim FIT files and get AI coaching, analytics, and training load analysis",
   "start_url": "/",
   "display": "standalone",
