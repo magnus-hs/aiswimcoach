@@ -132,6 +132,7 @@ export function ProfilePage() {
         nationality: nationality.trim(),
         locality: locality.trim(),
         ability_level: abilityLevel as 'beginner' | 'intermediate' | 'advanced' | 'elite',
+        date_of_birth: dateOfBirth || undefined,
       };
 
       // Save profile

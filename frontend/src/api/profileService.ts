@@ -8,6 +8,7 @@ export interface UserProfile {
   nationality: string;
   locality: string;
   ability_level: 'beginner' | 'intermediate' | 'advanced' | 'elite';
+  date_of_birth?: string;
 }
 
 /**
