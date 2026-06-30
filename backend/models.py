@@ -547,3 +547,4 @@ class FullResponse:
     hr_zones: HRZonesData | None = None
     ability_assessment: AbilityAssessment | None = None
     session_id: str | None = None
+    hr_timeseries: list | None = None

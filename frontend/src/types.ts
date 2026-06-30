@@ -75,6 +75,7 @@ export interface FullResponse {
   hr_zones?: HRZonesData;
   ability_assessment?: AbilityAssessment;
   session_id?: string;
+  hr_timeseries?: { t: number; hr: number }[] | null;
 }
 
 /**

@@ -119,13 +119,14 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
     hr_zones?: SessionDetail['hr_zones'] | FullResponse['hr_zones'];
     ability_assessment?: SessionDetail['ability_assessment'] | FullResponse['ability_assessment'];
     training_plan?: SessionDetail['training_plan'];
+    hr_timeseries?: { t: number; hr: number }[] | null;
   }) {
     return (
       <div className="activity-detail__sections">
         <SessionSummary session={data.session} />
         {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         <HRZonesCard hrZones={data.hr_zones ?? null} />
-        <HRTimeGraph hrTimeseries={(data as any).hr_timeseries} />
+        <HRTimeGraph hrTimeseries={data.hr_timeseries} />
         {data.coaching && data.coaching.tips && data.coaching.tips.length > 0 && (
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
         )}
@@ -165,6 +166,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
             hr_zones: sessionDetail.hr_zones,
             ability_assessment: sessionDetail.ability_assessment,
             training_plan: sessionDetail.training_plan,
+            hr_timeseries: sessionDetail.hr_timeseries,
           })}
         </>
       )}
@@ -202,6 +204,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
                 coaching: uploadResult.coaching,
                 hr_zones: uploadResult.hr_zones,
                 ability_assessment: uploadResult.ability_assessment,
+                hr_timeseries: uploadResult.hr_timeseries,
               })}
             </>
           )}

@@ -491,6 +491,28 @@ def _handle_file_upload(event: dict[str, Any], context: Any) -> dict[str, Any]:
     hr_zones = None
     hr_timeseries = None
     
+    # Extract HR time series from FIT file (independent of profile/age)
+    try:
+        hr_samples = extract_heart_rate_data(fit_bytes)
+        if hr_samples and len(hr_samples) > 2:
+            start_ts = hr_samples[0][0]
+            hr_timeseries = []
+            last_added_sec = -10  # force first point
+            for ts, hr in hr_samples:
+                elapsed_sec = (ts - start_ts).total_seconds()
+                if elapsed_sec - last_added_sec >= 5:
+                    hr_timeseries.append({"t": round(elapsed_sec, 0), "hr": hr})
+                    last_added_sec = elapsed_sec
+            # Always include last point
+            last_ts, last_hr = hr_samples[-1]
+            final_sec = (last_ts - start_ts).total_seconds()
+            if final_sec > last_added_sec:
+                hr_timeseries.append({"t": round(final_sec, 0), "hr": last_hr})
+            logger.info("HR timeseries extracted: %d points", len(hr_timeseries))
+    except (HRDataError, Exception) as exc:
+        logger.warning("HR timeseries extraction failed: %s", exc)
+        hr_samples = []
+    
     # Check if user is authenticated
     auth_context = event.get("auth_context")
     if auth_context:
@@ -504,36 +526,15 @@ def _handle_file_upload(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 # If profile exists and has age, calculate HR zones
                 if profile and profile.age:
                     try:
-                        # Extract heart rate data from FIT file
-                        hr_samples = extract_heart_rate_data(fit_bytes)
-                        
                         # Calculate HR zones if we have heart rate data
                         if hr_samples:
                             hr_zones = calculate_hr_zones(hr_samples, profile.age)
                             logger.info("HR zones calculated successfully for user %s", user_id)
-                            
-                            # Build downsampled HR time series for the graph
-                            # Convert to relative seconds from session start, sample every ~5s
-                            if len(hr_samples) > 2:
-                                start_ts = hr_samples[0][0]
-                                hr_timeseries = []
-                                last_added_sec = -10  # force first point
-                                for ts, hr in hr_samples:
-                                    elapsed_sec = (ts - start_ts).total_seconds()
-                                    if elapsed_sec - last_added_sec >= 5:
-                                        hr_timeseries.append({"t": round(elapsed_sec, 0), "hr": hr})
-                                        last_added_sec = elapsed_sec
-                                # Always include last point
-                                last_ts, last_hr = hr_samples[-1]
-                                final_sec = (last_ts - start_ts).total_seconds()
-                                if final_sec > last_added_sec:
-                                    hr_timeseries.append({"t": round(final_sec, 0), "hr": last_hr})
                         else:
                             logger.info("No heart rate data found in FIT file for user %s", user_id)
                     
                     except (HRDataError, ValueError) as exc:
                         # HR zone calculation failed - log and continue without HR zones
-                        # Requirement 12.1: Handle calculation failure gracefully
                         logger.warning("HR zone calculation failed for user %s: %s", user_id, exc)
                     
                 else:
@@ -638,6 +639,7 @@ def _handle_file_upload(event: dict[str, Any], context: Any) -> dict[str, Any]:
         hr_zones=hr_zones,
         ability_assessment=ability_assessment,
         session_id=session_id,
+        hr_timeseries=hr_timeseries,
     )
     return http_200(full_response)
 

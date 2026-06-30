@@ -174,9 +174,29 @@
   .grouped-splits__row {
     gap: var(--space-2);
     padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    flex-wrap: wrap;
   }
 
   .grouped-splits__stroke {
     display: none;
+  }
+
+  .grouped-splits__pace {
+    display: none;
+  }
+
+  .grouped-splits__cumulative {
+    font-size: 10px;
+  }
+
+  .grouped-splits__detail {
+    padding-left: var(--space-3);
+    overflow-x: auto;
+  }
+
+  .grouped-splits__detail-table {
+    font-size: var(--font-size-xs);
+    min-width: 400px;
   }
 }
