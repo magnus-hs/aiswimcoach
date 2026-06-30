@@ -9,6 +9,8 @@ import { HRZonesCard } from '../components/HRZonesCard';
 import { HRTimeGraph } from '../components/HRTimeGraph';
 import { SwolfChart } from '../components/SwolfChart';
 import { EfficiencyCurve } from '../components/EfficiencyCurve';
+import { StrokeMetricsCharts } from '../components/StrokeMetricsCharts';
+import { SessionStatsBlock } from '../components/SessionStatsBlock';
 import { TrainingLoadChart } from '../components/TrainingLoadChart';
 import { AICoachChat } from '../components/AICoachChat';
 import { CoachingResult } from '../components/CoachingResult';
@@ -178,6 +180,15 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
         />
         {data.splits && data.splits.length > 0 && <SwolfChart splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         {data.splits && data.splits.length > 0 && <EfficiencyCurve splits={data.splits} poolLengthM={data.session.pool_length_m} />}
+        {data.splits && data.splits.length > 0 && <StrokeMetricsCharts splits={data.splits} poolLengthM={data.session.pool_length_m} />}
+        {data.splits && data.splits.length > 0 && (
+          <SessionStatsBlock
+            splits={data.splits}
+            poolLengthM={data.session.pool_length_m}
+            totalDistanceM={data.session.total_distance_m}
+            totalTimeSeconds={data.session.total_time_seconds}
+          />
+        )}
         {data.splits && data.splits.length > 0 && <TrainingLoadChart splits={data.splits} poolLengthM={data.session.pool_length_m} cssPace={cssPace} />}
         {data.coaching && data.coaching.tips && data.coaching.tips.length > 0 && (
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
