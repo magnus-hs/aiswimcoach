@@ -54,22 +54,10 @@ export function HRZonesCard({ hrZones }: HRZonesCardProps) {
   // Extract zone data into an array for easier iteration
   const zones = [
     {
-      number: 1,
-      seconds: hrZones.zone_1_seconds,
-      percent: hrZones.zone_1_percent,
-      bounds: hrZones.zone_boundaries[1],
-    },
-    {
-      number: 2,
-      seconds: hrZones.zone_2_seconds,
-      percent: hrZones.zone_2_percent,
-      bounds: hrZones.zone_boundaries[2],
-    },
-    {
-      number: 3,
-      seconds: hrZones.zone_3_seconds,
-      percent: hrZones.zone_3_percent,
-      bounds: hrZones.zone_boundaries[3],
+      number: 5,
+      seconds: hrZones.zone_5_seconds,
+      percent: hrZones.zone_5_percent,
+      bounds: hrZones.zone_boundaries[5],
     },
     {
       number: 4,
@@ -78,10 +66,22 @@ export function HRZonesCard({ hrZones }: HRZonesCardProps) {
       bounds: hrZones.zone_boundaries[4],
     },
     {
-      number: 5,
-      seconds: hrZones.zone_5_seconds,
-      percent: hrZones.zone_5_percent,
-      bounds: hrZones.zone_boundaries[5],
+      number: 3,
+      seconds: hrZones.zone_3_seconds,
+      percent: hrZones.zone_3_percent,
+      bounds: hrZones.zone_boundaries[3],
+    },
+    {
+      number: 2,
+      seconds: hrZones.zone_2_seconds,
+      percent: hrZones.zone_2_percent,
+      bounds: hrZones.zone_boundaries[2],
+    },
+    {
+      number: 1,
+      seconds: hrZones.zone_1_seconds,
+      percent: hrZones.zone_1_percent,
+      bounds: hrZones.zone_boundaries[1],
     },
   ];
 
