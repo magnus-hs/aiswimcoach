@@ -12,7 +12,11 @@ from __future__ import annotations
 import dataclasses
 import json
 import logging
+import os
+from decimal import Decimal
 from typing import Any
+
+import boto3
 
 from multipart_parser import ParseError as MultipartParseError  # noqa: E402
 from multipart_parser import parse_multipart
@@ -769,7 +773,6 @@ def _handle_save_css(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _error_response(400, "css_pace_per_100m must be a positive number")
 
     table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
-    from decimal import Decimal
     try:
         table = boto3.resource("dynamodb").Table(table_name)
         table.update_item(
