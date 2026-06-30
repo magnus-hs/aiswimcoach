@@ -11,6 +11,7 @@ import { SwolfChart } from '../components/SwolfChart';
 import { EfficiencyCurve } from '../components/EfficiencyCurve';
 import { StrokeMetricsCharts } from '../components/StrokeMetricsCharts';
 import { SessionStatsBlock } from '../components/SessionStatsBlock';
+import { SetSummary } from '../components/SetSummary';
 import { TrainingLoadChart } from '../components/TrainingLoadChart';
 import { AICoachChat } from '../components/AICoachChat';
 import { CoachingResult } from '../components/CoachingResult';
@@ -171,6 +172,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
           swolf: (data as any).metrics?.swolf,
           stroke_rate: (data as any).metrics?.stroke_rate,
         }} />
+        {data.splits && data.splits.length > 0 && <SetSummary splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         <HRZonesCard hrZones={data.hr_zones ?? null} />
         <HRTimeGraph
