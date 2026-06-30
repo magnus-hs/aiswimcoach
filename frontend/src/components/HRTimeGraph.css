@@ -11,7 +11,42 @@
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text);
-  margin: 0 0 var(--space-3);
+  margin: 0;
+}
+
+.hr-time-graph__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.hr-time-graph__toggle {
+  display: flex;
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.hr-time-graph__toggle-btn {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.hr-time-graph__toggle-btn--active {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.hr-time-graph__toggle-btn:not(.hr-time-graph__toggle-btn--active):hover {
+  background: var(--color-gray-100);
 }
 
 .hr-time-graph__summary {

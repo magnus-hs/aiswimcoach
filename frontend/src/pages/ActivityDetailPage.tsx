@@ -126,7 +126,11 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
         <SessionSummary session={data.session} />
         {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         <HRZonesCard hrZones={data.hr_zones ?? null} />
-        <HRTimeGraph hrTimeseries={data.hr_timeseries} />
+        <HRTimeGraph
+          hrTimeseries={data.hr_timeseries}
+          totalDistanceM={data.session.total_distance_m}
+          totalTimeSeconds={data.session.total_time_seconds}
+        />
         {data.coaching && data.coaching.tips && data.coaching.tips.length > 0 && (
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
         )}
