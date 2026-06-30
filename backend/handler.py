@@ -605,9 +605,9 @@ def _handle_file_upload(event: dict[str, Any], context: Any) -> dict[str, Any]:
                         math.isfinite(metrics.stroke_rate)):
                         
                         try:
-                            # Compute average metrics from last 10 sessions + current for form-based assessment
+                            # Compute average metrics from last 3 sessions + current for form-based assessment
                             from models import Metrics as MetricsClass
-                            recent_sessions = get_user_sessions(user_id)[:9]  # Last 9 + current = 10
+                            recent_sessions = get_user_sessions(user_id)[:2]  # Last 2 + current = 3
                             
                             paces = [metrics.pace]
                             swolfs = [metrics.swolf]
