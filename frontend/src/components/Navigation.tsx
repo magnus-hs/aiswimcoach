@@ -81,13 +81,6 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
               <button
                 className="nav__dropdown-item"
                 role="menuitem"
-                onClick={() => { setProfileMenuOpen(false); onProfileClick?.(); }}
-              >
-                Edit Profile
-              </button>
-              <button
-                className="nav__dropdown-item"
-                role="menuitem"
                 onClick={() => { setProfileMenuOpen(false); navigate('/ability'); }}
               >
                 Ability Assessment
@@ -105,6 +98,13 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
                 onClick={() => { setProfileMenuOpen(false); navigate('/css'); }}
               >
                 Critical Swim Speed
+              </button>
+              <button
+                className="nav__dropdown-item"
+                role="menuitem"
+                onClick={() => { setProfileMenuOpen(false); onProfileClick?.(); }}
+              >
+                Edit Profile
               </button>
               <button
                 className="nav__dropdown-item nav__dropdown-item--logout"
