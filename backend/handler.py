@@ -98,6 +98,10 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_verify(event)
     elif path == "/auth/user" and http_method == "GET":
         return _handle_get_user_info(event, context)
+    elif path == "/auth/reset-request" and http_method == "POST":
+        return _handle_reset_request(event)
+    elif path == "/auth/reset-password" and http_method == "POST":
+        return _handle_reset_password(event)
     
     # Profile routes (auth required)
     elif path == "/profile" and http_method == "POST":
@@ -320,6 +324,132 @@ def _handle_verify(event: dict[str, Any]) -> dict[str, Any]:
     except Exception as exc:
         logger.error("Token verification failed: %s", exc)
         return _error_response(500, "Token verification failed")
+
+
+def _handle_reset_request(event: dict[str, Any]) -> dict[str, Any]:
+    """Handle POST /auth/reset-request — generate a reset token for the user."""
+    import random
+    import string
+    
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return _error_response(400, "Invalid JSON body")
+    
+    email = body.get("email", "").strip().lower()
+    if not email:
+        return _error_response(400, "Email is required")
+    
+    # Look up user by email
+    users_table = os.environ.get("USERS_TABLE", "ai-swim-coach-users")
+    table = boto3.resource("dynamodb").Table(users_table)
+    
+    try:
+        response = table.query(
+            IndexName="email-index",
+            KeyConditionExpression=boto3.dynamodb.conditions.Key("email").eq(email),
+        )
+        items = response.get("Items", [])
+    except Exception as exc:
+        logger.error("Reset request lookup failed: %s", exc)
+        # Don't reveal whether user exists
+        return http_200_dict({"message": "If an account exists, a reset token has been generated"})
+    
+    if not items:
+        # Don't reveal whether user exists
+        return http_200_dict({"message": "If an account exists, a reset token has been generated"})
+    
+    # Generate a 6-digit token
+    token = ''.join(random.choices(string.digits, k=6))
+    
+    # Store token with 15-min expiry
+    from datetime import datetime, timezone, timedelta
+    expiry = datetime.now(tz=timezone.utc) + timedelta(minutes=15)
+    
+    user_item = items[0]
+    try:
+        table.update_item(
+            Key={"user_id": user_item["user_id"]},
+            UpdateExpression="SET reset_token = :t, reset_token_expiry = :e",
+            ExpressionAttributeValues={
+                ":t": token,
+                ":e": expiry.isoformat(),
+            },
+        )
+    except Exception as exc:
+        logger.error("Failed to store reset token: %s", exc)
+        return _error_response(500, "Failed to generate reset token")
+    
+    # In production, this would be emailed. For now, log it.
+    logger.info("Reset token for %s: %s (expires %s)", email, token, expiry.isoformat())
+    
+    # Return token in response for testing (remove in production)
+    return http_200_dict({"message": "Reset token generated", "token": token})
+
+
+def _handle_reset_password(event: dict[str, Any]) -> dict[str, Any]:
+    """Handle POST /auth/reset-password — verify token and set new password."""
+    from auth import hash_password
+    
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return _error_response(400, "Invalid JSON body")
+    
+    email = body.get("email", "").strip().lower()
+    token = body.get("token", "").strip()
+    new_password = body.get("new_password", "")
+    
+    if not email or not token or not new_password:
+        return _error_response(400, "Email, token, and new_password are required")
+    
+    if len(new_password) < 8:
+        return _error_response(400, "Password must be at least 8 characters")
+    
+    # Look up user
+    users_table = os.environ.get("USERS_TABLE", "ai-swim-coach-users")
+    table = boto3.resource("dynamodb").Table(users_table)
+    
+    try:
+        response = table.query(
+            IndexName="email-index",
+            KeyConditionExpression=boto3.dynamodb.conditions.Key("email").eq(email),
+        )
+        items = response.get("Items", [])
+    except Exception as exc:
+        logger.error("Reset password lookup failed: %s", exc)
+        return _error_response(500, "Password reset failed")
+    
+    if not items:
+        return _error_response(400, "Invalid email or token")
+    
+    user_item = items[0]
+    stored_token = user_item.get("reset_token")
+    stored_expiry = user_item.get("reset_token_expiry")
+    
+    if not stored_token or stored_token != token:
+        return _error_response(400, "Invalid or expired reset token")
+    
+    # Check expiry
+    from datetime import datetime, timezone
+    if stored_expiry:
+        expiry = datetime.fromisoformat(stored_expiry)
+        if datetime.now(tz=timezone.utc) > expiry:
+            return _error_response(400, "Reset token has expired")
+    
+    # Update password and clear token
+    hashed = hash_password(new_password)
+    try:
+        table.update_item(
+            Key={"user_id": user_item["user_id"]},
+            UpdateExpression="SET password_hash = :p REMOVE reset_token, reset_token_expiry",
+            ExpressionAttributeValues={":p": hashed},
+        )
+    except Exception as exc:
+        logger.error("Password update failed: %s", exc)
+        return _error_response(500, "Password reset failed")
+    
+    return http_200_dict({"message": "Password reset successfully"})
 
 
 @require_auth

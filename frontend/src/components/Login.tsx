@@ -144,6 +144,11 @@ export function Login() {
 
         <div className="auth-card__footer">
           <p className="auth-card__footer-text">
+            <a href="/reset-password" className="auth-card__link">
+              Forgot your password?
+            </a>
+          </p>
+          <p className="auth-card__footer-text">
             Don't have an account?{' '}
             <a href="/register" className="auth-card__link">
               Sign up
