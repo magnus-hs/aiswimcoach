@@ -142,6 +142,12 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
       <div className="activity-detail__sections">
         <SessionSummary session={data.session} />
         {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} />}
+        <AICoachChat currentSession={{
+          total_distance_m: data.session.total_distance_m,
+          pace: (data as any).metrics?.pace,
+          swolf: (data as any).metrics?.swolf,
+          stroke_rate: (data as any).metrics?.stroke_rate,
+        }} />
         <HRZonesCard hrZones={data.hr_zones ?? null} />
         <HRTimeGraph
           hrTimeseries={data.hr_timeseries}
@@ -154,12 +160,6 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
         {data.coaching && data.coaching.tips && data.coaching.tips.length > 0 && (
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
         )}
-        <AICoachChat currentSession={{
-          total_distance_m: data.session.total_distance_m,
-          pace: (data as any).metrics?.pace,
-          swolf: (data as any).metrics?.swolf,
-          stroke_rate: (data as any).metrics?.stroke_rate,
-        }} />
         <AbilityAssessmentCard assessment={data.ability_assessment ?? null} />
         {data.training_plan && <TrainingPlanResult plan={data.training_plan} />}
       </div>

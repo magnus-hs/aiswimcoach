@@ -14,6 +14,7 @@ import { NewPlanPage } from './pages/NewPlanPage';
 import { PersonalBestsPage } from './pages/PersonalBestsPage';
 import { AbilityAssessmentPage } from './pages/AbilityAssessmentPage';
 import { CSSPage } from './pages/CSSPage';
+import { AIAnalysisPage } from './pages/AIAnalysisPage';
 import { PlanDetailView } from './components/PlanDetailView';
 
 /**
@@ -130,6 +131,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CSSPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ai-coach"
+            element={
+              <ProtectedRoute>
+                <AIAnalysisPage />
               </ProtectedRoute>
             }
           />

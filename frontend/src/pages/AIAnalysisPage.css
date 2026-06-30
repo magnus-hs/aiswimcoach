@@ -1,0 +1,114 @@
+.ai-analysis-page {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+.ai-analysis-page__heading {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-3);
+}
+
+.ai-analysis-page__intro {
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-relaxed);
+  margin: 0 0 var(--space-6);
+  max-width: 40rem;
+}
+
+.ai-analysis-page__what-it-does {
+  margin-bottom: var(--space-6);
+}
+
+.ai-analysis-page__what-it-does h2 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-4);
+}
+
+.ai-analysis-page__capabilities {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.ai-analysis-page__capability {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-subtle);
+}
+
+.ai-analysis-page__capability-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.ai-analysis-page__capability h3 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-1);
+}
+
+.ai-analysis-page__capability p {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-relaxed);
+  margin: 0;
+}
+
+.ai-analysis-page__examples {
+  margin-bottom: var(--space-6);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+}
+
+.ai-analysis-page__examples h2 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-3);
+}
+
+.ai-analysis-page__examples ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ai-analysis-page__examples li {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-primary);
+  font-style: italic;
+}
+
+.ai-analysis-page__chat-section {
+  /* The AICoachChat component provides its own card styling */
+}
+
+@media (max-width: 767px) {
+  .ai-analysis-page__capabilities {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-analysis-page {
+    padding: var(--space-4) var(--space-3);
+  }
+}
