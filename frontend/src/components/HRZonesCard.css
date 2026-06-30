@@ -107,3 +107,36 @@
   min-width: 3rem;
   text-align: right;
 }
+
+/* Mobile responsive */
+@media (max-width: 599px) {
+  .hr-zones-card {
+    padding: var(--space-3);
+  }
+
+  .hr-zones-card__item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .hr-zones-card__item-header {
+    gap: var(--space-2);
+  }
+
+  .hr-zones-card__item-stats {
+    width: 100%;
+    justify-content: flex-end;
+    gap: var(--space-3);
+  }
+
+  .hr-zones-card__zone-range {
+    font-size: 10px;
+  }
+
+  .hr-zones-card__zone-label {
+    font-size: var(--font-size-xs);
+    min-width: auto;
+  }
+}
