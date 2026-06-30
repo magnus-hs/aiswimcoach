@@ -1,0 +1,55 @@
+/* SwolfChart — Technique degradation over session */
+
+.swolf-chart {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+}
+
+.swolf-chart__heading {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-3);
+}
+
+.swolf-chart__summary {
+  display: flex;
+  gap: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.swolf-chart__stat {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.swolf-chart__stat strong {
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.swolf-chart__stat--warn strong {
+  color: var(--color-error);
+}
+
+.swolf-chart__chart {
+  width: 100%;
+}
+
+.swolf-chart__insight {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-error);
+  background: hsl(0, 60%, 97%);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+}
+
+@media (max-width: 599px) {
+  .swolf-chart__summary {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+}

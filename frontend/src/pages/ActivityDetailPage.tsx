@@ -7,6 +7,8 @@ import { SessionSummary } from '../components/SessionSummary';
 import { GroupedSplitsTable } from '../components/GroupedSplitsTable';
 import { HRZonesCard } from '../components/HRZonesCard';
 import { HRTimeGraph } from '../components/HRTimeGraph';
+import { SwolfChart } from '../components/SwolfChart';
+import { EfficiencyCurve } from '../components/EfficiencyCurve';
 import { CoachingResult } from '../components/CoachingResult';
 import { AbilityAssessmentCard } from '../components/AbilityAssessmentCard';
 import { TrainingPlanResult } from '../components/TrainingPlanResult';
@@ -131,6 +133,8 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
           totalDistanceM={data.session.total_distance_m}
           totalTimeSeconds={data.session.total_time_seconds}
         />
+        {data.splits && data.splits.length > 0 && <SwolfChart splits={data.splits} poolLengthM={data.session.pool_length_m} />}
+        {data.splits && data.splits.length > 0 && <EfficiencyCurve splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         {data.coaching && data.coaching.tips && data.coaching.tips.length > 0 && (
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
         )}
