@@ -176,6 +176,7 @@ function DetailRows({
         <thead>
           <tr>
             <th>#</th>
+            <th>Rep #</th>
             <th>Time</th>
             <th>Cum. Time</th>
             <th>Strokes</th>
@@ -188,6 +189,7 @@ function DetailRows({
           {group.splits.map((split, i) => (
             <tr key={split.length_number}>
               <td>{split.length_number}</td>
+              <td>{i + 1}/{group.splits.length}</td>
               <td>{split.time_seconds.toFixed(1)}s</td>
               <td className="grouped-splits__cum-cell">{formatTime(cumTimes[i])}</td>
               <td>{split.strokes}</td>
