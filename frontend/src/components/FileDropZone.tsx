@@ -4,8 +4,10 @@ import { validateFile } from '../utils/validateFile';
 
 export interface FileDropZoneProps {
   onFileAccepted: (file: File) => void;
+  onFilesAccepted?: (files: File[]) => void;
   onFileRejected: (reason: string) => void;
   disabled?: boolean;
+  multiple?: boolean;
 }
 
 /**
@@ -18,8 +20,10 @@ export interface FileDropZoneProps {
  */
 export function FileDropZone({
   onFileAccepted,
+  onFilesAccepted,
   onFileRejected,
   disabled = false,
+  multiple = true,
 }: FileDropZoneProps) {
   const [announcement, setAnnouncement] = useState('');
 
@@ -29,18 +33,32 @@ export function FileDropZone({
         return;
       }
 
-      const file = acceptedFiles[0];
-      const result = validateFile(file);
+      // Validate all files
+      const validFiles: File[] = [];
+      for (const file of acceptedFiles) {
+        const result = validateFile(file);
+        if (result.valid) {
+          validFiles.push(file);
+        } else {
+          setAnnouncement(`File rejected: ${result.reason}`);
+          onFileRejected(result.reason);
+          return;
+        }
+      }
 
-      if (result.valid) {
-        setAnnouncement(`File ${file.name} accepted. Upload starting.`);
-        onFileAccepted(file);
-      } else {
-        setAnnouncement(`File rejected: ${result.reason}`);
-        onFileRejected(result.reason);
+      if (validFiles.length > 1 && onFilesAccepted) {
+        setAnnouncement(`${validFiles.length} files accepted. Upload starting.`);
+        onFilesAccepted(validFiles);
+      } else if (validFiles.length >= 1) {
+        setAnnouncement(`File ${validFiles[0].name} accepted. Upload starting.`);
+        if (onFilesAccepted && validFiles.length > 0) {
+          onFilesAccepted(validFiles);
+        } else {
+          onFileAccepted(validFiles[0]);
+        }
       }
     },
-    [onFileAccepted, onFileRejected],
+    [onFileAccepted, onFilesAccepted, onFileRejected],
   );
 
   const onDropRejected = useCallback(() => {
@@ -54,23 +72,23 @@ export function FileDropZone({
     onDropRejected,
     accept: { 'application/octet-stream': ['.fit'] },
     disabled,
-    multiple: false,
+    multiple,
   });
 
   return (
     <div>
       <div
         {...getRootProps()}
-        aria-label="File upload drop zone. Accepts .fit files only."
+        aria-label="File upload drop zone. Accepts .fit files."
         className={`dropzone${isDragActive ? ' dropzone--active' : ''}${disabled ? ' dropzone--disabled' : ''}`}
       >
         <input {...getInputProps()} />
         {disabled ? (
           <p>Upload in progress…</p>
         ) : isDragActive ? (
-          <p>Drop your .fit file here…</p>
+          <p>Drop your .fit file(s) here…</p>
         ) : (
-          <p>Drop your .fit file here, or click to select</p>
+          <p>Drop your .fit file(s) here, or click to select</p>
         )}
       </div>
       <div aria-live="polite" aria-atomic="true" className="sr-only">

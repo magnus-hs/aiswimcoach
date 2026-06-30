@@ -123,6 +123,29 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
     }
   }, []);
 
+  const handleFilesAccepted = useCallback(async (files: File[]) => {
+    setUploading(true);
+    setUploadError(null);
+    let lastResult = null;
+    let uploadCount = 0;
+
+    for (const file of files) {
+      try {
+        lastResult = await uploadFitFile(file);
+        uploadCount++;
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : `Upload failed for ${file.name}`;
+        setUploadError(`${uploadCount}/${files.length} uploaded. Error: ${message}`);
+        break;
+      }
+    }
+
+    if (lastResult) {
+      setUploadResult(lastResult);
+    }
+    setUploading(false);
+  }, []);
+
   const handleFileRejected = useCallback((reason: string) => {
     setUploadError(reason);
   }, []);
@@ -207,6 +230,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
               <h1 className="activity-detail__heading">Upload Activity</h1>
               <FileDropZone
                 onFileAccepted={handleFileAccepted}
+                onFilesAccepted={handleFilesAccepted}
                 onFileRejected={handleFileRejected}
                 disabled={uploading}
               />
