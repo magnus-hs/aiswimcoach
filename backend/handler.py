@@ -938,23 +938,32 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
         if current_session.get("stroke_rate"):
             session_detail += f"- Stroke rate: {current_session['stroke_rate']:.1f} spm\n"
     
-    css_info = f"\nCSS (threshold) pace: {css_pace:.1f}s/100m\n" if css_pace else ""
+    css_info = ""
+    if css_pace:
+        css_info = (
+            f"\nCSS (threshold/training) pace: {css_pace:.1f}s/100m "
+            f"({int(css_pace)//60}:{int(css_pace)%60:02d}/100m)\n"
+            f"IMPORTANT: CSS is a TRAINING pace, not a race time. "
+            f"Estimated race times from this CSS:\n"
+            f"  - 100m race: ~{css_pace - 5:.0f}s ({int((css_pace-5)//60)}:{int((css_pace-5)%60):02d})\n"
+            f"  - 200m race: ~{(css_pace - 2) * 2:.0f}s ({int(((css_pace-2)*2)//60)}:{int(((css_pace-2)*2)%60):02d})\n"
+            f"  - 400m race: ~{(css_pace + 2) * 4:.0f}s ({int(((css_pace+2)*4)//60)}:{int(((css_pace+2)*4)%60):02d})\n"
+        )
     
     # Call Bedrock
     system_prompt = (
         "You are an elite competitive swim coach analysing a swimmer's training data.\n"
-        "You have access to their full session history, current session details, profile, and CSS pace.\n"
+        "You have access to their full session history, current session details, profile, CSS pace, "
+        "and official Masters Swimming time standards for their age group.\n\n"
+        "CRITICAL: CSS pace is a TRAINING pace (threshold), NOT a race time. "
+        "Race times are typically 3-8 seconds per 100m faster than CSS depending on distance. "
+        "When comparing to standards, use the ESTIMATED RACE TIMES provided, not the raw CSS pace.\n\n"
+        "When the swimmer's time standards table is provided, use THOSE EXACT NUMBERS for comparisons. "
+        "Do not invent or estimate different times — reference the table directly.\n\n"
         "Provide insightful, specific analysis based on the data. Identify trends, strengths, "
         "weaknesses, and give concrete advice on how to improve and reach their targets.\n\n"
-        "When asked about comparisons to others in their age group, use your knowledge of:\n"
-        "- Masters Swimming time standards (FINA/World Aquatics points)\n"
-        "- Typical performance bands for recreational, club, county, regional, and national swimmers\n"
-        "- Age-graded performance tables for swimming\n"
-        "Provide honest, specific comparisons like percentile estimates and what level their times "
-        "correspond to (e.g., 'Your 100m pace of 1:25 is approximately top 30% for male 40-44 age group "
-        "in Masters Swimming').\n\n"
         "Keep your response concise (2-4 paragraphs) but data-driven. Reference specific numbers "
-        "from their sessions when making points.\n"
+        "from their sessions and the standards table when making points.\n"
         "Do not use markdown formatting — respond in plain text with line breaks for readability."
     )
     
