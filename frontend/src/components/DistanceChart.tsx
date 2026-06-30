@@ -5,24 +5,28 @@ import {
   YAxis,
   ResponsiveContainer,
   Tooltip,
+  Cell,
 } from 'recharts';
 import './DistanceChart.css';
 
 export interface DistanceChartPoint {
   label: string;
   distance: number;
+  startDate?: string;  // ISO date for filtering
+  endDate?: string;    // ISO date for filtering
 }
 
 interface DistanceChartProps {
   data: DistanceChartPoint[];
   height?: number;
+  onBarClick?: (point: DistanceChartPoint) => void;
 }
 
 /**
  * Compact bar chart showing distance over time periods.
  * Used in the sidebar to visualize weekly/monthly/yearly distance.
  */
-export function DistanceChart({ data, height = 100 }: DistanceChartProps) {
+export function DistanceChart({ data, height = 100, onBarClick }: DistanceChartProps) {
   if (data.length === 0) {
     return null;
   }
@@ -39,10 +43,21 @@ export function DistanceChart({ data, height = 100 }: DistanceChartProps) {
     return `${value}`;
   };
 
+  const handleClick = (barData: any) => {
+    if (onBarClick && barData?.activePayload?.[0]?.payload) {
+      onBarClick(barData.activePayload[0].payload as DistanceChartPoint);
+    }
+  };
+
   return (
     <div className="distance-chart" aria-label="Distance chart">
       <ResponsiveContainer width="100%" height={height}>
-        <BarChart data={data} margin={{ top: 4, right: 4, left: -10, bottom: 0 }}>
+        <BarChart
+          data={data}
+          margin={{ top: 4, right: 4, left: -10, bottom: 0 }}
+          onClick={onBarClick ? handleClick : undefined}
+          style={onBarClick ? { cursor: 'pointer' } : undefined}
+        >
           <XAxis
             dataKey="label"
             tick={{ fontSize: 10, fill: 'var(--color-text-muted)' }}
@@ -73,7 +88,11 @@ export function DistanceChart({ data, height = 100 }: DistanceChartProps) {
             dataKey="distance"
             fill="var(--color-primary)"
             radius={[2, 2, 0, 0]}
-          />
+          >
+            {onBarClick && data.map((_, idx) => (
+              <Cell key={idx} cursor="pointer" />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>

@@ -18,6 +18,7 @@ export interface SidebarProps {
   weeklyDistanceChart: DistanceChartPoint[];
   monthlyDistanceChart: DistanceChartPoint[];
   yearlyDistanceChart: DistanceChartPoint[];
+  onBarClick?: (point: DistanceChartPoint) => void;
 }
 
 /**
@@ -44,6 +45,7 @@ export function Sidebar({
   weeklyDistanceChart,
   monthlyDistanceChart,
   yearlyDistanceChart,
+  onBarClick,
 }: SidebarProps) {
   const formattedDistance = formatDistance(totalDistanceMeters);
   const formattedTime = formatDuration(totalTimeSeconds);
@@ -90,19 +92,19 @@ export function Sidebar({
       <div className="sidebar__chart-section">
         <h3 className="sidebar__section-title">Distance This Week</h3>
         <span className="sidebar__section-value">{formatDistance(distanceThisWeekMeters)}</span>
-        <DistanceChart data={weeklyDistanceChart} height={90} />
+        <DistanceChart data={weeklyDistanceChart} height={90} onBarClick={onBarClick} />
       </div>
 
       <div className="sidebar__chart-section">
         <h3 className="sidebar__section-title">Distance This Month</h3>
         <span className="sidebar__section-value">{formatDistance(distanceThisMonthMeters)}</span>
-        <DistanceChart data={monthlyDistanceChart} height={90} />
+        <DistanceChart data={monthlyDistanceChart} height={90} onBarClick={onBarClick} />
       </div>
 
       <div className="sidebar__chart-section">
         <h3 className="sidebar__section-title">Distance Year to Date</h3>
         <span className="sidebar__section-value">{formatDistance(distanceYTDMeters)}</span>
-        <DistanceChart data={yearlyDistanceChart} height={90} />
+        <DistanceChart data={yearlyDistanceChart} height={90} onBarClick={onBarClick} />
       </div>
 
       <div className="sidebar__totals">

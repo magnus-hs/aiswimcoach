@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getUserSessions, SessionSummary } from '../api/sessionService';
 import { Sidebar } from '../components/Sidebar';
+import { DistanceChartPoint } from '../components/DistanceChart';
 import { ActivityFeed } from '../components/ActivityFeed';
 import './DashboardPage.css';
 
@@ -55,6 +56,7 @@ export function DashboardPage() {
   const [error, setError] = useState<string | undefined>(undefined);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const [memberSince, setMemberSince] = useState('');
+  const [dateFilter, setDateFilter] = useState<{ start: string; end: string; label: string } | null>(null);
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
@@ -146,7 +148,7 @@ export function DashboardPage() {
           return d >= dayStart && d < dayEnd;
         })
         .reduce((sum, s) => sum + s.total_distance_meters, 0);
-      return { label, distance };
+      return { label, distance, startDate: dayStart.toISOString(), endDate: dayEnd.toISOString() };
     });
   })();
 
@@ -174,7 +176,7 @@ export function DashboardPage() {
           return sd >= start && sd < end;
         })
         .reduce((sum, s) => sum + s.total_distance_meters, 0);
-      return { label, distance };
+      return { label, distance, startDate: start.toISOString(), endDate: end.toISOString() };
     });
   })();
 
@@ -191,12 +193,27 @@ export function DashboardPage() {
           return sd >= monthStart && sd < monthEnd;
         })
         .reduce((sum, s) => sum + s.total_distance_meters, 0);
-      return { label, distance };
+      return { label, distance, startDate: monthStart.toISOString(), endDate: monthEnd.toISOString() };
     });
   })();
 
   // Derive display name from email (use part before @)
   const displayName = email ? email.split('@')[0] : 'Swimmer';
+
+  // Handle bar click on distance charts — filter feed to that period
+  const handleBarClick = useCallback((point: DistanceChartPoint) => {
+    if (point.startDate && point.endDate && point.distance > 0) {
+      setDateFilter({ start: point.startDate, end: point.endDate, label: point.label });
+    }
+  }, []);
+
+  // Filter sessions by date range if a bar was clicked
+  const filteredSessions = dateFilter
+    ? sessions.filter(s => {
+        const d = new Date(s.session_date);
+        return d >= new Date(dateFilter.start) && d < new Date(dateFilter.end);
+      })
+    : sessions;
 
   return (
     <div className="dashboard">
@@ -218,6 +235,7 @@ export function DashboardPage() {
           weeklyDistanceChart={weeklyDistanceChart}
           monthlyDistanceChart={monthlyDistanceChart}
           yearlyDistanceChart={yearlyDistanceChart}
+          onBarClick={handleBarClick}
         />
       </aside>
       <section className="dashboard__feed">
@@ -227,8 +245,19 @@ export function DashboardPage() {
             + New Activity
           </Link>
         </div>
+        {dateFilter && (
+          <div className="dashboard__filter-bar">
+            <span className="dashboard__filter-label">Showing: {dateFilter.label}</span>
+            <button
+              className="dashboard__filter-clear"
+              onClick={() => setDateFilter(null)}
+            >
+              ✕ Clear
+            </button>
+          </div>
+        )}
         <ActivityFeed
-          sessions={sessions}
+          sessions={filteredSessions}
           loading={loading}
           error={error}
           onRetry={fetchSessions}
