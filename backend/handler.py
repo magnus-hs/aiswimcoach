@@ -102,6 +102,10 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_get_profile(event, context)
     elif path == "/profile/picture" and http_method == "POST":
         return _handle_upload_profile_picture(event, context)
+    elif path == "/profile/css" and http_method == "POST":
+        return _handle_save_css(event, context)
+    elif path == "/profile/css" and http_method == "GET":
+        return _handle_get_css(event, context)
     
     # Structured training plans routes (auth required)
     elif path == "/plans/generate" and http_method == "POST":
@@ -749,6 +753,54 @@ def _handle_get_profile(event: dict[str, Any], context: Any) -> dict[str, Any]:
     except Exception as exc:
         logger.error("Profile retrieval failed for user %s: %s", user_id, exc)
         return _error_response(500, "Internal server error")
+
+
+@require_auth
+def _handle_save_css(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle POST /profile/css — save CSS pace."""
+    user_id = event["auth_context"]["user_id"]
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return _error_response(400, "Invalid JSON body")
+
+    css_pace = body.get("css_pace_per_100m")
+    if css_pace is None or not isinstance(css_pace, (int, float)) or css_pace <= 0:
+        return _error_response(400, "css_pace_per_100m must be a positive number")
+
+    table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
+    from decimal import Decimal
+    try:
+        table = boto3.resource("dynamodb").Table(table_name)
+        table.update_item(
+            Key={"user_id": user_id},
+            UpdateExpression="SET css_pace_per_100m = :val",
+            ExpressionAttributeValues={":val": Decimal(str(round(float(css_pace), 1)))},
+        )
+        return http_200_dict({"message": "CSS saved", "css_pace_per_100m": float(css_pace)})
+    except Exception as exc:
+        logger.error("Failed to save CSS for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to save CSS")
+
+
+@require_auth
+def _handle_get_css(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /profile/css — retrieve CSS pace."""
+    user_id = event["auth_context"]["user_id"]
+    table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
+    try:
+        table = boto3.resource("dynamodb").Table(table_name)
+        response = table.get_item(
+            Key={"user_id": user_id},
+            ProjectionExpression="css_pace_per_100m",
+        )
+        item = response.get("Item", {})
+        css_val = item.get("css_pace_per_100m")
+        css_pace = float(css_val) if css_val is not None else None
+        return http_200_dict({"css_pace_per_100m": css_pace})
+    except Exception as exc:
+        logger.error("Failed to get CSS for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to retrieve CSS")
 
 
 @require_auth

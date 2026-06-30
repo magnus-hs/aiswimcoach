@@ -9,6 +9,7 @@ import { HRZonesCard } from '../components/HRZonesCard';
 import { HRTimeGraph } from '../components/HRTimeGraph';
 import { SwolfChart } from '../components/SwolfChart';
 import { EfficiencyCurve } from '../components/EfficiencyCurve';
+import { TrainingLoadChart } from '../components/TrainingLoadChart';
 import { CoachingResult } from '../components/CoachingResult';
 import { AbilityAssessmentCard } from '../components/AbilityAssessmentCard';
 import { TrainingPlanResult } from '../components/TrainingPlanResult';
@@ -42,6 +43,19 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadResult, setUploadResult] = useState<FullResponse | null>(null);
+  const [cssPace, setCssPace] = useState<number | null>(null);
+
+  // Fetch user's CSS pace
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+    fetch(`${import.meta.env.VITE_API_ENDPOINT}/profile/css`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.css_pace_per_100m) setCssPace(data.css_pace_per_100m); })
+      .catch(() => {});
+  }, []);
 
   const isUploadMode = mode === 'upload';
 
@@ -135,6 +149,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
         />
         {data.splits && data.splits.length > 0 && <SwolfChart splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         {data.splits && data.splits.length > 0 && <EfficiencyCurve splits={data.splits} poolLengthM={data.session.pool_length_m} />}
+        {data.splits && data.splits.length > 0 && <TrainingLoadChart splits={data.splits} poolLengthM={data.session.pool_length_m} cssPace={cssPace} />}
         {data.coaching && data.coaching.tips && data.coaching.tips.length > 0 && (
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
         )}

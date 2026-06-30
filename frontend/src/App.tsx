@@ -13,6 +13,7 @@ import { TrainingPlansPage } from './pages/TrainingPlansPage';
 import { NewPlanPage } from './pages/NewPlanPage';
 import { PersonalBestsPage } from './pages/PersonalBestsPage';
 import { AbilityAssessmentPage } from './pages/AbilityAssessmentPage';
+import { CSSPage } from './pages/CSSPage';
 import { PlanDetailView } from './components/PlanDetailView';
 
 /**
@@ -121,6 +122,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <AbilityAssessmentPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/css"
+            element={
+              <ProtectedRoute>
+                <CSSPage />
               </ProtectedRoute>
             }
           />
