@@ -462,17 +462,20 @@ def _derive_all_pbs_from_history(user_id: str) -> dict[str, dict]:
         if stroke not in fastest_by_stroke or pace_float < fastest_by_stroke[stroke]:
             fastest_by_stroke[stroke] = pace_float
 
-    # Build derived PB entries (100m events)
+    # Build derived PB entries for multiple distances
+    # Standard distances to derive: 50m, 100m, 400m, 750m, 2000m
+    derive_distances = [50, 100, 400, 750, 2000]
+    
     derived: dict[str, dict] = {}
     for stroke, fastest_pace in fastest_by_stroke.items():
-        event_name = f"100m {stroke}"
-        # For 100m, the time equals the pace
-        time_seconds = fastest_pace * PACE_DEGRADATION_FACTORS[100]
-        derived[event_name] = {
-            "event": event_name,
-            "time_seconds": time_seconds,
-            "source": "derived",
-            "updated_at": _now_iso(),
-        }
+        for distance in derive_distances:
+            event_name = f"{distance}m {stroke}"
+            time_seconds = _scale_pace_to_distance(fastest_pace, distance)
+            derived[event_name] = {
+                "event": event_name,
+                "time_seconds": round(time_seconds, 3),
+                "source": "derived",
+                "updated_at": _now_iso(),
+            }
 
     return derived
