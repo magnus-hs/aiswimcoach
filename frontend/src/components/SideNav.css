@@ -33,7 +33,7 @@
 }
 
 .sidenav__link--active {
-  background-color: hsla(38, 80%, 55%, 0.15);
+  background-color: hsla(210, 90%, 60%, 0.12);
   color: var(--color-primary);
   font-weight: var(--font-weight-semibold);
 }

@@ -4,11 +4,11 @@
  */
 
 :root {
-  /* Colors — Dark base with gold/amber accent */
-  --color-primary: hsl(38, 80%, 55%);
-  --color-primary-light: hsl(38, 70%, 65%);
-  --color-primary-dark: hsl(38, 85%, 42%);
-  --color-secondary: hsl(200, 40%, 55%);
+  /* Colors — Vibrant blue accent on dark */
+  --color-primary: hsl(210, 90%, 60%);
+  --color-primary-light: hsl(210, 80%, 72%);
+  --color-primary-dark: hsl(210, 95%, 45%);
+  --color-secondary: hsl(185, 60%, 55%);
 
   /* Dark neutrals */
   --color-gray-50: hsl(220, 15%, 13%);
