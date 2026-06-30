@@ -163,6 +163,13 @@ function DetailRows({
   startCumulative: number;
   hasHR: boolean;
 }) {
+  // Compute cumulative time within the set
+  let cumTime = 0;
+  const cumTimes = group.splits.map((split) => {
+    cumTime += split.time_seconds;
+    return cumTime;
+  });
+
   return (
     <div className="grouped-splits__detail">
       <table className="grouped-splits__detail-table">
@@ -170,10 +177,11 @@ function DetailRows({
           <tr>
             <th>#</th>
             <th>Time</th>
+            <th>Cum. Time</th>
             <th>Strokes</th>
             <th>Stroke</th>
             {hasHR && <th>HR</th>}
-            <th>Cum.</th>
+            <th>Cum. Dist</th>
           </tr>
         </thead>
         <tbody>
@@ -181,6 +189,7 @@ function DetailRows({
             <tr key={split.length_number}>
               <td>{split.length_number}</td>
               <td>{split.time_seconds.toFixed(1)}s</td>
+              <td className="grouped-splits__cum-cell">{cumTimes[i].toFixed(1)}s</td>
               <td>{split.strokes}</td>
               <td>{capitalize(split.stroke)}</td>
               {hasHR && <td>{split.avg_hr != null ? `${split.avg_hr}` : '—'}</td>}
