@@ -189,7 +189,7 @@ function DetailRows({
             <tr key={split.length_number}>
               <td>{split.length_number}</td>
               <td>{split.time_seconds.toFixed(1)}s</td>
-              <td className="grouped-splits__cum-cell">{cumTimes[i].toFixed(1)}s</td>
+              <td className="grouped-splits__cum-cell">{formatTime(cumTimes[i])}</td>
               <td>{split.strokes}</td>
               <td>{capitalize(split.stroke)}</td>
               {hasHR && <td>{split.avg_hr != null ? `${split.avg_hr}` : '—'}</td>}
