@@ -7,8 +7,8 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-3) var(--space-5);
-  background: var(--color-primary-dark);
-  box-shadow: var(--shadow-subtle);
+  background: hsl(220, 20%, 8%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -37,7 +37,7 @@
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
-  color: #ffffff;
+  color: var(--color-primary);
   line-height: 1;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -137,7 +137,8 @@
   top: 100%;
   right: 0;
   margin-top: var(--space-2);
-  background: var(--color-surface);
+  background: hsl(220, 15%, 16%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-elevated);
   min-width: 180px;
@@ -161,5 +162,5 @@
 }
 
 .nav__dropdown-item:hover {
-  background: var(--color-gray-100);
+  background: rgba(255, 255, 255, 0.06);
 }
