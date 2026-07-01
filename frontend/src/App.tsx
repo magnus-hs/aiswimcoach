@@ -18,6 +18,10 @@ import { AbilityAssessmentPage } from './pages/AbilityAssessmentPage';
 import { CSSPage } from './pages/CSSPage';
 import { GoalsPage } from './pages/GoalsPage';
 import { AIAnalysisPage } from './pages/AIAnalysisPage';
+import { TermsPage } from './pages/TermsPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { SupportPage } from './pages/SupportPage';
+import { FAQPage } from './pages/FAQPage';
 import { PlanDetailView } from './components/PlanDetailView';
 
 /**
@@ -64,6 +68,10 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/support" element={<SupportPage />} />
+          <Route path="/faq" element={<FAQPage />} />
 
           {/* Protected routes */}
           <Route
