@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-3) var(--space-5);
-  background: hsl(215, 45%, 13%);
+  background: hsl(215, 45%, 9%);
   box-shadow: 0 1px 0 rgba(120, 170, 255, 0.1);
   position: sticky;
   top: 0;
