@@ -42,6 +42,8 @@ from plan_generator import generate_multi_week_plan, PlanGenerationError
 from pb_resolver import save_personal_best, get_personal_bests, delete_personal_best, PBResolverError
 from plan_lifecycle import activate_plan, archive_plan
 from structured_plan_store import get_user_structured_plans, get_plan_by_id
+from http_headers import response_headers
+from rate_limit import check_rate_limit
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -80,30 +82,34 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     if http_method == "OPTIONS":
         return {
             "statusCode": 200,
-            "headers": {
-                "Access-Control-Allow-Origin": "*",
+            "headers": response_headers({
                 "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
                 "Access-Control-Allow-Headers": "Content-Type, Authorization",
-                "Access-Control-Max-Age": "86400"
-            },
+                "Access-Control-Max-Age": "86400",
+            }),
             "body": ""
         }
     
-    # Authentication routes (no auth required)
+    # Authentication routes (no auth required) — throttled to resist brute force.
     if path == "/auth/register" and http_method == "POST":
-        return _handle_register(event)
+        limited = _enforce_rate_limit(event, "register", 10, 900)
+        return limited or _handle_register(event)
     elif path == "/auth/login" and http_method == "POST":
-        return _handle_login(event)
+        limited = _enforce_rate_limit(event, "login", 10, 900)
+        return limited or _handle_login(event)
     elif path == "/auth/verify" and http_method == "GET":
         return _handle_verify(event)
     elif path == "/auth/user" and http_method == "GET":
         return _handle_get_user_info(event, context)
     elif path == "/auth/reset-request" and http_method == "POST":
-        return _handle_reset_request(event)
+        limited = _enforce_rate_limit(event, "reset-request", 5, 900)
+        return limited or _handle_reset_request(event)
     elif path == "/auth/reset-password" and http_method == "POST":
-        return _handle_reset_password(event)
+        limited = _enforce_rate_limit(event, "reset-password", 10, 900)
+        return limited or _handle_reset_password(event)
     elif path == "/auth/google" and http_method == "POST":
-        return _handle_google_auth(event)
+        limited = _enforce_rate_limit(event, "google", 20, 900)
+        return limited or _handle_google_auth(event)
     
     # Profile routes (auth required)
     elif path == "/profile" and http_method == "POST":
@@ -2257,14 +2263,36 @@ def _handle_get_session_by_id(
 # ---------------------------------------------------------------------------
 
 
+def _client_ip(event: dict[str, Any]) -> str:
+    """Best-effort client IP from the API Gateway proxy event."""
+    rc = event.get("requestContext") or {}
+    identity = rc.get("identity") or {}
+    ip = identity.get("sourceIp")
+    if ip:
+        return ip
+    headers = event.get("headers") or {}
+    xff = headers.get("X-Forwarded-For") or headers.get("x-forwarded-for") or ""
+    return (xff.split(",")[0].strip() or "unknown")
+
+
+def _enforce_rate_limit(event: dict[str, Any], action: str, limit: int, window: int):
+    """Return a 429 response if the caller has exceeded the limit, else None."""
+    ip = _client_ip(event)
+    if check_rate_limit(action, ip, limit, window):
+        return None
+    logger.warning("Rate limit exceeded for %s from %s", action, ip)
+    return {
+        "statusCode": 429,
+        "headers": response_headers({"Retry-After": str(window)}),
+        "body": json.dumps({"error": "Too many requests. Please try again later."}),
+    }
+
+
 def _error_response(status_code: int, message: str) -> dict[str, Any]:
     """Build an error response in the documented JSON format."""
     return {
         "statusCode": status_code,
-        "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-        },
+        "headers": response_headers(),
         "body": json.dumps({"error": message}),
     }
 
@@ -2273,10 +2301,7 @@ def http_200(response: Any) -> dict[str, Any]:
     """Return a successful response as a Lambda proxy response."""
     return {
         "statusCode": 200,
-        "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-        },
+        "headers": response_headers(),
         "body": json.dumps(dataclasses.asdict(response)),
     }
 
@@ -2285,9 +2310,6 @@ def http_200_dict(response: dict[str, Any]) -> dict[str, Any]:
     """Return a successful response from a dictionary as a Lambda proxy response."""
     return {
         "statusCode": 200,
-        "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-        },
+        "headers": response_headers(),
         "body": json.dumps(response),
     }

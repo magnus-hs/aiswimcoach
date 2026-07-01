@@ -70,7 +70,7 @@ def _assert_error_response(response: dict, status_code: int, error_substring: st
     """Assert the response is an error with the expected status and message."""
     assert response["statusCode"] == status_code
     assert response["headers"]["Content-Type"] == "application/json"
-    assert response["headers"]["Access-Control-Allow-Origin"] == "*"
+    assert response["headers"]["Access-Control-Allow-Origin"] == "https://main.d3qbayea55l8tl.amplifyapp.com"
     body = json.loads(response["body"])
     assert "error" in body
     assert error_substring in body["error"]
@@ -224,7 +224,7 @@ class TestSuccessPipeline:
 
         assert response["statusCode"] == 200
         assert response["headers"]["Content-Type"] == "application/json"
-        assert response["headers"]["Access-Control-Allow-Origin"] == "*"
+        assert response["headers"]["Access-Control-Allow-Origin"] == "https://main.d3qbayea55l8tl.amplifyapp.com"
 
         body = json.loads(response["body"])
         assert body["coaching"]["tips"] == ["Tip one", "Tip two", "Tip three"]
@@ -267,7 +267,7 @@ class TestHttp200Helper:
 
         assert response["statusCode"] == 200
         assert response["headers"]["Content-Type"] == "application/json"
-        assert response["headers"]["Access-Control-Allow-Origin"] == "*"
+        assert response["headers"]["Access-Control-Allow-Origin"] == "https://main.d3qbayea55l8tl.amplifyapp.com"
 
         body = json.loads(response["body"])
         assert body == {"tips": ["Tip one", "Tip two", "Tip three"], "drill": "Catch-up drill"}

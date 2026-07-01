@@ -16,6 +16,7 @@ from functools import wraps
 from typing import Any, Callable
 
 from auth import AuthenticationError, verify_token
+from http_headers import response_headers
 
 
 logger = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ def require_auth(handler_func: Callable) -> Callable:
             logger.warning("Missing Authorization header")
             return {
                 "statusCode": 401,
-                "headers": {"Content-Type": "application/json"},
+                "headers": response_headers(),
                 "body": json.dumps({"error": "Authorization header required"}),
             }
         
@@ -69,7 +70,7 @@ def require_auth(handler_func: Callable) -> Callable:
             logger.warning(f"Invalid Authorization header format: {auth_header}")
             return {
                 "statusCode": 401,
-                "headers": {"Content-Type": "application/json"},
+                "headers": response_headers(),
                 "body": json.dumps({"error": "Invalid Authorization header format. Expected: Bearer <token>"}),
             }
         
@@ -82,7 +83,7 @@ def require_auth(handler_func: Callable) -> Callable:
             logger.warning(f"Token verification failed: {e}")
             return {
                 "statusCode": 401,
-                "headers": {"Content-Type": "application/json"},
+                "headers": response_headers(),
                 "body": json.dumps({"error": str(e)}),
             }
         except ValueError as e:
@@ -90,14 +91,14 @@ def require_auth(handler_func: Callable) -> Callable:
             logger.error(f"Configuration error: {e}")
             return {
                 "statusCode": 500,
-                "headers": {"Content-Type": "application/json"},
+                "headers": response_headers(),
                 "body": json.dumps({"error": "Internal server error"}),
             }
         except Exception as e:
             logger.error(f"Unexpected error during token verification: {e}")
             return {
                 "statusCode": 500,
-                "headers": {"Content-Type": "application/json"},
+                "headers": response_headers(),
                 "body": json.dumps({"error": "Internal server error"}),
             }
         
