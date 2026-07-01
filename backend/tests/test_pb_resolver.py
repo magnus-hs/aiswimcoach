@@ -400,27 +400,33 @@ class TestGetPersonalBests:
 
         mock_session_table = MagicMock()
         mock_sessions.return_value = mock_session_table
-        # Session history shows a faster pace — both should be returned
+        # Session history with splits: a continuous 100m set (4×25m, no rest between)
         mock_session_table.query.return_value = {
             "Items": [
                 {
                     "stroke_type": "Freestyle",
                     "average_pace_per_100m": Decimal("60.0"),
                     "session_date": "2024-01-15T10:00:00Z",
+                    "pool_length_meters": 25,
+                    "splits": [
+                        {"length_number": 1, "time_seconds": Decimal("15.0"), "stroke": "freestyle", "strokes": 10},
+                        {"length_number": 2, "time_seconds": Decimal("15.0"), "stroke": "freestyle", "strokes": 10},
+                        {"length_number": 3, "time_seconds": Decimal("15.0"), "stroke": "freestyle", "strokes": 10},
+                        {"length_number": 4, "time_seconds": Decimal("15.0"), "stroke": "freestyle", "strokes": 10},
+                    ],
                 },
             ]
         }
 
         result = get_personal_bests("user1")
-        # Should have both manual AND derived entries for 100m Freestyle
-        freestyle_pbs = [pb for pb in result if pb["event"] == "100m Freestyle"]
-        assert len(freestyle_pbs) == 2
-        sources = {pb["source"] for pb in freestyle_pbs}
-        assert sources == {"manual", "derived"}
-        manual_pb = next(pb for pb in freestyle_pbs if pb["source"] == "manual")
-        derived_pb = next(pb for pb in freestyle_pbs if pb["source"] == "derived")
-        assert manual_pb["time_seconds"] == 65.5
-        assert derived_pb["time_seconds"] == 60.0
+        # Should have both manual AND derived entries for 100m Freestyle (actual 100m set from splits)
+        freestyle_pbs = [pb for pb in result if pb["event"] == "100m freestyle"]
+        manual_pbs = [pb for pb in result if pb["event"] == "100m Freestyle" and pb["source"] == "manual"]
+        assert len(manual_pbs) == 1
+        assert len(freestyle_pbs) == 1
+        assert freestyle_pbs[0]["source"] == "derived"
+        assert freestyle_pbs[0]["time_seconds"] == 60.0
+        assert manual_pbs[0]["time_seconds"] == 65.5
 
     @patch("pb_resolver._get_sessions_table")
     @patch("pb_resolver._get_profiles_table")

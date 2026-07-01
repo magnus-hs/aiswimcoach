@@ -35,14 +35,16 @@ _dynamodb_resource = None
 # Pace degradation factors: how much slower per-100m pace becomes at longer distances.
 # Key is target distance in meters, value is the scaling factor applied to the
 # fastest 100m pace to estimate the time for that distance.
-# For example, 200m uses factor 2.05 (not 2.0) to account for fatigue.
+# These are used as a FALLBACK only when splits are not available.
 PACE_DEGRADATION_FACTORS = {
-    50: 0.48,    # 50m is slightly faster than half of 100m pace
-    100: 1.0,    # baseline
-    200: 2.05,   # ~2.5% fatigue penalty
-    400: 4.20,   # ~5% fatigue penalty
-    800: 8.60,   # ~7.5% fatigue penalty
-    1500: 16.50, # ~10% fatigue penalty
+    50: 0.48,     # 50m is slightly faster than half of 100m pace
+    100: 1.0,     # baseline
+    200: 2.05,    # ~2.5% fatigue penalty
+    400: 4.20,    # ~5% fatigue penalty
+    750: 8.10,    # ~8% fatigue penalty
+    800: 8.60,    # ~7.5% fatigue penalty
+    1500: 16.50,  # ~10% fatigue penalty
+    2000: 22.40,  # ~12% fatigue penalty
 }
 
 
@@ -416,10 +418,17 @@ def _scale_pace_to_distance(pace_per_100m: float, distance_m: int) -> float:
 
 
 def _derive_all_pbs_from_history(user_id: str) -> dict[str, dict]:
-    """Derive PBs for all stroke types found in session history.
+    """Derive PBs from session history using actual continuous sets only.
 
-    Scans all sessions for the user, groups by stroke type, finds the
-    fastest pace per stroke, and derives a 100m PB for each.
+    Strategy: scan all sessions with stored splits and find sets (continuous
+    groups of same-stroke lengths unbroken by rest) whose total distance
+    exactly matches a target distance. Use the actual elapsed time of that
+    set as the PB. If no continuous set of the target distance has been swum,
+    NO derived PB is produced for that event — no extrapolation or estimation.
+
+    This means a 2000m PB only appears if the swimmer has actually done a
+    continuous 2000m swim, a 400m PB only if they've done a continuous 400m,
+    etc.
 
     Args:
         user_id: User identifier
@@ -432,50 +441,85 @@ def _derive_all_pbs_from_history(user_id: str) -> dict[str, dict]:
     try:
         response = sessions_table.query(
             KeyConditionExpression=Key("user_id").eq(user_id),
-            ProjectionExpression="stroke_type, average_pace_per_100m, session_date",
+            ProjectionExpression=(
+                "session_date, pool_length_meters, splits"
+            ),
         )
-    except ClientError as e:
-        # Non-fatal: return empty if we can't query history
+    except ClientError:
         return {}
 
     items = response.get("Items", [])
 
-    # Group fastest pace by stroke type
-    fastest_by_stroke: dict[str, float] = {}
+    # Target distances to look for.
+    derive_distances = [50, 100, 200, 400, 800, 1500, 2000]
+
+    # best_time[(distance, stroke)] = fastest elapsed time (seconds)
+    best_time: dict[tuple[int, str], float] = {}
+
     for item in items:
         session_date = item.get("session_date", "")
         if session_date.startswith("PLAN#") or session_date.startswith("MPLAN#"):
             continue
 
-        stroke = item.get("stroke_type", "")
-        if not stroke:
+        splits = item.get("splits")
+        if not splits or not isinstance(splits, list):
             continue
 
-        pace = item.get("average_pace_per_100m")
-        if pace is None:
-            continue
+        pool_length = int(item.get("pool_length_meters", 25))
 
-        pace_float = float(pace)
-        if pace_float <= 0:
-            continue
+        # Build continuous groups: same-stroke lengths unbroken by rest.
+        groups: list[list[dict]] = []
+        current_group: list[dict] = []
 
-        if stroke not in fastest_by_stroke or pace_float < fastest_by_stroke[stroke]:
-            fastest_by_stroke[stroke] = pace_float
+        for s in splits:
+            s_stroke = str(s.get("stroke", "unknown")).lower()
+            if current_group:
+                prev_stroke = str(current_group[0].get("stroke", "unknown")).lower()
+                if s_stroke != prev_stroke:
+                    groups.append(current_group)
+                    current_group = [s]
+                else:
+                    current_group.append(s)
+            else:
+                current_group.append(s)
 
-    # Build derived PB entries for multiple distances
-    # Standard distances to derive: 50m, 100m, 400m, 750m, 2000m
-    derive_distances = [50, 100, 400, 750, 2000]
-    
+            # If this length has rest_after, it ends the continuous group.
+            if s.get("rest_after_seconds") is not None and current_group:
+                groups.append(current_group)
+                current_group = []
+
+        if current_group:
+            groups.append(current_group)
+
+        # For each group, check if its distance matches any target exactly.
+        for group in groups:
+            if not group:
+                continue
+            group_stroke = str(group[0].get("stroke", "unknown"))
+            group_dist = len(group) * pool_length
+            group_time = sum(float(s.get("time_seconds", 0)) for s in group)
+
+            if group_time <= 0:
+                continue
+
+            for target in derive_distances:
+                if group_dist != target:
+                    continue
+                key = (target, group_stroke)
+                if key not in best_time or group_time < best_time[key]:
+                    best_time[key] = group_time
+
+    # Build derived PB entries (only for distances actually swum continuously).
     derived: dict[str, dict] = {}
-    for stroke, fastest_pace in fastest_by_stroke.items():
-        for distance in derive_distances:
-            event_name = f"{distance}m {stroke}"
-            time_seconds = _scale_pace_to_distance(fastest_pace, distance)
-            derived[event_name] = {
-                "event": event_name,
-                "time_seconds": round(time_seconds, 3),
-                "source": "derived",
-                "updated_at": _now_iso(),
-            }
+    now = _now_iso()
+
+    for (distance, stroke), time_seconds in best_time.items():
+        event_name = f"{distance}m {stroke}"
+        derived[event_name] = {
+            "event": event_name,
+            "time_seconds": round(time_seconds, 3),
+            "source": "derived",
+            "updated_at": now,
+        }
 
     return derived
