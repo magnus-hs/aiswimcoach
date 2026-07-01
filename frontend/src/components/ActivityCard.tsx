@@ -94,6 +94,7 @@ export function ActivityCard({
     splits && splits.length > 0
       ? summarizeSets(splits, poolLengthMeters && poolLengthMeters > 0 ? poolLengthMeters : 25)
       : '';
+  const sessionLines = setSummary ? setSummary.split(', ') : [];
 
   return (
     <article
@@ -127,10 +128,14 @@ export function ActivityCard({
         </div>
       </div>
 
-      {setSummary && (
+      {sessionLines.length > 0 && (
         <div className="activity-card__session">
           <span className="activity-card__session-label">Session</span>
-          <span className="activity-card__session-text">{setSummary}</span>
+          <span className="activity-card__session-lines">
+            {sessionLines.map((line, i) => (
+              <span key={i} className="activity-card__session-line">{line}</span>
+            ))}
+          </span>
         </div>
       )}
 
