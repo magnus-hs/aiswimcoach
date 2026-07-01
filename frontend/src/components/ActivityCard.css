@@ -99,6 +99,12 @@
   letter-spacing: 0.05em;
 }
 
+.activity-card__session-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+}
+
 .activity-card__session-lines {
   display: flex;
   flex-direction: column;
@@ -113,6 +119,11 @@
   font-weight: var(--font-weight-medium);
 }
 
+/* Show mobile (single-line) session variant by default; hide desktop one. */
+.activity-card__session--desktop {
+  display: none;
+}
+
 /* Touch devices: ensure tap target meets 44x44px minimum (Req 11.5) */
 @media (pointer: coarse) {
   .activity-card {
@@ -121,9 +132,19 @@
   }
 }
 
-/* Mobile: hide the stroke percentage breakdown, keep the session summary */
+/* Mobile: hide the stroke % ; show session as a single comma line */
 @media (max-width: 599px) {
   .activity-card__stroke {
+    display: none;
+  }
+  .activity-card__session--mobile {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .activity-card__session--desktop {
     display: none;
   }
 }
@@ -137,7 +158,12 @@
     gap: var(--space-6);
   }
 
-  .activity-card__session {
+  .activity-card__session--mobile {
+    display: none;
+  }
+
+  .activity-card__session--desktop {
+    display: flex;
     margin-top: 0;
     padding-top: 0;
     border-top: none;
