@@ -83,7 +83,15 @@ export function Register() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-card__header">
-          <span className="auth-card__icon" aria-hidden="true">🏊</span>
+          <span className="auth-card__icon" aria-hidden="true">
+            <svg width="56" height="28" viewBox="0 0 48 24" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="14" cy="12" rx="9" ry="7" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
+              <ellipse cx="34" cy="12" rx="9" ry="7" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
+              <path d="M23 10 C24 8, 24 8, 25 10" stroke="var(--color-primary)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+              <line x1="5" y1="11" x2="2" y2="11" stroke="var(--color-primary-light)" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="43" y1="11" x2="46" y2="11" stroke="var(--color-primary-light)" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </span>
           <h1 className="auth-card__title">Create Account</h1>
           <p className="auth-card__subtitle">Join AI Swim Coach to track your progress</p>
         </div>
