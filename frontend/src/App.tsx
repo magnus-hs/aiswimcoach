@@ -4,6 +4,7 @@ import { useAuth } from './hooks/useAuth';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Navigation } from './components/Navigation';
 import { SideNav } from './components/SideNav';
+import { Footer } from './components/Footer';
 import { ProfileModal } from './components/ProfileModal';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -166,6 +167,7 @@ function App() {
         </Routes>
       </main>
       </div>
+      {showNavigation && <Footer />}
       <ProfileModal
         isOpen={isProfileOpen}
         onClose={handleProfileClose}
