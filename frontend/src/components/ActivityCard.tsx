@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { StrokeBreakdownEntry } from '../api/sessionService';
-import { formatStrokeBreakdown } from '../utils/strokeBreakdown';
+import { strokeLabel } from '../utils/strokeBreakdown';
 import './ActivityCard.css';
 
 export interface ActivityCardProps {
@@ -79,10 +79,10 @@ export function ActivityCard({
     }
   };
 
-  const strokeDisplay =
+  const strokeLines =
     strokeBreakdown && strokeBreakdown.length > 0
-      ? formatStrokeBreakdown(strokeBreakdown)
-      : strokeType;
+      ? strokeBreakdown.map((b) => `${Math.round(b.percent)}% ${strokeLabel(b.stroke)}`)
+      : [strokeType];
 
   return (
     <article
@@ -91,11 +91,15 @@ export function ActivityCard({
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
-      aria-label={`${strokeDisplay} session on ${formatDate(sessionDate)}, ${totalDistanceMeters} meters`}
+      aria-label={`${strokeLines.join(', ')} session on ${formatDate(sessionDate)}, ${totalDistanceMeters} meters`}
     >
       <div className="activity-card__header">
         <span className="activity-card__date">{formatDate(sessionDate)}</span>
-        <span className="activity-card__stroke">{strokeDisplay}</span>
+        <span className="activity-card__stroke">
+          {strokeLines.map((line, i) => (
+            <span key={i} className="activity-card__stroke-line">{line}</span>
+          ))}
+        </span>
       </div>
 
       <div className="activity-card__distance">

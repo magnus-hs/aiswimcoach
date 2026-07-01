@@ -1,6 +1,6 @@
 import { SessionInfo } from '../types';
 import { StrokeBreakdownEntry } from '../api/sessionService';
-import { formatStrokeBreakdown } from '../utils/strokeBreakdown';
+import { strokeLabel } from '../utils/strokeBreakdown';
 import './SessionSummary.css';
 
 interface SessionSummaryProps {
@@ -40,10 +40,10 @@ function capitalize(s: string): string {
  * Validates: Requirements 25.1, 25.2
  */
 export function SessionSummary({ session, strokeBreakdown }: SessionSummaryProps) {
-  const strokeDisplay =
+  const strokeLines =
     strokeBreakdown && strokeBreakdown.length > 0
-      ? formatStrokeBreakdown(strokeBreakdown)
-      : capitalize(session.stroke);
+      ? strokeBreakdown.map((b) => `${Math.round(b.percent)}% ${strokeLabel(b.stroke)}`)
+      : [capitalize(session.stroke)];
   return (
     <section className="session-summary" aria-label="Session summary">
       <h2 className="session-summary__heading">Session Summary</h2>
@@ -66,7 +66,11 @@ export function SessionSummary({ session, strokeBreakdown }: SessionSummaryProps
         </div>
         <div className="session-summary__item">
           <span className="session-summary__label">Stroke</span>
-          <span className="session-summary__value">{strokeDisplay}</span>
+          <span className="session-summary__value">
+            {strokeLines.map((line, i) => (
+              <span key={i} className="session-summary__stroke-line">{line}</span>
+            ))}
+          </span>
         </div>
         <div className="session-summary__item">
           <span className="session-summary__label">Lengths</span>

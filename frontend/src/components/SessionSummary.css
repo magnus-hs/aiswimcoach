@@ -42,6 +42,10 @@
   line-height: var(--line-height-tight);
 }
 
+.session-summary__stroke-line {
+  display: block;
+}
+
 .session-summary__value--large {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
