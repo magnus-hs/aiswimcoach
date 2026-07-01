@@ -58,6 +58,8 @@ export function DashboardPage() {
   const [memberSince, setMemberSince] = useState('');
   const [dateFilter, setDateFilter] = useState<{ start: string; end: string; label: string } | null>(null);
   const [weeklyGoalM, setWeeklyGoalM] = useState<number | null>(null);
+  const [monthlyGoalM, setMonthlyGoalM] = useState<number | null>(null);
+  const [yearlyGoalM, setYearlyGoalM] = useState<number | null>(null);
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
@@ -91,6 +93,10 @@ export function DashboardPage() {
           const data = await response.json();
           const wd = data.goals?.weekly_distance_m;
           if (wd) setWeeklyGoalM(wd);
+          const md = data.goals?.monthly_distance_m;
+          if (md) setMonthlyGoalM(md);
+          const yd = data.goals?.yearly_distance_m;
+          if (yd) setYearlyGoalM(yd);
         }
       } catch {
         // Non-critical
@@ -259,6 +265,8 @@ export function DashboardPage() {
           yearlyDistanceChart={yearlyDistanceChart}
           onBarClick={handleBarClick}
           weeklyGoalMeters={weeklyGoalM}
+          monthlyGoalMeters={monthlyGoalM}
+          yearlyGoalMeters={yearlyGoalM}
         />
       </aside>
       <section className="dashboard__feed">

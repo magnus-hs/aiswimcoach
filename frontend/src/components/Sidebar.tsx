@@ -20,8 +20,23 @@ export interface SidebarProps {
   monthlyDistanceChart: DistanceChartPoint[];
   yearlyDistanceChart: DistanceChartPoint[];
   onBarClick?: (point: DistanceChartPoint) => void;
-  /** Optional weekly distance goal in metres (from the swimmer's Goals). */
+  /** Optional distance goals (metres) from the swimmer's Goals. */
   weeklyGoalMeters?: number | null;
+  monthlyGoalMeters?: number | null;
+  yearlyGoalMeters?: number | null;
+}
+
+/**
+ * Format a small goal-progress indicator, or null if no goal is set.
+ */
+function goalText(goalMeters: number | null | undefined, currentMeters: number): string | null {
+  if (!goalMeters || goalMeters <= 0) return null;
+  const pct = Math.round((currentMeters / goalMeters) * 100);
+  const remaining = Math.max(0, goalMeters - currentMeters);
+  if (pct >= 100) {
+    return `🎯 Goal reached — ${pct}% of ${formatDistance(goalMeters)}`;
+  }
+  return `🎯 ${pct}% of ${formatDistance(goalMeters)} goal — ${formatDistance(remaining)} to go`;
 }
 
 /**
@@ -50,20 +65,12 @@ export function Sidebar({
   yearlyDistanceChart,
   onBarClick,
   weeklyGoalMeters,
+  monthlyGoalMeters,
+  yearlyGoalMeters,
 }: SidebarProps) {
   const formattedDistance = formatDistance(totalDistanceMeters);
   const formattedTime = formatDuration(totalTimeSeconds);
   const [mobileExpanded, setMobileExpanded] = useState(false);
-
-  // Weekly distance goal progress (if a goal is set).
-  const weeklyGoalPct =
-    weeklyGoalMeters && weeklyGoalMeters > 0
-      ? Math.round((distanceThisWeekMeters / weeklyGoalMeters) * 100)
-      : null;
-  const weeklyGoalRemaining =
-    weeklyGoalMeters && weeklyGoalMeters > 0
-      ? Math.max(0, weeklyGoalMeters - distanceThisWeekMeters)
-      : 0;
 
   return (
     <aside className="sidebar" aria-label="Profile summary">
@@ -100,27 +107,28 @@ export function Sidebar({
         <h3 className="sidebar__section-title">Distance This Week</h3>
         <span className="sidebar__section-value">{formatDistance(distanceThisWeekMeters)}</span>
         <DistanceChart data={weeklyDistanceChart} height={90} onBarClick={onBarClick} />
+        {goalText(weeklyGoalMeters, distanceThisWeekMeters) && (
+          <p className="sidebar__goal-indicator">{goalText(weeklyGoalMeters, distanceThisWeekMeters)}</p>
+        )}
       </div>
 
       <div className="sidebar__chart-section">
         <h3 className="sidebar__section-title">Distance This Month</h3>
         <span className="sidebar__section-value">{formatDistance(distanceThisMonthMeters)}</span>
         <DistanceChart data={monthlyDistanceChart} height={90} onBarClick={onBarClick} />
+        {goalText(monthlyGoalMeters, distanceThisMonthMeters) && (
+          <p className="sidebar__goal-indicator">{goalText(monthlyGoalMeters, distanceThisMonthMeters)}</p>
+        )}
       </div>
 
       <div className="sidebar__chart-section">
         <h3 className="sidebar__section-title">Distance Year to Date</h3>
         <span className="sidebar__section-value">{formatDistance(distanceYTDMeters)}</span>
         <DistanceChart data={yearlyDistanceChart} height={90} onBarClick={onBarClick} />
+        {goalText(yearlyGoalMeters, distanceYTDMeters) && (
+          <p className="sidebar__goal-indicator">{goalText(yearlyGoalMeters, distanceYTDMeters)}</p>
+        )}
       </div>
-
-      {weeklyGoalPct != null && (
-        <p className="sidebar__goal-indicator">
-          {weeklyGoalPct >= 100
-            ? `🎯 Weekly goal smashed — ${weeklyGoalPct}% of ${formatDistance(weeklyGoalMeters!)}`
-            : `🎯 ${weeklyGoalPct}% of your ${formatDistance(weeklyGoalMeters!)} weekly goal — ${formatDistance(weeklyGoalRemaining)} to go`}
-        </p>
-      )}
 
       <div className="sidebar__stats" role="list" aria-label="Training statistics">
         <div className="sidebar__stat" role="listitem">

@@ -5,6 +5,8 @@ import './GoalsPage.css';
 interface Goals {
   focus?: string[];
   weekly_distance_m?: number;
+  monthly_distance_m?: number;
+  yearly_distance_m?: number;
   target_event?: string;
   target_time_seconds?: number;
   target_date?: string;
@@ -54,6 +56,20 @@ function weekStart(): Date {
   return d;
 }
 
+/** Start of the current month (local time). */
+function monthStart(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+}
+
+/** Start of the current year (local time). */
+function yearStart(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+}
+
+type Period = 'week' | 'month' | 'year';
+
 /**
  * Goals page — set qualitative and measurable swimming goals that steer the AI
  * coach's analysis and comparisons.
@@ -61,6 +77,9 @@ function weekStart(): Date {
 export function GoalsPage() {
   const [focus, setFocus] = useState<string[]>([]);
   const [weeklyKm, setWeeklyKm] = useState('');
+  const [monthlyKm, setMonthlyKm] = useState('');
+  const [yearlyKm, setYearlyKm] = useState('');
+  const [activePeriod, setActivePeriod] = useState<Period>('week');
   const [stroke, setStroke] = useState('Freestyle');
   const [distance, setDistance] = useState('100m');
   const [targetTime, setTargetTime] = useState('');
@@ -71,10 +90,12 @@ export function GoalsPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [weekDistance, setWeekDistance] = useState<number | null>(null);
+  const [monthDistance, setMonthDistance] = useState<number | null>(null);
+  const [yearDistance, setYearDistance] = useState<number | null>(null);
 
   useEffect(() => {
     loadGoals();
-    loadWeekDistance();
+    loadDistances();
   }, []);
 
   const loadGoals = async () => {
@@ -89,6 +110,8 @@ export function GoalsPage() {
       const g: Goals = data.goals || {};
       if (g.focus) setFocus(g.focus);
       if (g.weekly_distance_m) setWeeklyKm((g.weekly_distance_m / 1000).toString());
+      if (g.monthly_distance_m) setMonthlyKm((g.monthly_distance_m / 1000).toString());
+      if (g.yearly_distance_m) setYearlyKm((g.yearly_distance_m / 1000).toString());
       if (g.target_event) {
         const parts = g.target_event.split(' ');
         if (parts[0]) setDistance(parts[0]);
@@ -102,14 +125,24 @@ export function GoalsPage() {
     }
   };
 
-  const loadWeekDistance = async () => {
+  const loadDistances = async () => {
     try {
       const sessions = await getUserSessions();
-      const start = weekStart();
-      const total = sessions
-        .filter((s) => new Date(s.session_date) >= start)
-        .reduce((sum, s) => sum + s.total_distance_meters, 0);
-      setWeekDistance(total);
+      const ws = weekStart();
+      const ms = monthStart();
+      const ys = yearStart();
+      let week = 0;
+      let month = 0;
+      let year = 0;
+      for (const s of sessions) {
+        const d = new Date(s.session_date);
+        if (d >= ws) week += s.total_distance_meters;
+        if (d >= ms) month += s.total_distance_meters;
+        if (d >= ys) year += s.total_distance_meters;
+      }
+      setWeekDistance(week);
+      setMonthDistance(month);
+      setYearDistance(year);
     } catch {
       // non-critical
     }
@@ -127,14 +160,27 @@ export function GoalsPage() {
     const goals: Goals = {};
     if (focus.length > 0) goals.focus = focus;
 
-    if (weeklyKm.trim()) {
-      const km = Number(weeklyKm);
+    const parseKm = (val: string, label: string): number | null | 'error' => {
+      if (!val.trim()) return null;
+      const km = Number(val);
       if (!Number.isFinite(km) || km <= 0) {
-        setError('Weekly distance must be a positive number of km.');
-        return;
+        setError(`${label} goal must be a positive number of km.`);
+        return 'error';
       }
-      goals.weekly_distance_m = Math.round(km * 1000);
-    }
+      return Math.round(km * 1000);
+    };
+
+    const wk = parseKm(weeklyKm, 'Weekly');
+    if (wk === 'error') return;
+    if (wk) goals.weekly_distance_m = wk;
+
+    const mo = parseKm(monthlyKm, 'Monthly');
+    if (mo === 'error') return;
+    if (mo) goals.monthly_distance_m = mo;
+
+    const yr = parseKm(yearlyKm, 'Yearly');
+    if (yr === 'error') return;
+    if (yr) goals.yearly_distance_m = yr;
 
     if (targetTime.trim()) {
       const secs = parseTime(targetTime);
@@ -166,10 +212,16 @@ export function GoalsPage() {
     }
   };
 
-  const weeklyGoalM = weeklyKm.trim() ? Math.round(Number(weeklyKm) * 1000) : null;
-  const weeklyPct =
-    weeklyGoalM && weekDistance != null && weeklyGoalM > 0
-      ? Math.min(100, Math.round((weekDistance / weeklyGoalM) * 100))
+  const periodConfig: Record<Period, { label: string; km: string; setKm: (v: string) => void; distance: number | null; suffix: string }> = {
+    week: { label: 'Per Week', km: weeklyKm, setKm: setWeeklyKm, distance: weekDistance, suffix: 'this week' },
+    month: { label: 'Per Month', km: monthlyKm, setKm: setMonthlyKm, distance: monthDistance, suffix: 'this month' },
+    year: { label: 'Per Year', km: yearlyKm, setKm: setYearlyKm, distance: yearDistance, suffix: 'this year' },
+  };
+  const active = periodConfig[activePeriod];
+  const activeGoalM = active.km.trim() ? Math.round(Number(active.km) * 1000) : null;
+  const activePct =
+    activeGoalM && active.distance != null && activeGoalM > 0
+      ? Math.min(100, Math.round((active.distance / activeGoalM) * 100))
       : null;
 
   return (
@@ -204,30 +256,45 @@ export function GoalsPage() {
         </section>
 
         <section className="goals-page__card">
-          <h2>Weekly distance goal</h2>
-          <p className="goals-page__hint">A measurable target for how far you want to swim each week.</p>
+          <h2>Distance goals</h2>
+          <p className="goals-page__hint">Measurable targets for how far you want to swim. Set any or all.</p>
+          <div className="goals-page__tabs" role="tablist">
+            {(['week', 'month', 'year'] as Period[]).map((p) => (
+              <button
+                type="button"
+                key={p}
+                role="tab"
+                aria-selected={activePeriod === p}
+                className={`goals-page__tab ${activePeriod === p ? 'goals-page__tab--active' : ''}`}
+                onClick={() => setActivePeriod(p)}
+              >
+                {periodConfig[p].label}
+                {periodConfig[p].km.trim() && <span className="goals-page__tab-dot" aria-hidden="true">•</span>}
+              </button>
+            ))}
+          </div>
           <div className="goals-page__field">
-            <label htmlFor="weekly-km">Distance per week (km)</label>
+            <label htmlFor="period-km">Distance {active.label.toLowerCase()} (km)</label>
             <input
-              id="weekly-km"
+              id="period-km"
               type="number"
               min="0"
               step="0.5"
-              value={weeklyKm}
-              onChange={(e) => setWeeklyKm(e.target.value)}
+              value={active.km}
+              onChange={(e) => active.setKm(e.target.value)}
               placeholder="e.g. 10"
               className="goals-page__input"
             />
           </div>
-          {weeklyGoalM && weekDistance != null && (
+          {activeGoalM && active.distance != null && (
             <div className="goals-page__progress">
               <div className="goals-page__progress-label">
-                This week: {weekDistance}m of {weeklyGoalM}m ({weeklyPct}%)
+                {active.suffix.charAt(0).toUpperCase() + active.suffix.slice(1)}: {active.distance}m of {activeGoalM}m ({activePct}%)
               </div>
               <div className="goals-page__progress-bar">
                 <div
                   className="goals-page__progress-fill"
-                  style={{ width: `${weeklyPct ?? 0}%` }}
+                  style={{ width: `${activePct ?? 0}%` }}
                 />
               </div>
             </div>

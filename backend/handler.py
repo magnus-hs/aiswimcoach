@@ -1143,6 +1143,10 @@ def _goals_to_json(goals: dict | None) -> dict:
         out["focus"] = [str(x) for x in focus]
     if goals.get("weekly_distance_m") is not None:
         out["weekly_distance_m"] = int(goals["weekly_distance_m"])
+    if goals.get("monthly_distance_m") is not None:
+        out["monthly_distance_m"] = int(goals["monthly_distance_m"])
+    if goals.get("yearly_distance_m") is not None:
+        out["yearly_distance_m"] = int(goals["yearly_distance_m"])
     if goals.get("target_event"):
         out["target_event"] = str(goals["target_event"])
     if goals.get("target_time_seconds") is not None:
@@ -1179,6 +1183,24 @@ def _handle_save_goals(event: dict[str, Any], context: Any) -> dict[str, Any]:
             wdf = float(wd)
             if wdf > 0:
                 item["weekly_distance_m"] = Decimal(str(int(wdf)))
+        except (ValueError, TypeError):
+            pass
+
+    md = goals.get("monthly_distance_m")
+    if md is not None:
+        try:
+            mdf = float(md)
+            if mdf > 0:
+                item["monthly_distance_m"] = Decimal(str(int(mdf)))
+        except (ValueError, TypeError):
+            pass
+
+    yd = goals.get("yearly_distance_m")
+    if yd is not None:
+        try:
+            ydf = float(yd)
+            if ydf > 0:
+                item["yearly_distance_m"] = Decimal(str(int(ydf)))
         except (ValueError, TypeError):
             pass
 
@@ -1531,6 +1553,56 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
                 parts.append(
                     f"- Weekly distance goal: {int(wdf)}m ({wdf/1000:.1f} km). "
                     f"So far this week: {week_distance}m ({pct:.0f}% of goal).\n"
+                )
+            except (ValueError, TypeError):
+                pass
+
+        md = goals_data.get("monthly_distance_m")
+        if md is not None:
+            try:
+                mdf = float(md)
+                from datetime import datetime as _dt, timezone as _tz
+                now = _dt.now(tz=_tz.utc)
+                month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                month_distance = 0
+                for s in sessions:
+                    try:
+                        sd = _dt.fromisoformat(s.session_date.replace("Z", "+00:00"))
+                        if sd.tzinfo is None:
+                            sd = sd.replace(tzinfo=_tz.utc)
+                        if sd >= month_start:
+                            month_distance += s.total_distance_meters
+                    except (ValueError, AttributeError):
+                        pass
+                pct = (month_distance / mdf * 100) if mdf > 0 else 0
+                parts.append(
+                    f"- Monthly distance goal: {int(mdf)}m ({mdf/1000:.1f} km). "
+                    f"So far this month: {month_distance}m ({pct:.0f}% of goal).\n"
+                )
+            except (ValueError, TypeError):
+                pass
+
+        yd = goals_data.get("yearly_distance_m")
+        if yd is not None:
+            try:
+                ydf = float(yd)
+                from datetime import datetime as _dt, timezone as _tz
+                now = _dt.now(tz=_tz.utc)
+                year_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+                year_distance = 0
+                for s in sessions:
+                    try:
+                        sd = _dt.fromisoformat(s.session_date.replace("Z", "+00:00"))
+                        if sd.tzinfo is None:
+                            sd = sd.replace(tzinfo=_tz.utc)
+                        if sd >= year_start:
+                            year_distance += s.total_distance_meters
+                    except (ValueError, AttributeError):
+                        pass
+                pct = (year_distance / ydf * 100) if ydf > 0 else 0
+                parts.append(
+                    f"- Yearly distance goal: {int(ydf)}m ({ydf/1000:.1f} km). "
+                    f"So far this year: {year_distance}m ({pct:.0f}% of goal).\n"
                 )
             except (ValueError, TypeError):
                 pass

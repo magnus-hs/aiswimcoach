@@ -80,12 +80,50 @@
   line-height: 1;
 }
 
+.goals-page__tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.goals-page__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.goals-page__tab:hover {
+  color: var(--color-text);
+}
+
+.goals-page__tab--active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.goals-page__tab-dot {
+  color: var(--color-primary);
+  font-size: var(--font-size-base);
+  line-height: 1;
+}
+
 .goals-page__row {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4);
 }
-
 .goals-page__row .goals-page__field {
   flex: 1;
   min-width: 120px;
