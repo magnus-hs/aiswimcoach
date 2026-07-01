@@ -75,7 +75,8 @@ resource "aws_iam_role_policy" "lambda_permissions" {
           "dynamodb:PutItem",
           "dynamodb:GetItem",
           "dynamodb:UpdateItem",
-          "dynamodb:Query"
+          "dynamodb:Query",
+          "dynamodb:Scan"
         ]
         Resource = [
           aws_dynamodb_table.users.arn,
@@ -85,7 +86,7 @@ resource "aws_iam_role_policy" "lambda_permissions" {
       {
         Sid      = "DynamoDBUserProfiles"
         Effect   = "Allow"
-        Action   = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem"]
+        Action   = ["dynamodb:PutItem", "dynamodb:GetItem", "dynamodb:UpdateItem", "dynamodb:Scan"]
         Resource = aws_dynamodb_table.user_profiles.arn
       },
       {
