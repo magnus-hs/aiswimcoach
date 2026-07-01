@@ -94,7 +94,18 @@ def _get_display_name(user_id: str) -> str:
     return "Unknown User"
 
 
-# ---------------------------------------------------------------------------
+def _get_profile_picture_url(user_id: str) -> str | None:
+    """Fetch profile picture URL from the users table."""
+    users_table = _get_users_table()
+    try:
+        response = users_table.get_item(
+            Key={"user_id": user_id},
+            ProjectionExpression="profile_picture_url",
+        )
+        item = response.get("Item", {})
+        return item.get("profile_picture_url") or None
+    except ClientError:
+        return None# ---------------------------------------------------------------------------
 # Task 2.1: Core relationship functions
 # ---------------------------------------------------------------------------
 
@@ -459,6 +470,7 @@ def search_users(query: str, current_user_id: str) -> list[dict]:
             "display_name": user_data["display_name"],
             "email_prefix": user_data["email_prefix"],
             "relationship_status": status,
+            "profile_picture_url": _get_profile_picture_url(uid),
         })
         if len(results) >= 20:
             break

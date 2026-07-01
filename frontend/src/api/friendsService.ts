@@ -7,6 +7,7 @@ export interface UserSearchResult {
   display_name: string;
   email_prefix: string;
   relationship_status: 'none' | 'pending_sent' | 'pending_received' | 'friends';
+  profile_picture_url?: string | null;
 }
 
 export interface FriendRequest {

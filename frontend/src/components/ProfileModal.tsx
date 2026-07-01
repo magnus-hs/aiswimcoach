@@ -80,6 +80,25 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
       }
     }
 
+    // Load existing profile picture from user info
+    async function loadProfilePicture() {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+        const response = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/auth/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.profile_picture_url) {
+            setPicturePreview(data.profile_picture_url);
+          }
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+
     // Load latest ability assessment from most recent session
     async function loadAssessment() {
       try {
@@ -105,6 +124,7 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
     }
 
     loadProfile();
+    loadProfilePicture();
     loadAssessment();
   }, [isOpen]);
 
@@ -284,18 +304,30 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
             {/* Profile Picture */}
             <div className="modal__field">
               <label className="modal__label">Profile Picture</label>
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/gif"
-                onChange={handlePictureChange}
-                disabled={loading}
-                className="modal__picture-input"
-              />
-              {picturePreview && (
-                <div className="modal__picture-preview">
-                  <img src={picturePreview} alt="Profile preview" />
-                </div>
-              )}
+              <div className="modal__picture-upload">
+                <label className="modal__picture-icon" htmlFor="profile-pic-input" role="button" tabIndex={0}>
+                  {picturePreview ? (
+                    <img src={picturePreview} alt="Profile preview" className="modal__picture-icon-img" />
+                  ) : (
+                    <svg viewBox="0 0 48 24" xmlns="http://www.w3.org/2000/svg" className="modal__picture-icon-logo">
+                      <ellipse cx="14" cy="12" rx="9" ry="7" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
+                      <ellipse cx="34" cy="12" rx="9" ry="7" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
+                      <path d="M23 10 C24 8, 24 8, 25 10" stroke="var(--color-primary)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+                      <line x1="5" y1="11" x2="2" y2="11" stroke="var(--color-primary-light)" strokeWidth="2" strokeLinecap="round"/>
+                      <line x1="43" y1="11" x2="46" y2="11" stroke="var(--color-primary-light)" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  )}
+                  <span className="modal__picture-icon-badge">📷</span>
+                </label>
+                <input
+                  id="profile-pic-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif"
+                  onChange={handlePictureChange}
+                  disabled={loading}
+                  className="modal__picture-input-hidden"
+                />
+              </div>
             </div>
 
             {/* Age */}

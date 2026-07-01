@@ -257,9 +257,22 @@ export function FriendsPage() {
           <ul className="friends-page__search-results">
             {searchResults.map((user) => (
               <li key={user.user_id} className="friends-page__search-item">
-                <div className="friends-page__user-info">
-                  <span className="friends-page__user-name">{user.display_name}</span>
-                  <span className="friends-page__user-email">{user.email_prefix}</span>
+                <div className="friends-page__user-row">
+                  <span className="friends-page__avatar">
+                    {user.profile_picture_url ? (
+                      <img src={user.profile_picture_url} alt="" className="friends-page__avatar-img" />
+                    ) : (
+                      <svg viewBox="0 0 48 24" xmlns="http://www.w3.org/2000/svg" className="friends-page__avatar-logo">
+                        <ellipse cx="14" cy="12" rx="9" ry="7" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
+                        <ellipse cx="34" cy="12" rx="9" ry="7" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
+                        <path d="M23 10 C24 8, 24 8, 25 10" stroke="var(--color-primary)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+                      </svg>
+                    )}
+                  </span>
+                  <div className="friends-page__user-info">
+                    <span className="friends-page__user-name">{user.display_name}</span>
+                    <span className="friends-page__user-email">{user.email_prefix}</span>
+                  </div>
                 </div>
                 {user.relationship_status === 'none' && (
                   <button
