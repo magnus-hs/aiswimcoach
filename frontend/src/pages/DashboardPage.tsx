@@ -57,6 +57,7 @@ export function DashboardPage() {
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const [memberSince, setMemberSince] = useState('');
   const [dateFilter, setDateFilter] = useState<{ start: string; end: string; label: string } | null>(null);
+  const [weeklyGoalM, setWeeklyGoalM] = useState<number | null>(null);
 
   const fetchSessions = useCallback(async () => {
     setLoading(true);
@@ -76,6 +77,27 @@ export function DashboardPage() {
   useEffect(() => {
     fetchSessions();
   }, [fetchSessions]);
+
+  // Fetch the swimmer's weekly distance goal (if set).
+  useEffect(() => {
+    async function fetchGoals() {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/profile/goals`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const wd = data.goals?.weekly_distance_m;
+          if (wd) setWeeklyGoalM(wd);
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+    fetchGoals();
+  }, []);
 
   // Fetch user profile info (profile picture, member since)
   useEffect(() => {
@@ -236,6 +258,7 @@ export function DashboardPage() {
           monthlyDistanceChart={monthlyDistanceChart}
           yearlyDistanceChart={yearlyDistanceChart}
           onBarClick={handleBarClick}
+          weeklyGoalMeters={weeklyGoalM}
         />
       </aside>
       <section className="dashboard__feed">
