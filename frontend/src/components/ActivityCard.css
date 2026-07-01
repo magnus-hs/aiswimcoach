@@ -175,18 +175,24 @@
   }
 }
 
-/* Kudos indicator — bottom-right of the card */
-.activity-card__kudos {
+/* Social indicators — bottom-right of the card */
+.activity-card__social {
   position: absolute;
   bottom: var(--space-3);
   right: var(--space-4);
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-3);
 }
 
-.activity-card__kudos-count {
-  font-size: var(--font-size-xs);
+.activity-card__social-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.activity-card__social-count {
+  font-size: 11px;
   color: var(--color-text-muted);
   font-weight: var(--font-weight-medium);
 }

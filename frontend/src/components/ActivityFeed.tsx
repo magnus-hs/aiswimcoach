@@ -141,6 +141,7 @@ export function ActivityFeed({ sessions, loading, error, onRetry }: ActivityFeed
             splits={session.splits}
             poolLengthMeters={session.pool_length_meters}
             kudosCount={session.kudos?.length || 0}
+            commentsCount={session.comments?.length || 0}
           />
         ))}
 

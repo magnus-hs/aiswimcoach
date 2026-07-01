@@ -5,6 +5,7 @@ import { strokeLabel } from '../utils/strokeBreakdown';
 import { summarizeSets } from '../utils/groupSplits';
 import { LengthSplit } from '../types';
 import { KudosIcon } from './KudosIcon';
+import { CommentIcon } from './CommentIcon';
 import './ActivityCard.css';
 
 export interface ActivityCardProps {
@@ -19,6 +20,7 @@ export interface ActivityCardProps {
   splits?: LengthSplit[];
   poolLengthMeters?: number;
   kudosCount?: number;
+  commentsCount?: number;
 }
 
 /**
@@ -87,6 +89,7 @@ export function ActivityCard({
   splits,
   poolLengthMeters,
   kudosCount,
+  commentsCount,
 }: ActivityCardProps) {
   const navigate = useNavigate();
 
@@ -233,12 +236,22 @@ export function ActivityCard({
         ))}
       </span>
 
-      {kudosCount != null && kudosCount > 0 && (
-        <span className="activity-card__kudos">
-          <KudosIcon active size={16} />
-          <span className="activity-card__kudos-count">{kudosCount}</span>
+      {(kudosCount != null && kudosCount > 0) || (commentsCount != null && commentsCount > 0) ? (
+        <span className="activity-card__social">
+          {kudosCount != null && kudosCount > 0 && (
+            <span className="activity-card__social-item">
+              <KudosIcon active size={12} />
+              <span className="activity-card__social-count">{kudosCount}</span>
+            </span>
+          )}
+          {commentsCount != null && commentsCount > 0 && (
+            <span className="activity-card__social-item">
+              <CommentIcon size={12} />
+              <span className="activity-card__social-count">{commentsCount}</span>
+            </span>
+          )}
         </span>
-      )}
+      ) : null}
     </article>
   );
 }
