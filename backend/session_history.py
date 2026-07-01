@@ -420,6 +420,50 @@ def get_session_by_id(session_id: str) -> Session:
     )
 
 
+def compute_stroke_breakdown(
+    splits: list | None,
+    fallback_stroke: str | None = None,
+) -> list[dict]:
+    """Compute a per-stroke percentage breakdown from per-length splits.
+
+    Each length is treated as an equal unit (pool length is constant within a
+    session), so the percentage is the share of lengths swum with each stroke.
+
+    Args:
+        splits:          List of split dicts (each with a "stroke" key), or None.
+        fallback_stroke: Stroke to report as 100% when no splits are available.
+
+    Returns:
+        A list of {"stroke": str, "lengths": int, "percent": float} entries
+        sorted by length count descending. Percentages are rounded to one
+        decimal place and sum to ~100. Returns an empty list if neither splits
+        nor a fallback stroke are available.
+    """
+    counts: dict[str, int] = {}
+    if splits:
+        for s in splits:
+            stroke = str(s.get("stroke", "unknown")) if isinstance(s, dict) else str(getattr(s, "stroke", "unknown"))
+            counts[stroke] = counts.get(stroke, 0) + 1
+
+    if not counts:
+        if fallback_stroke:
+            return [{"stroke": fallback_stroke, "lengths": 0, "percent": 100.0}]
+        return []
+
+    total = sum(counts.values())
+    breakdown = [
+        {
+            "stroke": stroke,
+            "lengths": n,
+            "percent": round(n * 100.0 / total, 1),
+        }
+        for stroke, n in counts.items()
+    ]
+    # Sort by length count descending, then stroke name for stable ordering.
+    breakdown.sort(key=lambda b: (-b["lengths"], b["stroke"]))
+    return breakdown
+
+
 def aggregate_daily_distances(sessions: list[Session]) -> dict[str, int]:
     """Aggregate total distance by date from a list of sessions.
     

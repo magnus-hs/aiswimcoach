@@ -36,7 +36,7 @@ from profile_manager import (
 )
 from auth import AuthenticationError, ConflictError, register_user, login_user, verify_token, get_user_info
 from middleware import require_auth
-from session_history import get_user_sessions, get_session_by_id, save_session
+from session_history import get_user_sessions, get_session_by_id, save_session, compute_stroke_breakdown
 from training_plan_store import save_training_plan, get_user_plans
 from plan_generator import generate_multi_week_plan, PlanGenerationError
 from pb_resolver import save_personal_best, get_personal_bests, delete_personal_best, PBResolverError
@@ -1911,7 +1911,13 @@ def _handle_get_sessions(event: dict[str, Any], context: Any) -> dict[str, Any]:
         
         # Convert Session objects to dicts
         sessions_data = [dataclasses.asdict(session) for session in sessions]
-        
+
+        # Add a per-stroke percentage breakdown for the activity feed.
+        for session_obj, session_dict in zip(sessions, sessions_data):
+            session_dict["stroke_breakdown"] = compute_stroke_breakdown(
+                session_dict.get("splits"), session_obj.stroke_type
+            )
+
         return http_200_dict({"sessions": sessions_data})
     except Exception as exc:
         logger.error("Session retrieval failed for user %s: %s", user_id, exc)
@@ -1963,6 +1969,9 @@ def _handle_get_session_by_id(
             return _error_response(404, "Session not found")
         
         session_data = dataclasses.asdict(session)
+        session_data["stroke_breakdown"] = compute_stroke_breakdown(
+            session_data.get("splits"), session.stroke_type
+        )
         return http_200_dict(session_data)
     except ValueError as exc:
         # Session not found

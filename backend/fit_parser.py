@@ -266,14 +266,73 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
             total_time_seconds = float(tt)
         break  # only need first session record
 
+    # ------------------------------------------------------------------
+    # Build lap boundaries. Garmin swim files record a "lap" message every
+    # time the swimmer presses the lap button (typically once per set). Each
+    # lap knows which length records belong to it (first_length_index +
+    # num_lengths) and its own start_time / elapsed time. This is the
+    # authoritative source for set/rest structure — far more reliable than
+    # the per-length `timestamp` field, which Garmin writes in batches (many
+    # lengths share one timestamp), making timestamp-gap heuristics misfire
+    # and incorrectly split continuous swims (e.g. a 400m read as 250m).
+    #
+    # Strategy:
+    #   - For each lap, compute the rest that follows it as the gap between
+    #     the lap's end (start_time + elapsed) and the NEXT lap's start_time.
+    #   - Attach that rest to the last active length of the lap.
+    # ------------------------------------------------------------------
+    lap_infos: list[dict[str, Any]] = []
+    for record in fitfile.get_messages("lap"):
+        data = {f.name: f.value for f in record}
+        st = data.get("start_time")
+        el = data.get("total_elapsed_time") or data.get("total_timer_time") or 0.0
+        first_idx = data.get("first_length_index")
+        n_lengths = data.get("num_lengths")
+        if n_lengths is None:
+            n_lengths = data.get("num_active_lengths")
+        lap_infos.append({
+            "start_time": st,
+            "elapsed": float(el) if el is not None else 0.0,
+            "first_index": int(first_idx) if first_idx is not None else None,
+            "num_lengths": int(n_lengths) if n_lengths is not None else None,
+        })
+
+    # rest_by_raw_index maps a 0-based length-message index to the rest (s)
+    # that should be recorded after that length.
+    rest_by_raw_index: dict[int, float] = {}
+    for i, lap in enumerate(lap_infos):
+        first_idx = lap["first_index"]
+        n_lengths = lap["num_lengths"]
+        if first_idx is None or n_lengths is None or n_lengths <= 0:
+            continue
+        last_raw_index = first_idx + n_lengths - 1
+        # Rest = gap between this lap's end and the next lap's start.
+        if i + 1 < len(lap_infos):
+            next_start = lap_infos[i + 1]["start_time"]
+            this_start = lap["start_time"]
+            this_elapsed = lap["elapsed"]
+            if next_start is not None and this_start is not None:
+                try:
+                    lap_end = this_start.timestamp() + this_elapsed
+                    rest = next_start.timestamp() - lap_end
+                    if rest > 2:  # ignore sub-2s turnaround noise
+                        rest_by_raw_index[last_raw_index] = round(rest, 2)
+                except (TypeError, AttributeError):
+                    pass
+
+    have_lap_data = bool(rest_by_raw_index) or len(lap_infos) > 1
+
     # Extract per-length splits
     splits: list[LengthSplit] = []
     stroke_counts: dict[str, int] = {}
     length_number = 0
-    prev_timestamp = None
+    raw_index = -1  # 0-based index over ALL length messages (incl. idle)
+    prev_start_time = None
+    prev_elapsed = 0.0
 
     for record in fitfile.get_messages("length"):
         data = {f.name: f.value for f in record}
+        raw_index += 1
 
         # Check for rest intervals (length_type == 1 means "idle")
         length_type = data.get("length_type")
@@ -302,29 +361,31 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
         avg_hr_val = data.get("avg_heart_rate")
         avg_hr = int(avg_hr_val) if avg_hr_val is not None and avg_hr_val > 0 else None
 
-        # Detect rest from timestamp gaps (when no explicit idle records exist)
-        current_timestamp = data.get("timestamp")
-        if prev_timestamp is not None and current_timestamp is not None and splits:
+        current_start_time = data.get("start_time")
+
+        # Fallback rest detection (only when lap messages are unavailable):
+        # use each length's reliable start_time, NOT the batched `timestamp`.
+        # If the actual start of this length is later than the expected start
+        # (previous start + previous elapsed) by a meaningful margin, the gap
+        # is rest between sets.
+        if not have_lap_data and prev_start_time is not None and current_start_time is not None and splits:
             try:
-                gap = (current_timestamp - prev_timestamp).total_seconds()
-                # Sum of elapsed times for lengths sharing the previous timestamp
-                # If gap > sum of their elapsed times + a small buffer, there's rest
-                # Simpler: if timestamp changed and gap > current length time + 5s, it's a new set
-                if gap > float(elapsed) + 5 and splits[-1].rest_after_seconds is None:
-                    rest_duration = gap - float(elapsed)
-                    if rest_duration > 3:  # At least 3 seconds to count as rest
-                        splits[-1] = LengthSplit(
-                            length_number=splits[-1].length_number,
-                            time_seconds=splits[-1].time_seconds,
-                            stroke=splits[-1].stroke,
-                            strokes=splits[-1].strokes,
-                            rest_after_seconds=round(rest_duration, 2),
-                            avg_hr=splits[-1].avg_hr,
-                        )
+                expected_next = prev_start_time.timestamp() + prev_elapsed
+                gap = current_start_time.timestamp() - expected_next
+                if gap > 3 and splits[-1].rest_after_seconds is None:
+                    splits[-1] = LengthSplit(
+                        length_number=splits[-1].length_number,
+                        time_seconds=splits[-1].time_seconds,
+                        stroke=splits[-1].stroke,
+                        strokes=splits[-1].strokes,
+                        rest_after_seconds=round(gap, 2),
+                        avg_hr=splits[-1].avg_hr,
+                    )
             except (TypeError, AttributeError):
                 pass
 
-        prev_timestamp = current_timestamp
+        prev_start_time = current_start_time
+        prev_elapsed = float(elapsed)
 
         splits.append(LengthSplit(
             length_number=length_number,
@@ -333,6 +394,17 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
             strokes=strokes,
             avg_hr=avg_hr,
         ))
+
+        # Apply lap-boundary rest (authoritative) to this length if applicable.
+        if raw_index in rest_by_raw_index:
+            splits[-1] = LengthSplit(
+                length_number=splits[-1].length_number,
+                time_seconds=splits[-1].time_seconds,
+                stroke=splits[-1].stroke,
+                strokes=splits[-1].strokes,
+                rest_after_seconds=rest_by_raw_index[raw_index],
+                avg_hr=splits[-1].avg_hr,
+            )
 
         stroke_counts[stroke] = stroke_counts.get(stroke, 0) + 1
 

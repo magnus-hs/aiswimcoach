@@ -12,6 +12,7 @@ import { EfficiencyCurve } from '../components/EfficiencyCurve';
 import { StrokeMetricsCharts } from '../components/StrokeMetricsCharts';
 import { SessionStatsBlock } from '../components/SessionStatsBlock';
 import { SetSummary } from '../components/SetSummary';
+import { computeBreakdownFromSplits } from '../utils/strokeBreakdown';
 import { TrainingLoadChart } from '../components/TrainingLoadChart';
 import { AICoachChat } from '../components/AICoachChat';
 import { CoachingResult } from '../components/CoachingResult';
@@ -165,7 +166,14 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
   }) {
     return (
       <div className="activity-detail__sections">
-        <SessionSummary session={data.session} />
+        <SessionSummary
+          session={data.session}
+          strokeBreakdown={
+            data.splits && data.splits.length > 0
+              ? computeBreakdownFromSplits(data.splits)
+              : undefined
+          }
+        />
         <AICoachChat currentSession={{
           total_distance_m: data.session.total_distance_m,
           pace: (data as any).metrics?.pace,

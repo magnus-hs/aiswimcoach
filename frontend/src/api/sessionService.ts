@@ -62,6 +62,15 @@ export interface Session {
 }
 
 /**
+ * Per-stroke percentage breakdown entry.
+ */
+export interface StrokeBreakdownEntry {
+  stroke: string;
+  lengths: number;
+  percent: number;
+}
+
+/**
  * Session summary for history list.
  */
 export interface SessionSummary {
@@ -74,6 +83,7 @@ export interface SessionSummary {
   average_pace_per_100m: number;
   swolf_score: number;
   stroke_rate: number;
+  stroke_breakdown?: StrokeBreakdownEntry[];
 }
 
 /**
@@ -89,6 +99,7 @@ export interface SessionDetail {
   training_plan?: TrainingPlan;
   session_id: string;
   hr_timeseries?: { t: number; hr: number }[] | null;
+  stroke_breakdown?: StrokeBreakdownEntry[];
 }
 
 /**

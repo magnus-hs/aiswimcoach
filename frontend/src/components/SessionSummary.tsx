@@ -1,8 +1,11 @@
 import { SessionInfo } from '../types';
+import { StrokeBreakdownEntry } from '../api/sessionService';
+import { formatStrokeBreakdown } from '../utils/strokeBreakdown';
 import './SessionSummary.css';
 
 interface SessionSummaryProps {
   session: SessionInfo;
+  strokeBreakdown?: StrokeBreakdownEntry[];
 }
 
 function formatTime(totalSeconds: number): string {
@@ -36,7 +39,11 @@ function capitalize(s: string): string {
  * Key metrics (distance, time) are displayed with large bold numbers per Strava/Garmin pattern.
  * Validates: Requirements 25.1, 25.2
  */
-export function SessionSummary({ session }: SessionSummaryProps) {
+export function SessionSummary({ session, strokeBreakdown }: SessionSummaryProps) {
+  const strokeDisplay =
+    strokeBreakdown && strokeBreakdown.length > 0
+      ? formatStrokeBreakdown(strokeBreakdown)
+      : capitalize(session.stroke);
   return (
     <section className="session-summary" aria-label="Session summary">
       <h2 className="session-summary__heading">Session Summary</h2>
@@ -59,7 +66,7 @@ export function SessionSummary({ session }: SessionSummaryProps) {
         </div>
         <div className="session-summary__item">
           <span className="session-summary__label">Stroke</span>
-          <span className="session-summary__value">{capitalize(session.stroke)}</span>
+          <span className="session-summary__value">{strokeDisplay}</span>
         </div>
         <div className="session-summary__item">
           <span className="session-summary__label">Lengths</span>
