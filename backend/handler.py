@@ -334,9 +334,14 @@ def _handle_verify(event: dict[str, Any]) -> dict[str, Any]:
 
 def _handle_reset_request(event: dict[str, Any]) -> dict[str, Any]:
     """Handle POST /auth/reset-request — generate a reset token for the user."""
-    import random
-    import string
-    
+    import secrets
+
+    # Identical response for both existing and non-existing accounts to avoid
+    # user enumeration.
+    neutral_response = http_200_dict(
+        {"message": "If an account exists, a reset token has been generated"}
+    )
+
     try:
         body = json.loads(event.get("body") or "{}")
     except (json.JSONDecodeError, TypeError):
@@ -358,15 +363,13 @@ def _handle_reset_request(event: dict[str, Any]) -> dict[str, Any]:
         items = response.get("Items", [])
     except Exception as exc:
         logger.error("Reset request lookup failed: %s", exc)
-        # Don't reveal whether user exists
-        return http_200_dict({"message": "If an account exists, a reset token has been generated"})
+        return neutral_response
     
     if not items:
-        # Don't reveal whether user exists
-        return http_200_dict({"message": "If an account exists, a reset token has been generated"})
+        return neutral_response
     
-    # Generate a 6-digit token
-    token = ''.join(random.choices(string.digits, k=6))
+    # Generate a cryptographically-random token (not the predictable `random`).
+    token = secrets.token_hex(4)  # 8 hex chars ≈ 4.3 billion combinations
     
     # Store token with 15-min expiry
     from datetime import datetime, timezone, timedelta
@@ -389,7 +392,7 @@ def _handle_reset_request(event: dict[str, Any]) -> dict[str, Any]:
     # In production, this would be emailed.
     logger.info("Reset token for %s: %s (expires %s)", email, token, expiry.isoformat())
     
-    return http_200_dict({"message": "Reset token generated"})
+    return neutral_response
 
 
 def _handle_reset_password(event: dict[str, Any]) -> dict[str, Any]:
@@ -432,7 +435,8 @@ def _handle_reset_password(event: dict[str, Any]) -> dict[str, Any]:
     stored_token = user_item.get("reset_token")
     stored_expiry = user_item.get("reset_token_expiry")
     
-    if not stored_token or stored_token != token:
+    import secrets as _secrets
+    if not stored_token or not _secrets.compare_digest(str(stored_token), token):
         return _error_response(400, "Invalid or expired reset token")
     
     # Check expiry
@@ -442,12 +446,13 @@ def _handle_reset_password(event: dict[str, Any]) -> dict[str, Any]:
         if datetime.now(tz=timezone.utc) > expiry:
             return _error_response(400, "Reset token has expired")
     
-    # Update password and clear token
+    # Update password and clear token. NOTE: login reads `hashed_password`,
+    # so the reset MUST write to that same attribute (not `password_hash`).
     hashed = hash_password(new_password)
     try:
         table.update_item(
             Key={"user_id": user_item["user_id"]},
-            UpdateExpression="SET password_hash = :p REMOVE reset_token, reset_token_expiry",
+            UpdateExpression="SET hashed_password = :p REMOVE reset_token, reset_token_expiry",
             ExpressionAttributeValues={":p": hashed},
         )
     except Exception as exc:
@@ -468,6 +473,7 @@ def _handle_google_auth(event: dict[str, Any]) -> dict[str, Any]:
     5. Issue our app's JWT token
     """
     import urllib.request
+    import urllib.parse
     import uuid
     from datetime import datetime, timezone
     from auth import generate_jwt_token
@@ -481,50 +487,46 @@ def _handle_google_auth(event: dict[str, Any]) -> dict[str, Any]:
     if not id_token:
         return _error_response(400, "Missing id_token")
     
-    # Verify the Google ID token
-    # Decode the JWT payload (Google tokens are JWTs)
+    # Verify the Google ID token against Google's tokeninfo endpoint. This
+    # validates the cryptographic SIGNATURE, issuer and expiry server-side.
+    # (Decoding the JWT payload locally without verifying the signature would
+    # let anyone forge a token and take over any account.)
+    expected_client_id = "315548660280-922flu5u39917s66qn51fu0u1s0gelrc.apps.googleusercontent.com"
     try:
-        import base64
-        # Split the JWT
-        parts = id_token.split('.')
-        if len(parts) != 3:
-            return _error_response(401, "Invalid Google token format")
-        
-        # Decode payload (middle part)
-        payload_b64 = parts[1]
-        # Add padding
-        payload_b64 += '=' * (4 - len(payload_b64) % 4)
-        payload_json = base64.urlsafe_b64decode(payload_b64)
-        payload = json.loads(payload_json)
-        
-        # Verify issuer and audience
-        iss = payload.get("iss")
-        if iss not in ("accounts.google.com", "https://accounts.google.com"):
-            return _error_response(401, "Invalid token issuer")
-        
-        aud = payload.get("aud")
-        expected_client_id = "315548660280-922flu5u39917s66qn51fu0u1s0gelrc.apps.googleusercontent.com"
-        if aud != expected_client_id:
-            return _error_response(401, "Invalid token audience")
-        
-        # Check expiration
-        import time
-        exp = payload.get("exp", 0)
-        if time.time() > exp:
-            return _error_response(401, "Token expired")
-        
-        # Extract user info
-        google_email = payload.get("email", "").lower()
-        if not google_email:
-            return _error_response(401, "No email in Google token")
-        
-        email_verified = payload.get("email_verified", False)
-        if not email_verified:
-            return _error_response(401, "Email not verified by Google")
-    
+        query = urllib.parse.urlencode({"id_token": id_token})
+        req = urllib.request.Request(
+            f"https://oauth2.googleapis.com/tokeninfo?{query}",
+            method="GET",
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if resp.status != 200:
+                return _error_response(401, "Invalid Google token")
+            payload = json.loads(resp.read().decode("utf-8"))
     except Exception as exc:
-        logger.error("Google token verification failed: %s", exc)
+        logger.warning("Google token verification failed: %s", exc)
         return _error_response(401, "Invalid Google token")
+
+    # Validate the Google-verified claims.
+    iss = payload.get("iss")
+    if iss not in ("accounts.google.com", "https://accounts.google.com"):
+        return _error_response(401, "Invalid token issuer")
+
+    if payload.get("aud") != expected_client_id:
+        return _error_response(401, "Invalid token audience")
+
+    import time
+    try:
+        if time.time() > int(payload.get("exp", 0)):
+            return _error_response(401, "Token expired")
+    except (ValueError, TypeError):
+        return _error_response(401, "Invalid Google token")
+
+    google_email = (payload.get("email") or "").lower()
+    if not google_email:
+        return _error_response(401, "No email in Google token")
+
+    if str(payload.get("email_verified", "")).lower() != "true":
+        return _error_response(401, "Email not verified by Google")
     
     # Find or create user
     users_table = os.environ.get("USERS_TABLE", "ai-swim-coach-users")
