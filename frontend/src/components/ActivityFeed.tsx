@@ -140,7 +140,7 @@ export function ActivityFeed({ sessions, loading, error, onRetry }: ActivityFeed
             strokeBreakdown={session.stroke_breakdown}
             splits={session.splits}
             poolLengthMeters={session.pool_length_meters}
-            kudosCount={(session as unknown as Record<string, unknown>).kudos ? ((session as unknown as Record<string, unknown>).kudos as unknown[]).length : 0}
+            kudosCount={session.kudos?.length || 0}
           />
         ))}
 
@@ -211,7 +211,7 @@ export function ActivityFeed({ sessions, loading, error, onRetry }: ActivityFeed
               totalTimeSeconds={activity.total_time_seconds}
               averagePacePer100m={activity.average_pace_per_100m}
               swolfScore={activity.swolf_score}
-              kudosCount={(activity as unknown as Record<string, unknown>).kudos ? ((activity as unknown as Record<string, unknown>).kudos as unknown[]).length : 0}
+              kudosCount={0}
             />
           </div>
         ))}

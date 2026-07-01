@@ -421,6 +421,8 @@ class Session:
     splits: list | None = None
     coaching: dict | None = None
     hr_timeseries: list | None = None
+    kudos: list | None = None
+    comments: list | None = None
 
     def __post_init__(self) -> None:
         # Validate session_id

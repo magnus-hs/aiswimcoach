@@ -353,6 +353,8 @@ def get_user_sessions(
             splits=_deserialize_splits(item.get("splits")),
             coaching=item.get("coaching"),
             hr_timeseries=_deserialize_hr_timeseries(item.get("hr_timeseries")),
+            kudos=item.get("kudos"),
+            comments=item.get("comments"),
         )
         sessions.append(session)
     
@@ -417,6 +419,8 @@ def get_session_by_id(session_id: str) -> Session:
         splits=_deserialize_splits(item.get("splits")),
         coaching=item.get("coaching"),
         hr_timeseries=_deserialize_hr_timeseries(item.get("hr_timeseries")),
+        kudos=item.get("kudos"),
+        comments=item.get("comments"),
     )
 
 

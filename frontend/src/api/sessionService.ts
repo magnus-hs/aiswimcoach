@@ -84,6 +84,8 @@ export interface SessionSummary {
   stroke_rate: number;
   stroke_breakdown?: StrokeBreakdownEntry[];
   splits?: LengthSplit[];
+  kudos?: { user_id: string; created_at: string }[];
+  comments?: { comment_id: string; user_id: string; display_name: string; text: string; created_at: string }[];
 }
 
 /**
