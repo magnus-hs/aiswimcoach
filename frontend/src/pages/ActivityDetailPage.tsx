@@ -168,6 +168,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
       <div className="activity-detail__sections">
         <SessionSummary
           session={data.session}
+          splits={data.splits}
           strokeBreakdown={
             data.splits && data.splits.length > 0
               ? computeBreakdownFromSplits(data.splits)

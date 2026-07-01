@@ -1,4 +1,4 @@
-import { SessionInfo } from '../types';
+import { SessionInfo, LengthSplit } from '../types';
 import { StrokeBreakdownEntry } from '../api/sessionService';
 import { strokeLabel } from '../utils/strokeBreakdown';
 import './SessionSummary.css';
@@ -6,6 +6,7 @@ import './SessionSummary.css';
 interface SessionSummaryProps {
   session: SessionInfo;
   strokeBreakdown?: StrokeBreakdownEntry[];
+  splits?: LengthSplit[];
 }
 
 function formatTime(totalSeconds: number): string {
@@ -39,11 +40,22 @@ function capitalize(s: string): string {
  * Key metrics (distance, time) are displayed with large bold numbers per Strava/Garmin pattern.
  * Validates: Requirements 25.1, 25.2
  */
-export function SessionSummary({ session, strokeBreakdown }: SessionSummaryProps) {
+export function SessionSummary({ session, strokeBreakdown, splits }: SessionSummaryProps) {
   const strokeLines =
     strokeBreakdown && strokeBreakdown.length > 0
       ? strokeBreakdown.map((b) => `${Math.round(b.percent)}% ${strokeLabel(b.stroke)}`)
       : [capitalize(session.stroke)];
+
+  // Average distance per stroke across valid lengths (metres per stroke).
+  const validSplits = (splits ?? []).filter((s) => s.strokes > 0 && s.time_seconds > 0);
+  const avgDps =
+    validSplits.length > 0
+      ? (
+          validSplits.reduce((sum, s) => sum + session.pool_length_m / s.strokes, 0) /
+          validSplits.length
+        ).toFixed(2)
+      : null;
+
   return (
     <section className="session-summary" aria-label="Session summary">
       <h2 className="session-summary__heading">Session Summary</h2>
@@ -76,6 +88,12 @@ export function SessionSummary({ session, strokeBreakdown }: SessionSummaryProps
           <span className="session-summary__label">Lengths</span>
           <span className="session-summary__value">{session.num_lengths}</span>
         </div>
+        {avgDps && (
+          <div className="session-summary__item">
+            <span className="session-summary__label">Dist / Stroke</span>
+            <span className="session-summary__value">{avgDps}m</span>
+          </div>
+        )}
       </div>
     </section>
   );

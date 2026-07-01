@@ -117,6 +117,10 @@ function GroupRow({
   const hrsInGroup = group.splits.filter(s => s.avg_hr != null).map(s => s.avg_hr!);
   const avgHR = hrsInGroup.length > 0 ? Math.round(hrsInGroup.reduce((a, b) => a + b, 0) / hrsInGroup.length) : null;
 
+  // Distance per stroke for the rep = total distance / total strokes
+  const totalStrokes = group.splits.reduce((sum, s) => sum + s.strokes, 0);
+  const groupDps = totalStrokes > 0 ? group.totalDistance / totalStrokes : null;
+
   return (
     <div
       className={`grouped-splits__row ${expanded ? 'grouped-splits__row--expanded' : ''}`}
@@ -140,6 +144,7 @@ function GroupRow({
       <span className="grouped-splits__distance">{group.totalDistance}m</span>
       <span className="grouped-splits__time">{formatTime(group.totalTime)}</span>
       <span className="grouped-splits__stroke">{capitalize(group.stroke)}</span>
+      <span className="grouped-splits__dps">{groupDps != null ? `${groupDps.toFixed(2)} m/str` : '—'}</span>
       {hasHR && (
         <span className="grouped-splits__hr">
           {avgHR != null ? `${avgHR} bpm` : '—'}
@@ -180,6 +185,7 @@ function DetailRows({
             <th>Time</th>
             <th>Cum. Time</th>
             <th>Strokes</th>
+            <th>DPS</th>
             <th>Stroke</th>
             {hasHR && <th>HR</th>}
             <th>Cum. Dist</th>
@@ -193,6 +199,7 @@ function DetailRows({
               <td>{split.time_seconds.toFixed(1)}s</td>
               <td className="grouped-splits__cum-cell">{formatTime(cumTimes[i])}</td>
               <td>{split.strokes}</td>
+              <td>{split.strokes > 0 ? `${(poolLengthM / split.strokes).toFixed(2)} m` : '—'}</td>
               <td>{capitalize(split.stroke)}</td>
               {hasHR && <td>{split.avg_hr != null ? `${split.avg_hr}` : '—'}</td>}
               <td className="grouped-splits__cum-cell">{startCumulative + (i + 1) * poolLengthM}m</td>
