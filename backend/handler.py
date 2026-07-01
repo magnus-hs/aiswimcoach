@@ -60,6 +60,8 @@ from interactions_service import (
     add_comment,
     delete_comment,
     toggle_kudos,
+    get_notifications,
+    clear_notifications,
 )
 from http_headers import response_headers
 from rate_limit import check_rate_limit
@@ -178,6 +180,12 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         if friend_user_id and friend_user_id not in ("search", "request", "requests", "activities", "visibility"):
             event["friend_user_id"] = friend_user_id
             return _handle_remove_friend(event, context)
+
+    # Notifications routes (auth required)
+    elif path == "/notifications" and http_method == "GET":
+        return _handle_get_notifications(event, context)
+    elif path == "/notifications" and http_method == "DELETE":
+        return _handle_clear_notifications(event, context)
 
     # Structured training plans routes (auth required)
     elif path == "/plans/generate" and http_method == "POST":
@@ -2624,6 +2632,30 @@ def _handle_toggle_kudos(event: dict[str, Any], context: Any) -> dict[str, Any]:
     except ClientError as exc:
         logger.error("Toggle kudos failed for session %s: %s", session_id, exc)
         return _error_response(500, "Failed to save interaction. Please try again.")
+
+
+@require_auth
+def _handle_get_notifications(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /notifications endpoint."""
+    user_id = event["auth_context"]["user_id"]
+    try:
+        notifs = get_notifications(user_id)
+        return http_200_dict({"notifications": notifs})
+    except Exception as exc:
+        logger.error("Get notifications failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to retrieve notifications")
+
+
+@require_auth
+def _handle_clear_notifications(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle DELETE /notifications endpoint."""
+    user_id = event["auth_context"]["user_id"]
+    try:
+        clear_notifications(user_id)
+        return http_200_dict({"message": "Notifications cleared"})
+    except Exception as exc:
+        logger.error("Clear notifications failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to clear notifications")
 
 
 # ---------------------------------------------------------------------------

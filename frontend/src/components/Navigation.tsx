@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { NotificationBell } from './NotificationBell';
 import './Navigation.css';
 
 interface NavigationProps {
@@ -65,6 +66,7 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
         >
           AI Coach
         </NavLink>
+        <NotificationBell />
         <div className="nav__profile-menu">
           <button
             type="button"

@@ -41,9 +41,28 @@ def _get_sessions_table():
     return _get_dynamodb().Table(table_name)
 
 
+def _get_profiles_table():
+    """Get the user profiles DynamoDB table."""
+    table_name = os.environ.get("PROFILES_TABLE", "ai-swim-coach-user-profiles")
+    return _get_dynamodb().Table(table_name)
+
+
 def _now_iso() -> str:
     """Return current UTC timestamp in ISO 8601 format."""
     return datetime.now(tz=timezone.utc).isoformat()
+
+
+def _push_notification(target_user_id: str, notif: dict) -> None:
+    """Append a notification to the target user's profile (max 50 kept)."""
+    try:
+        table = _get_profiles_table()
+        table.update_item(
+            Key={"user_id": target_user_id},
+            UpdateExpression="SET notifications = list_append(if_not_exists(notifications, :empty), :n)",
+            ExpressionAttributeValues={":empty": [], ":n": [notif]},
+        )
+    except Exception:
+        pass  # Non-critical — notification delivery is best-effort
 
 
 def _authorize_interaction(session_id: str, current_user_id: str) -> tuple[dict, bool]:
@@ -198,6 +217,16 @@ def add_comment(session_id: str, user_id: str, text: str) -> dict:
         },
     )
 
+    # Notify session owner (if commenter is not the owner)
+    if user_id != pk_user_id:
+        _push_notification(pk_user_id, {
+            "type": "comment",
+            "from_display_name": display_name,
+            "session_id": session_id,
+            "text": stripped_text[:80],
+            "created_at": created_at,
+        })
+
     return new_comment
 
 
@@ -308,4 +337,47 @@ def toggle_kudos(session_id: str, user_id: str) -> dict:
             },
         )
         new_count = len(kudos) + 1
+
+        # Notify session owner
+        giver_name = friends_service._get_display_name(user_id)
+        _push_notification(pk_user_id, {
+            "type": "kudos",
+            "from_display_name": giver_name,
+            "session_id": session_id,
+            "created_at": new_kudos["created_at"],
+        })
+
         return {"action": "added", "kudos_count": new_count}
+
+
+# ---------------------------------------------------------------------------
+# Notifications
+# ---------------------------------------------------------------------------
+
+
+def get_notifications(user_id: str) -> list[dict]:
+    """Get all notifications for a user (most recent first, max 50)."""
+    table = _get_profiles_table()
+    try:
+        response = table.get_item(
+            Key={"user_id": user_id},
+            ProjectionExpression="notifications",
+        )
+        items = response.get("Item", {}).get("notifications", [])
+        # Return most recent first, capped at 50
+        return list(reversed(items[-50:]))
+    except ClientError:
+        return []
+
+
+def clear_notifications(user_id: str) -> None:
+    """Clear all notifications for a user."""
+    table = _get_profiles_table()
+    try:
+        table.update_item(
+            Key={"user_id": user_id},
+            UpdateExpression="SET notifications = :empty",
+            ExpressionAttributeValues={":empty": []},
+        )
+    except ClientError:
+        pass

@@ -13,8 +13,8 @@ export interface KudosIconProps {
  * - Active: filled with primary color
  */
 export function KudosIcon({ active, size = 24, onClick, className }: KudosIconProps) {
-  const stroke = active ? 'var(--color-primary)' : 'var(--color-text-muted)';
-  const fill = active ? 'var(--color-primary)' : 'none';
+  const stroke = active ? 'hsl(45, 95%, 50%)' : 'var(--color-text-muted)';
+  const fill = active ? 'hsl(45, 95%, 50%)' : 'none';
   const cursor = onClick ? 'pointer' : 'default';
 
   return (

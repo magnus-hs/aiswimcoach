@@ -86,7 +86,7 @@ This plan implements commenting and kudos functionality for swim sessions. The b
     - Pass `kudosCount` prop to each `<ActivityCard>` where applicable
     - _Requirements: 8.1, 8.3_
 
-- [-] 6. Final checkpoint - Full stack verification
+- [x] 6. Final checkpoint - Full stack verification
   - Ensure all tests pass with `cd backend && python -m pytest tests/ -x -q` and `cd frontend && npx tsc --noEmit`, ask the user if questions arise.
 
 ## Notes
