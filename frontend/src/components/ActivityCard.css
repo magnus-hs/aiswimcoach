@@ -86,10 +86,40 @@
   font-weight: var(--font-weight-medium);
 }
 
+.activity-card__session {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+}
+
+.activity-card__session-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.activity-card__session-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+}
+
 /* Touch devices: ensure tap target meets 44x44px minimum (Req 11.5) */
 @media (pointer: coarse) {
   .activity-card {
     min-height: 44px;
     padding: var(--space-5);
+  }
+}
+
+/* Mobile: hide the stroke percentage breakdown, keep the session summary */
+@media (max-width: 599px) {
+  .activity-card__stroke {
+    display: none;
   }
 }

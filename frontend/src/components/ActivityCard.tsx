@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { StrokeBreakdownEntry } from '../api/sessionService';
 import { strokeLabel } from '../utils/strokeBreakdown';
+import { summarizeSets } from '../utils/groupSplits';
+import { LengthSplit } from '../types';
 import './ActivityCard.css';
 
 export interface ActivityCardProps {
@@ -12,6 +14,8 @@ export interface ActivityCardProps {
   averagePacePer100m: number;
   swolfScore: number;
   strokeBreakdown?: StrokeBreakdownEntry[];
+  splits?: LengthSplit[];
+  poolLengthMeters?: number;
 }
 
 /**
@@ -65,6 +69,8 @@ export function ActivityCard({
   averagePacePer100m,
   swolfScore,
   strokeBreakdown,
+  splits,
+  poolLengthMeters,
 }: ActivityCardProps) {
   const navigate = useNavigate();
 
@@ -83,6 +89,11 @@ export function ActivityCard({
     strokeBreakdown && strokeBreakdown.length > 0
       ? strokeBreakdown.map((b) => `${Math.round(b.percent)}% ${strokeLabel(b.stroke)}`)
       : [strokeType];
+
+  const setSummary =
+    splits && splits.length > 0
+      ? summarizeSets(splits, poolLengthMeters && poolLengthMeters > 0 ? poolLengthMeters : 25)
+      : '';
 
   return (
     <article
@@ -120,6 +131,13 @@ export function ActivityCard({
           <span className="activity-card__metric-value">{swolfScore}</span>
         </div>
       </div>
+
+      {setSummary && (
+        <div className="activity-card__session">
+          <span className="activity-card__session-label">Session</span>
+          <span className="activity-card__session-text">{setSummary}</span>
+        </div>
+      )}
     </article>
   );
 }

@@ -76,6 +76,8 @@ export function ActivityFeed({ sessions, loading, error, onRetry }: ActivityFeed
           averagePacePer100m={session.average_pace_per_100m}
           swolfScore={session.swolf_score}
           strokeBreakdown={session.stroke_breakdown}
+          splits={session.splits}
+          poolLengthMeters={session.pool_length_meters}
         />
       ))}
     </div>

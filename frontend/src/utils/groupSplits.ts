@@ -80,3 +80,19 @@ export function formatRest(seconds: number): string {
   const secs = Math.round(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
+
+/**
+ * Build a compact set-structure summary from splits, e.g. "1×400m, 4×100m, 4×50m".
+ * Consecutive sets of the same distance are counted together.
+ */
+export function summarizeSets(splits: LengthSplit[], poolLengthM: number): string {
+  if (!splits || splits.length === 0) return '';
+  const groups = groupSplits(splits, poolLengthM);
+  const distanceCounts = new Map<number, number>();
+  for (const group of groups) {
+    distanceCounts.set(group.totalDistance, (distanceCounts.get(group.totalDistance) || 0) + 1);
+  }
+  const entries = Array.from(distanceCounts.entries()).sort((a, b) => b[0] - a[0]);
+  return entries.map(([dist, count]) => `${count}×${dist}m`).join(', ');
+}
+

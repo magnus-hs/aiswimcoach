@@ -1,5 +1,4 @@
 import { ApiError, SessionInfo, LengthSplit, CoachingResponse } from '../types';
-
 /**
  * Heart rate zone distribution data.
  */
@@ -84,6 +83,7 @@ export interface SessionSummary {
   swolf_score: number;
   stroke_rate: number;
   stroke_breakdown?: StrokeBreakdownEntry[];
+  splits?: LengthSplit[];
 }
 
 /**
