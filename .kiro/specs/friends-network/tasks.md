@@ -152,7 +152,7 @@ This plan implements the Friends Network feature by building the backend service
     - Wrap in `ProtectedRoute` for authentication
     - _Requirements: 1.2_
 
-- [-] 9. Checkpoint - Frontend complete
+- [x] 9. Checkpoint - Frontend complete
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 10. Integration tests and final validation
@@ -171,7 +171,7 @@ This plan implements the Friends Network feature by building the backend service
     - Test friends' activities tab shows loading skeleton and empty state message
     - _Requirements: 2.1, 3.1, 4.1, 4.3, 5.3, 7.1, 7.2, 8.5, 8.6_
 
-- [~] 11. Final checkpoint - Ensure all tests pass
+- [x] 11. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

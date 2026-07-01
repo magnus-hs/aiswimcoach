@@ -63,7 +63,7 @@ def _now_iso() -> str:
 
 
 def _get_display_name(user_id: str) -> str:
-    """Fetch display name from user-profiles table for a given user_id."""
+    """Fetch display name from user-profiles table, falling back to email prefix from users table."""
     table = _get_profiles_table()
     try:
         response = table.get_item(
@@ -71,9 +71,27 @@ def _get_display_name(user_id: str) -> str:
             ProjectionExpression="display_name",
         )
         item = response.get("Item", {})
-        return item.get("display_name", "Unknown User")
+        name = item.get("display_name")
+        if name:
+            return name
     except ClientError:
-        return "Unknown User"
+        pass
+
+    # Fallback: get email prefix from users table
+    users_table = _get_users_table()
+    try:
+        response = users_table.get_item(
+            Key={"user_id": user_id},
+            ProjectionExpression="email",
+        )
+        item = response.get("Item", {})
+        email = item.get("email", "")
+        if email and "@" in email:
+            return email.split("@")[0]
+    except ClientError:
+        pass
+
+    return "Unknown User"
 
 
 # ---------------------------------------------------------------------------
@@ -385,12 +403,12 @@ def search_users(query: str, current_user_id: str) -> list[dict]:
     query_lower = query.lower()
     found_users: dict[str, dict] = {}  # user_id -> {user_id, display_name, email_prefix}
 
-    # Search users table by email prefix using email-index GSI
+    # Search users table by email (scan with contains filter — email-index is a
+    # hash-only GSI so begins_with is not supported in a Query on the PK).
     users_table = _get_users_table()
     try:
-        response = users_table.query(
-            IndexName="email-index",
-            KeyConditionExpression=Key("email").begins_with(query_lower),
+        response = users_table.scan(
+            FilterExpression=Attr("email").contains(query_lower),
         )
         for item in response.get("Items", []):
             uid = item.get("user_id", "")

@@ -418,6 +418,49 @@ export function FriendsPage() {
           <p className="friends-page__success">{visibilitySuccess}</p>
         )}
       </section>
+
+      {/* Invite Section */}
+      <section className="friends-page__card">
+        <h2>Invite a Friend</h2>
+        <p className="friends-page__hint">
+          Know someone who'd enjoy AI Swim Coach? Share a link and invite them to join.
+        </p>
+        <div className="friends-page__invite-row">
+          <input
+            type="text"
+            className="friends-page__search-input"
+            readOnly
+            value="https://main.d3qbayea55l8tl.amplifyapp.com/register"
+            onClick={(e) => (e.target as HTMLInputElement).select()}
+          />
+          <button
+            className="friends-page__btn friends-page__btn--primary"
+            onClick={() => {
+              navigator.clipboard.writeText('https://main.d3qbayea55l8tl.amplifyapp.com/register');
+              setActionError('');
+              setVisibilitySuccess('Invite link copied!');
+              setTimeout(() => setVisibilitySuccess(''), 3000);
+            }}
+          >
+            Copy Link
+          </button>
+        </div>
+        {typeof navigator.share === 'function' && (
+          <button
+            className="friends-page__btn friends-page__btn--secondary"
+            style={{ marginTop: 'var(--space-3)' }}
+            onClick={() => {
+              navigator.share({
+                title: 'Join AI Swim Coach',
+                text: 'Track your swims, get AI coaching, and compare with friends!',
+                url: 'https://main.d3qbayea55l8tl.amplifyapp.com/register',
+              }).catch(() => {});
+            }}
+          >
+            Share via…
+          </button>
+        )}
+      </section>
     </div>
   );
 }
