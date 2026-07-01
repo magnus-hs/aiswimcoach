@@ -51,20 +51,20 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
           Dashboard
         </NavLink>
         <NavLink
-          to="/plans"
-          className={({ isActive }) =>
-            `nav__link${isActive ? ' nav__link--active' : ''}`
-          }
-        >
-          Training Plans
-        </NavLink>
-        <NavLink
           to="/ai-coach"
           className={({ isActive }) =>
             `nav__link${isActive ? ' nav__link--active' : ''}`
           }
         >
           AI Coach
+        </NavLink>
+        <NavLink
+          to="/plans"
+          className={({ isActive }) =>
+            `nav__link${isActive ? ' nav__link--active' : ''}`
+          }
+        >
+          Training Plans
         </NavLink>
         <NotificationBell />
         <div className="nav__profile-menu">
