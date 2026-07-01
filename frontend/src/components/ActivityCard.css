@@ -6,6 +6,8 @@
   min-height: 44px;
   cursor: pointer;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .activity-card:hover {
@@ -121,5 +123,23 @@
 @media (max-width: 599px) {
   .activity-card__stroke {
     display: none;
+  }
+}
+
+/* Desktop: move the session summary up between the header (stroke %) and
+   the activity snapshot (distance + metrics) instead of at the foot. */
+@media (min-width: 600px) {
+  .activity-card__header {
+    order: 1;
+  }
+  .activity-card__session {
+    order: 2;
+    margin-top: 0;
+  }
+  .activity-card__distance {
+    order: 3;
+  }
+  .activity-card__metrics {
+    order: 4;
   }
 }
