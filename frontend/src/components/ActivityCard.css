@@ -126,18 +126,18 @@
   }
 }
 
-/* Desktop: move the session summary up between the header (stroke %) and
-   the activity snapshot (distance + metrics) instead of at the foot. */
+/* Desktop: stack the session summary in the middle of the card, between the
+   distance/overview and the metrics snapshot. */
 @media (min-width: 600px) {
   .activity-card__header {
     order: 1;
   }
-  .activity-card__session {
-    order: 2;
-    margin-top: 0;
-  }
   .activity-card__distance {
+    order: 2;
+  }
+  .activity-card__session {
     order: 3;
+    margin-top: 0;
   }
   .activity-card__metrics {
     order: 4;
