@@ -121,6 +121,97 @@
   /* The AICoachChat component provides its own card styling */
 }
 
+/* Intent (collapsible focus categories) */
+.ai-analysis-page__intent {
+  margin-bottom: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.ai-analysis-page__intent-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.ai-analysis-page__intent-arrow {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  transition: transform 0.15s ease;
+}
+
+.ai-analysis-page__intent-arrow--open {
+  transform: rotate(90deg);
+}
+
+.ai-analysis-page__intent-count {
+  margin-left: auto;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: hsl(215, 30%, 95%);
+  padding: 2px var(--space-2);
+  border-radius: 9999px;
+}
+
+.ai-analysis-page__intent-body {
+  padding: 0 var(--space-4) var(--space-4);
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.ai-analysis-page__intent-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: var(--space-3) 0;
+}
+
+.ai-analysis-page__intent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.ai-analysis-page__intent-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-300);
+  border-radius: 9999px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.ai-analysis-page__intent-chip:hover {
+  border-color: var(--color-primary);
+}
+
+.ai-analysis-page__intent-chip--active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.ai-analysis-page__intent-chip-icon {
+  font-size: var(--font-size-base);
+  line-height: 1;
+}
+
 @media (max-width: 767px) {
   .ai-analysis-page__capabilities {
     grid-template-columns: 1fr;

@@ -15,11 +15,31 @@ const EXAMPLES = [
   'Where would my times place me in Masters Swimming?',
 ];
 
+/** Coaching focus categories that steer the AI's answers. */
+const INTENTS: { key: string; label: string; icon: string }[] = [
+  { key: 'technique', label: 'Technique & Efficiency', icon: '🌊' },
+  { key: 'endurance', label: 'Endurance & Base', icon: '🫁' },
+  { key: 'speed', label: 'Speed & Sprint', icon: '⚡' },
+  { key: 'threshold', label: 'Threshold / CSS', icon: '📈' },
+  { key: 'race_prep', label: 'Race Prep & Taper', icon: '🏁' },
+  { key: 'recovery', label: 'Recovery & Injury Prevention', icon: '🧘' },
+  { key: 'fitness', label: 'General Fitness & Weight', icon: '❤️' },
+  { key: 'open_water', label: 'Open Water', icon: '🌅' },
+];
+
 /**
  * Dedicated AI Analysis page — ask your AI coach anything about your training.
  */
 export function AIAnalysisPage() {
   const [selectedPrompt, setSelectedPrompt] = useState('');
+  const [intentOpen, setIntentOpen] = useState(false);
+  const [selectedIntents, setSelectedIntents] = useState<string[]>([]);
+
+  const toggleIntent = (key: string) => {
+    setSelectedIntents((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
 
   return (
     <div className="ai-analysis-page">
@@ -70,8 +90,45 @@ export function AIAnalysisPage() {
         </div>
       </div>
 
+      <div className="ai-analysis-page__intent">
+        <button
+          className="ai-analysis-page__intent-toggle"
+          onClick={() => setIntentOpen((o) => !o)}
+          aria-expanded={intentOpen}
+        >
+          <span className={`ai-analysis-page__intent-arrow ${intentOpen ? 'ai-analysis-page__intent-arrow--open' : ''}`}>▶</span>
+          Intent
+          {selectedIntents.length > 0 && (
+            <span className="ai-analysis-page__intent-count">{selectedIntents.length} selected</span>
+          )}
+        </button>
+        {intentOpen && (
+          <div className="ai-analysis-page__intent-body">
+            <p className="ai-analysis-page__intent-hint">
+              Pick one or more focus areas to steer your coach's answers. Leave blank for general advice.
+            </p>
+            <div className="ai-analysis-page__intent-chips">
+              {INTENTS.map((intent) => {
+                const active = selectedIntents.includes(intent.key);
+                return (
+                  <button
+                    key={intent.key}
+                    className={`ai-analysis-page__intent-chip ${active ? 'ai-analysis-page__intent-chip--active' : ''}`}
+                    onClick={() => toggleIntent(intent.key)}
+                    aria-pressed={active}
+                  >
+                    <span className="ai-analysis-page__intent-chip-icon">{intent.icon}</span>
+                    {intent.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="ai-analysis-page__chat-section">
-        <AICoachChat externalPrompt={selectedPrompt} />
+        <AICoachChat externalPrompt={selectedPrompt} intents={selectedIntents} />
       </div>
 
       <div className="ai-analysis-page__examples">

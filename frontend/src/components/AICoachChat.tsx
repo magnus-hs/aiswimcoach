@@ -11,6 +11,8 @@ interface AICoachChatProps {
   } | null;
   /** Externally set prompt (from parent clicking an example) */
   externalPrompt?: string;
+  /** Optional coaching focus categories that influence the AI answer */
+  intents?: string[];
 }
 
 interface Message {
@@ -22,7 +24,7 @@ interface Message {
  * AI coaching chat — interactive analysis of current session and historical trends.
  * Clicking a suggestion populates the input box for the user to edit or send.
  */
-export function AICoachChat({ currentSession, externalPrompt }: AICoachChatProps) {
+export function AICoachChat({ currentSession, externalPrompt, intents }: AICoachChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,6 +55,7 @@ export function AICoachChat({ currentSession, externalPrompt }: AICoachChatProps
         body: JSON.stringify({
           prompt,
           current_session: currentSession || undefined,
+          intents: intents && intents.length > 0 ? intents : undefined,
         }),
       });
 

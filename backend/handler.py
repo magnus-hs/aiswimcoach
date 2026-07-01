@@ -1270,6 +1270,7 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _error_response(400, "Missing prompt")
     
     current_session = body.get("current_session")  # Optional: current session data
+    intents = body.get("intents") or []  # Optional: coaching focus categories
     
     # Fetch all user sessions for trend analysis
     try:
@@ -1359,6 +1360,27 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
             f"  - 200m race: ~{(css_pace - 2) * 2:.0f}s ({int(((css_pace-2)*2)//60)}:{int(((css_pace-2)*2)%60):02d})\n"
             f"  - 400m race: ~{(css_pace + 2) * 4:.0f}s ({int(((css_pace+2)*4)//60)}:{int(((css_pace+2)*4)%60):02d})\n"
         )
+
+    # Build coaching-intent focus guidance from the categories the swimmer selected.
+    intent_info = ""
+    if intents:
+        intent_guidance = {
+            "technique": "Stroke technique and efficiency (distance-per-stroke, SWOLF, stroke rate).",
+            "endurance": "Aerobic endurance and building a distance base.",
+            "speed": "Speed and sprint development (short, fast efforts).",
+            "threshold": "Threshold / CSS improvement and race-pace work.",
+            "race_prep": "Race preparation, pacing strategy, and tapering.",
+            "recovery": "Recovery, injury prevention, and managing training load.",
+            "fitness": "General fitness, health, and weight management.",
+            "open_water": "Open water swimming skills and preparation.",
+        }
+        lines = [intent_guidance.get(str(i), str(i)) for i in intents]
+        intent_info = (
+            "\n\nThe swimmer has selected these coaching focus areas. "
+            "Tailor and prioritise your answer around them:\n"
+            + "\n".join(f"- {line}" for line in lines)
+            + "\n"
+        )
     
     # Call Bedrock
     system_prompt = (
@@ -1378,7 +1400,7 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
         "Do not use markdown formatting — respond in plain text with line breaks for readability."
     )
     
-    user_message = f"{prompt}{profile_info}{css_info}{session_detail}{history_summary}"
+    user_message = f"{prompt}{intent_info}{profile_info}{css_info}{session_detail}{history_summary}"
     
     try:
         region = os.environ.get("AWS_REGION", "us-east-1")
