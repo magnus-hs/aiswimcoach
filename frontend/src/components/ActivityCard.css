@@ -19,9 +19,11 @@
 }
 
 .activity-card__header {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: var(--font-size-sm);
   margin-bottom: var(--space-3);
 }
 
@@ -32,6 +34,9 @@
 }
 
 .activity-card__stroke {
+  position: absolute;
+  top: 0;
+  right: 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   font-weight: var(--font-weight-medium);
@@ -40,6 +45,7 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 1px;
+  line-height: var(--line-height-tight);
 }
 
 .activity-card__stroke-line {
