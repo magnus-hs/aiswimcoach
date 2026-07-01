@@ -44,18 +44,18 @@ resource "aws_iam_role_policy" "lambda_permissions" {
         Resource = "${aws_s3_bucket.profile_pictures.arn}/*"
       },
       {
-        Sid      = "BedrockInvokeModel"
-        Effect   = "Allow"
-        Action   = ["bedrock:InvokeModel"]
+        Sid    = "BedrockInvokeModel"
+        Effect = "Allow"
+        Action = ["bedrock:InvokeModel"]
         Resource = [
           "arn:aws:bedrock:*::foundation-model/anthropic.*",
           "arn:aws:bedrock:*:*:inference-profile/us.anthropic.*"
         ]
       },
       {
-        Sid      = "MarketplaceSubscription"
-        Effect   = "Allow"
-        Action   = [
+        Sid    = "MarketplaceSubscription"
+        Effect = "Allow"
+        Action = [
           "aws-marketplace:ViewSubscriptions",
           "aws-marketplace:Subscribe",
           "aws-marketplace:Unsubscribe"
@@ -99,6 +99,20 @@ resource "aws_iam_role_policy" "lambda_permissions" {
         Resource = [
           aws_dynamodb_table.sessions.arn,
           "${aws_dynamodb_table.sessions.arn}/index/session_id-index"
+        ]
+      },
+      {
+        Sid    = "DynamoDBFriends"
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.friends.arn,
+          "${aws_dynamodb_table.friends.arn}/index/sk-pk-index"
         ]
       }
     ]

@@ -42,6 +42,18 @@ from plan_generator import generate_multi_week_plan, PlanGenerationError
 from pb_resolver import save_personal_best, get_personal_bests, delete_personal_best, PBResolverError
 from plan_lifecycle import activate_plan, archive_plan
 from structured_plan_store import get_user_structured_plans, get_plan_by_id
+from friends_service import (
+    search_users,
+    send_friend_request,
+    get_pending_requests,
+    accept_friend_request,
+    decline_friend_request,
+    get_friends,
+    remove_friend,
+    get_friends_activities,
+    update_activity_visibility,
+    get_activity_visibility,
+)
 from http_headers import response_headers
 from rate_limit import check_rate_limit
 
@@ -129,6 +141,37 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     elif path == "/profile/assessment" and http_method == "GET":
         return _handle_get_assessment(event, context)
     
+    # Friends network routes (auth required)
+    elif path == "/friends/search" and http_method == "GET":
+        limited = _enforce_rate_limit(event, "friends-search", 30, 60)
+        return limited or _handle_search_friends(event, context)
+    elif path == "/friends/request" and http_method == "POST":
+        limited = _enforce_rate_limit(event, "friends-request", 20, 60)
+        return limited or _handle_send_friend_request(event, context)
+    elif path == "/friends/requests" and http_method == "GET":
+        return _handle_get_pending_requests(event, context)
+    elif path.startswith("/friends/requests/") and path.endswith("/accept") and http_method == "POST":
+        request_id = path.split("/friends/requests/")[1].split("/accept")[0]
+        event["request_id"] = request_id
+        return _handle_accept_friend_request(event, context)
+    elif path.startswith("/friends/requests/") and path.endswith("/decline") and http_method == "POST":
+        request_id = path.split("/friends/requests/")[1].split("/decline")[0]
+        event["request_id"] = request_id
+        return _handle_decline_friend_request(event, context)
+    elif path == "/friends/activities" and http_method == "GET":
+        return _handle_get_friends_activities(event, context)
+    elif path == "/friends/visibility" and http_method == "PUT":
+        return _handle_update_activity_visibility(event, context)
+    elif path == "/friends/visibility" and http_method == "GET":
+        return _handle_get_activity_visibility(event, context)
+    elif path == "/friends" and http_method == "GET":
+        return _handle_get_friends(event, context)
+    elif path.startswith("/friends/") and http_method == "DELETE":
+        friend_user_id = path.split("/friends/")[1]
+        if friend_user_id and friend_user_id not in ("search", "request", "requests", "activities", "visibility"):
+            event["friend_user_id"] = friend_user_id
+            return _handle_remove_friend(event, context)
+
     # Structured training plans routes (auth required)
     elif path == "/plans/generate" and http_method == "POST":
         return _handle_generate_structured_plan(event, context)
@@ -2256,6 +2299,193 @@ def _handle_get_session_by_id(
     except Exception as exc:
         logger.error("Session retrieval failed for session %s: %s", session_id, exc)
         return _error_response(500, "Session retrieval failure")
+
+
+# ---------------------------------------------------------------------------
+# Friends network handlers
+# ---------------------------------------------------------------------------
+
+
+@require_auth
+def _handle_search_friends(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /friends/search?q={query} endpoint."""
+    user_id = event["auth_context"]["user_id"]
+    query_params = event.get("queryStringParameters") or {}
+    query = query_params.get("q", "")
+
+    try:
+        results = search_users(query, user_id)
+        return http_200_dict({"results": results})
+    except ValueError as exc:
+        return _error_response(400, str(exc))
+    except Exception as exc:
+        logger.error("Friend search failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Internal server error")
+
+
+@require_auth
+def _handle_send_friend_request(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle POST /friends/request endpoint."""
+    import base64
+
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        body = event.get("body")
+        if not body:
+            return _error_response(400, "Request body is required")
+        if event.get("isBase64Encoded"):
+            body = base64.b64decode(body).decode("utf-8")
+        payload = json.loads(body)
+    except (json.JSONDecodeError, ValueError) as exc:
+        return _error_response(400, f"Invalid JSON body: {exc}")
+
+    target_user_id = payload.get("target_user_id")
+    if not target_user_id:
+        return _error_response(400, "Missing 'target_user_id' in request body")
+
+    try:
+        result = send_friend_request(user_id, target_user_id)
+        return {
+            "statusCode": 201,
+            "headers": response_headers(),
+            "body": json.dumps(result),
+        }
+    except ValueError as exc:
+        msg = str(exc)
+        if "already exists" in msg.lower() or "already friends" in msg.lower():
+            return _error_response(409, msg)
+        return _error_response(400, msg)
+    except Exception as exc:
+        logger.error("Send friend request failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Internal server error")
+
+
+@require_auth
+def _handle_get_pending_requests(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /friends/requests endpoint."""
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        requests = get_pending_requests(user_id)
+        return http_200_dict({"requests": requests})
+    except Exception as exc:
+        logger.error("Get pending requests failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Internal server error")
+
+
+@require_auth
+def _handle_accept_friend_request(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle POST /friends/requests/{request_id}/accept endpoint."""
+    user_id = event["auth_context"]["user_id"]
+    request_id = event.get("request_id", "")
+
+    try:
+        result = accept_friend_request(request_id, user_id)
+        return http_200_dict(result)
+    except ValueError as exc:
+        return _error_response(404, str(exc))
+    except Exception as exc:
+        logger.error("Accept friend request failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Internal server error")
+
+
+@require_auth
+def _handle_decline_friend_request(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle POST /friends/requests/{request_id}/decline endpoint."""
+    user_id = event["auth_context"]["user_id"]
+    request_id = event.get("request_id", "")
+
+    try:
+        result = decline_friend_request(request_id, user_id)
+        return http_200_dict(result)
+    except ValueError as exc:
+        return _error_response(404, str(exc))
+    except Exception as exc:
+        logger.error("Decline friend request failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Internal server error")
+
+
+@require_auth
+def _handle_get_friends(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /friends endpoint."""
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        friends = get_friends(user_id)
+        return http_200_dict({"friends": friends})
+    except Exception as exc:
+        logger.error("Get friends failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Internal server error")
+
+
+@require_auth
+def _handle_remove_friend(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle DELETE /friends/{friend_user_id} endpoint."""
+    user_id = event["auth_context"]["user_id"]
+    friend_user_id = event.get("friend_user_id", "")
+
+    try:
+        result = remove_friend(user_id, friend_user_id)
+        return http_200_dict(result)
+    except Exception as exc:
+        logger.error("Remove friend failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Internal server error")
+
+
+@require_auth
+def _handle_get_friends_activities(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /friends/activities endpoint."""
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        activities = get_friends_activities(user_id)
+        return http_200_dict({"activities": activities})
+    except Exception as exc:
+        logger.error("Get friends activities failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Internal server error")
+
+
+@require_auth
+def _handle_update_activity_visibility(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle PUT /friends/visibility endpoint."""
+    import base64
+
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        body = event.get("body")
+        if not body:
+            return _error_response(400, "Request body is required")
+        if event.get("isBase64Encoded"):
+            body = base64.b64decode(body).decode("utf-8")
+        payload = json.loads(body)
+    except (json.JSONDecodeError, ValueError) as exc:
+        return _error_response(400, f"Invalid JSON body: {exc}")
+
+    visible = payload.get("visible")
+    if visible is None:
+        return _error_response(400, "Missing 'visible' in request body")
+
+    try:
+        result = update_activity_visibility(user_id, bool(visible))
+        return http_200_dict(result)
+    except Exception as exc:
+        logger.error("Update activity visibility failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Internal server error")
+
+
+@require_auth
+def _handle_get_activity_visibility(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /friends/visibility endpoint."""
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        visible = get_activity_visibility(user_id)
+        return http_200_dict({"visible": visible})
+    except Exception as exc:
+        logger.error("Get activity visibility failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Internal server error")
 
 
 # ---------------------------------------------------------------------------

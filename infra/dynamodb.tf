@@ -83,6 +83,42 @@ resource "aws_dynamodb_table" "user_profiles" {
 }
 
 # =============================================================================
+# DynamoDB Table — Friends
+# Requirements: friends-network (Infrastructure prerequisite)
+# =============================================================================
+
+resource "aws_dynamodb_table" "friends" {
+  name         = "ai-swim-coach-friends"
+  billing_mode = "PAY_PER_REQUEST"
+
+  hash_key  = "pk"
+  range_key = "sk"
+
+  attribute {
+    name = "pk"
+    type = "S"
+  }
+
+  attribute {
+    name = "sk"
+    type = "S"
+  }
+
+  # GSI for reverse lookups (e.g., incoming friend requests)
+  global_secondary_index {
+    name            = "sk-pk-index"
+    hash_key        = "sk"
+    range_key       = "pk"
+    projection_type = "ALL"
+  }
+
+  tags = {
+    Name    = "ai-swim-coach-friends"
+    Purpose = "Friend relationships and pending requests (adjacency list pattern)"
+  }
+}
+
+# =============================================================================
 # DynamoDB Table — Sessions
 # Requirements: hr-zones-user-profile 15.1-15.12
 # =============================================================================

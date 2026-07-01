@@ -23,6 +23,7 @@ import { PrivacyPage } from './pages/PrivacyPage';
 import { SupportPage } from './pages/SupportPage';
 import { FAQPage } from './pages/FAQPage';
 import { PlanDetailView } from './components/PlanDetailView';
+import { FriendsPage } from './pages/FriendsPage';
 
 /**
  * Redirect component for backward compatibility.
@@ -151,6 +152,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <GoalsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/friends"
+            element={
+              <ProtectedRoute>
+                <FriendsPage />
               </ProtectedRoute>
             }
           />

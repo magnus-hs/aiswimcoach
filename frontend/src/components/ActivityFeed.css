@@ -1,5 +1,58 @@
 /* ActivityFeed styles */
 
+.activity-feed-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Tab bar */
+.activity-feed__tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--color-gray-200);
+  margin-bottom: var(--space-4);
+}
+
+.activity-feed__tab {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.activity-feed__tab:hover {
+  color: var(--color-text);
+}
+
+.activity-feed__tab--active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* Friend card wrapper */
+.activity-feed__friend-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.activity-feed__friend-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  padding-left: var(--space-2);
+}
+
 .activity-feed {
   display: flex;
   flex-direction: column;
