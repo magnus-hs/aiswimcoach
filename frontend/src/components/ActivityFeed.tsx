@@ -1,8 +1,12 @@
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { SessionSummary } from '../api/sessionService';
 import { ActivityCard } from './ActivityCard';
 import { ErrorBanner } from './ErrorBanner';
 import './ActivityFeed.css';
+
+const INITIAL_COUNT = 7;
+const LOAD_MORE_STEP = 5;
 
 export interface ActivityFeedProps {
   /** Session summaries to render as ActivityCards. */
@@ -22,6 +26,33 @@ export interface ActivityFeedProps {
  * Validates: Requirements 3.5, 12.1, 12.2, 12.4
  */
 export function ActivityFeed({ sessions, loading, error, onRetry }: ActivityFeedProps) {
+  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Sort sessions by date descending (API should already be sorted, but ensure correctness)
+  const sorted = [...sessions].sort((a, b) => {
+    return new Date(b.session_date).getTime() - new Date(a.session_date).getTime();
+  });
+  const hasMore = visibleCount < sorted.length;
+  const visible = sorted.slice(0, visibleCount);
+
+  // Reveal more activities as the sentinel scrolls into view.
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + LOAD_MORE_STEP, sorted.length));
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, sorted.length, visibleCount]);
+
   // Error state
   if (error) {
     return (
@@ -58,14 +89,9 @@ export function ActivityFeed({ sessions, loading, error, onRetry }: ActivityFeed
     );
   }
 
-  // Sort sessions by date descending (API should already be sorted, but ensure correctness)
-  const sorted = [...sessions].sort((a, b) => {
-    return new Date(b.session_date).getTime() - new Date(a.session_date).getTime();
-  });
-
   return (
     <div className="activity-feed">
-      {sorted.map((session) => (
+      {visible.map((session) => (
         <ActivityCard
           key={session.session_id}
           sessionId={session.session_id}
@@ -80,6 +106,18 @@ export function ActivityFeed({ sessions, loading, error, onRetry }: ActivityFeed
           poolLengthMeters={session.pool_length_meters}
         />
       ))}
+
+      {hasMore && (
+        <div ref={sentinelRef} className="activity-feed__more">
+          <button
+            type="button"
+            className="activity-feed__more-btn"
+            onClick={() => setVisibleCount((c) => Math.min(c + LOAD_MORE_STEP, sorted.length))}
+          >
+            Show more activities
+          </button>
+        </div>
+      )}
     </div>
   );
 }
