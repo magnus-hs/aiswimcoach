@@ -173,3 +173,18 @@
     align-items: flex-end;
   }
 }
+
+/* Kudos indicator */
+.activity-card__kudos {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  align-self: flex-end;
+}
+
+.activity-card__kudos-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}

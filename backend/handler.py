@@ -17,6 +17,7 @@ from decimal import Decimal
 from typing import Any
 
 import boto3
+from botocore.exceptions import ClientError
 
 from multipart_parser import ParseError as MultipartParseError  # noqa: E402
 from multipart_parser import parse_multipart
@@ -53,6 +54,12 @@ from friends_service import (
     get_friends_activities,
     update_activity_visibility,
     get_activity_visibility,
+)
+from interactions_service import (
+    get_interactions,
+    add_comment,
+    delete_comment,
+    toggle_kudos,
 )
 from http_headers import response_headers
 from rate_limit import check_rate_limit
@@ -203,6 +210,29 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     elif path == "/plans" and http_method == "GET":
         return _handle_get_plans(event, context)
     
+    # Session interaction routes (auth required) — must match before /sessions/{id}
+    elif path.startswith("/sessions/") and path.endswith("/interactions") and http_method == "GET":
+        session_id = path.split("/sessions/")[1].split("/interactions")[0]
+        event["session_id"] = session_id
+        return _handle_get_interactions(event, context)
+    elif path.startswith("/sessions/") and path.endswith("/comments") and http_method == "POST":
+        session_id = path.split("/sessions/")[1].split("/comments")[0]
+        event["session_id"] = session_id
+        limited = _enforce_rate_limit(event, "add-comment", 20, 60)
+        return limited or _handle_add_comment(event, context)
+    elif path.startswith("/sessions/") and "/comments/" in path and http_method == "DELETE":
+        parts = path.split("/sessions/")[1]
+        session_id = parts.split("/comments/")[0]
+        comment_id = parts.split("/comments/")[1]
+        event["session_id"] = session_id
+        event["comment_id"] = comment_id
+        return _handle_delete_comment(event, context)
+    elif path.startswith("/sessions/") and path.endswith("/kudos") and http_method == "POST":
+        session_id = path.split("/sessions/")[1].split("/kudos")[0]
+        event["session_id"] = session_id
+        limited = _enforce_rate_limit(event, "toggle-kudos", 30, 60)
+        return limited or _handle_toggle_kudos(event, context)
+
     # Session history routes (auth required)
     elif path == "/sessions" and http_method == "GET":
         return _handle_get_sessions(event, context)
@@ -2486,6 +2516,114 @@ def _handle_get_activity_visibility(event: dict[str, Any], context: Any) -> dict
     except Exception as exc:
         logger.error("Get activity visibility failed for user %s: %s", user_id, exc)
         return _error_response(500, "Internal server error")
+
+
+# ---------------------------------------------------------------------------
+# Social interaction handlers
+# ---------------------------------------------------------------------------
+
+
+@require_auth
+def _handle_get_interactions(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /sessions/{id}/interactions endpoint."""
+    user_id = event["auth_context"]["user_id"]
+    session_id = event.get("session_id", "")
+
+    try:
+        result = get_interactions(session_id, user_id)
+        return http_200_dict(result)
+    except ValueError as exc:
+        msg = str(exc)
+        if "not found" in msg.lower():
+            return _error_response(404, msg)
+        return _error_response(400, msg)
+    except PermissionError as exc:
+        return _error_response(403, str(exc))
+    except ClientError as exc:
+        logger.error("Get interactions failed for session %s: %s", session_id, exc)
+        return _error_response(500, "Failed to retrieve interactions")
+
+
+@require_auth
+def _handle_add_comment(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle POST /sessions/{id}/comments endpoint."""
+    import base64
+
+    user_id = event["auth_context"]["user_id"]
+    session_id = event.get("session_id", "")
+
+    try:
+        body = event.get("body")
+        if not body:
+            return _error_response(400, "Request body is required")
+        if event.get("isBase64Encoded"):
+            body = base64.b64decode(body).decode("utf-8")
+        payload = json.loads(body)
+    except (json.JSONDecodeError, ValueError) as exc:
+        return _error_response(400, f"Invalid JSON body: {exc}")
+
+    text = payload.get("text", "")
+
+    try:
+        result = add_comment(session_id, user_id, text)
+        return {
+            "statusCode": 201,
+            "headers": response_headers(),
+            "body": json.dumps(result),
+        }
+    except ValueError as exc:
+        msg = str(exc)
+        if "not found" in msg.lower():
+            return _error_response(404, msg)
+        return _error_response(400, msg)
+    except PermissionError as exc:
+        return _error_response(403, str(exc))
+    except ClientError as exc:
+        logger.error("Add comment failed for session %s: %s", session_id, exc)
+        return _error_response(500, "Failed to save interaction. Please try again.")
+
+
+@require_auth
+def _handle_delete_comment(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle DELETE /sessions/{id}/comments/{comment_id} endpoint."""
+    user_id = event["auth_context"]["user_id"]
+    session_id = event.get("session_id", "")
+    comment_id = event.get("comment_id", "")
+
+    try:
+        delete_comment(session_id, comment_id, user_id)
+        return http_200_dict({"status": "deleted"})
+    except ValueError as exc:
+        msg = str(exc)
+        if "not found" in msg.lower():
+            return _error_response(404, msg)
+        return _error_response(400, msg)
+    except PermissionError as exc:
+        return _error_response(403, str(exc))
+    except ClientError as exc:
+        logger.error("Delete comment failed for session %s: %s", session_id, exc)
+        return _error_response(500, "Failed to delete comment. Please try again.")
+
+
+@require_auth
+def _handle_toggle_kudos(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle POST /sessions/{id}/kudos endpoint."""
+    user_id = event["auth_context"]["user_id"]
+    session_id = event.get("session_id", "")
+
+    try:
+        result = toggle_kudos(session_id, user_id)
+        return http_200_dict(result)
+    except ValueError as exc:
+        msg = str(exc)
+        if "not found" in msg.lower():
+            return _error_response(404, msg)
+        return _error_response(400, msg)
+    except PermissionError as exc:
+        return _error_response(403, str(exc))
+    except ClientError as exc:
+        logger.error("Toggle kudos failed for session %s: %s", session_id, exc)
+        return _error_response(500, "Failed to save interaction. Please try again.")
 
 
 # ---------------------------------------------------------------------------

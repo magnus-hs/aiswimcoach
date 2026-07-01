@@ -4,6 +4,7 @@ import { StrokeBreakdownEntry } from '../api/sessionService';
 import { strokeLabel } from '../utils/strokeBreakdown';
 import { summarizeSets } from '../utils/groupSplits';
 import { LengthSplit } from '../types';
+import { KudosIcon } from './KudosIcon';
 import './ActivityCard.css';
 
 export interface ActivityCardProps {
@@ -17,6 +18,7 @@ export interface ActivityCardProps {
   strokeBreakdown?: StrokeBreakdownEntry[];
   splits?: LengthSplit[];
   poolLengthMeters?: number;
+  kudosCount?: number;
 }
 
 /**
@@ -84,6 +86,7 @@ export function ActivityCard({
   strokeBreakdown,
   splits,
   poolLengthMeters,
+  kudosCount,
 }: ActivityCardProps) {
   const navigate = useNavigate();
 
@@ -229,6 +232,13 @@ export function ActivityCard({
           <span key={i} className="activity-card__stroke-line">{line}</span>
         ))}
       </span>
+
+      {kudosCount != null && kudosCount > 0 && (
+        <span className="activity-card__kudos">
+          <KudosIcon active size={16} />
+          <span className="activity-card__kudos-count">{kudosCount}</span>
+        </span>
+      )}
     </article>
   );
 }

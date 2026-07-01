@@ -20,6 +20,7 @@ import { TrainingPlanResult } from '../components/TrainingPlanResult';
 import { FileDropZone } from '../components/FileDropZone';
 import { LoadingIndicator } from '../components/LoadingIndicator';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { InteractionsPanel } from '../components/InteractionsPanel';
 import './ActivityDetailPage.css';
 
 export interface ActivityDetailPageProps {
@@ -62,6 +63,18 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
   }, []);
 
   const isUploadMode = mode === 'upload';
+
+  // Determine if current user is the session owner
+  const isCurrentUserOwner = useCallback((): boolean => {
+    const currentUserId = localStorage.getItem('user_id') || '';
+    if (!currentUserId) return true; // Default to owner view if no user_id
+    // If session detail has a user_id field, compare; otherwise assume owner
+    if (sessionDetail) {
+      const sessionUserId = (sessionDetail as unknown as Record<string, unknown>).user_id as string | undefined;
+      if (sessionUserId) return sessionUserId === currentUserId;
+    }
+    return true;
+  }, [sessionDetail]);
 
   const fetchSession = useCallback(async (sessionId: string) => {
     setLoading(true);
@@ -205,6 +218,13 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
         )}
         {data.training_plan && <TrainingPlanResult plan={data.training_plan} />}
+        {id && (
+          <InteractionsPanel
+            sessionId={id}
+            isOwner={isCurrentUserOwner()}
+            canInteract={true}
+          />
+        )}
       </div>
     );
   }
