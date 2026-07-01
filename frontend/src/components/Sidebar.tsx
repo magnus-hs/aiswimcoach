@@ -83,6 +83,24 @@ export function Sidebar({
 
       <div className={`sidebar__collapsible ${mobileExpanded ? 'sidebar__collapsible--open' : ''}`}>
 
+      <div className="sidebar__chart-section">
+        <h3 className="sidebar__section-title">Distance This Week</h3>
+        <span className="sidebar__section-value">{formatDistance(distanceThisWeekMeters)}</span>
+        <DistanceChart data={weeklyDistanceChart} height={90} onBarClick={onBarClick} />
+      </div>
+
+      <div className="sidebar__chart-section">
+        <h3 className="sidebar__section-title">Distance This Month</h3>
+        <span className="sidebar__section-value">{formatDistance(distanceThisMonthMeters)}</span>
+        <DistanceChart data={monthlyDistanceChart} height={90} onBarClick={onBarClick} />
+      </div>
+
+      <div className="sidebar__chart-section">
+        <h3 className="sidebar__section-title">Distance Year to Date</h3>
+        <span className="sidebar__section-value">{formatDistance(distanceYTDMeters)}</span>
+        <DistanceChart data={yearlyDistanceChart} height={90} onBarClick={onBarClick} />
+      </div>
+
       <div className="sidebar__stats" role="list" aria-label="Training statistics">
         <div className="sidebar__stat" role="listitem">
           <span className="sidebar__stat-value">{totalSessions}</span>
@@ -100,24 +118,6 @@ export function Sidebar({
           <span className="sidebar__stat-value">{swimsYTD}</span>
           <span className="sidebar__stat-label">Swims Year to Date</span>
         </div>
-      </div>
-
-      <div className="sidebar__chart-section">
-        <h3 className="sidebar__section-title">Distance This Week</h3>
-        <span className="sidebar__section-value">{formatDistance(distanceThisWeekMeters)}</span>
-        <DistanceChart data={weeklyDistanceChart} height={90} onBarClick={onBarClick} />
-      </div>
-
-      <div className="sidebar__chart-section">
-        <h3 className="sidebar__section-title">Distance This Month</h3>
-        <span className="sidebar__section-value">{formatDistance(distanceThisMonthMeters)}</span>
-        <DistanceChart data={monthlyDistanceChart} height={90} onBarClick={onBarClick} />
-      </div>
-
-      <div className="sidebar__chart-section">
-        <h3 className="sidebar__section-title">Distance Year to Date</h3>
-        <span className="sidebar__section-value">{formatDistance(distanceYTDMeters)}</span>
-        <DistanceChart data={yearlyDistanceChart} height={90} onBarClick={onBarClick} />
       </div>
 
       <div className="sidebar__totals">
