@@ -1,0 +1,191 @@
+.goals-page {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+.goals-page__heading {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-2);
+}
+
+.goals-page__intro {
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-relaxed);
+  margin: 0 0 var(--space-6);
+}
+
+.goals-page__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.goals-page__card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+}
+
+.goals-page__card h2 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-1);
+}
+
+.goals-page__hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-3);
+}
+
+.goals-page__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.goals-page__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-300);
+  border-radius: 9999px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.goals-page__chip:hover {
+  border-color: var(--color-primary);
+}
+
+.goals-page__chip--active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.goals-page__chip-icon {
+  font-size: var(--font-size-base);
+  line-height: 1;
+}
+
+.goals-page__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.goals-page__row .goals-page__field {
+  flex: 1;
+  min-width: 120px;
+}
+
+.goals-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.goals-page__field label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.goals-page__input {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+}
+
+.goals-page__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.goals-page__textarea {
+  resize: vertical;
+}
+
+.goals-page__progress {
+  margin-top: var(--space-2);
+}
+
+.goals-page__progress-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  margin-bottom: var(--space-1);
+}
+
+.goals-page__progress-bar {
+  width: 100%;
+  height: 10px;
+  background: var(--color-gray-200);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.goals-page__progress-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.goals-page__error {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.goals-page__success {
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+}
+
+.goals-page__submit {
+  align-self: flex-start;
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.goals-page__submit:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.goals-page__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 599px) {
+  .goals-page {
+    padding: var(--space-4) var(--space-3);
+  }
+}

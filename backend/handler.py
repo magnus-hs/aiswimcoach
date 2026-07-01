@@ -116,6 +116,10 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_save_css(event, context)
     elif path == "/profile/css" and http_method == "GET":
         return _handle_get_css(event, context)
+    elif path == "/profile/goals" and http_method == "POST":
+        return _handle_save_goals(event, context)
+    elif path == "/profile/goals" and http_method == "GET":
+        return _handle_get_goals(event, context)
     elif path == "/profile/assessment" and http_method == "GET":
         return _handle_get_assessment(event, context)
     
@@ -1129,6 +1133,108 @@ def _handle_get_css(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _error_response(500, "Failed to retrieve CSS")
 
 
+def _goals_to_json(goals: dict | None) -> dict:
+    """Convert a stored goals map (with Decimals) into JSON-friendly types."""
+    if not goals:
+        return {}
+    out: dict[str, Any] = {}
+    focus = goals.get("focus")
+    if isinstance(focus, list):
+        out["focus"] = [str(x) for x in focus]
+    if goals.get("weekly_distance_m") is not None:
+        out["weekly_distance_m"] = int(goals["weekly_distance_m"])
+    if goals.get("target_event"):
+        out["target_event"] = str(goals["target_event"])
+    if goals.get("target_time_seconds") is not None:
+        out["target_time_seconds"] = float(goals["target_time_seconds"])
+    if goals.get("target_date"):
+        out["target_date"] = str(goals["target_date"])
+    if goals.get("notes"):
+        out["notes"] = str(goals["notes"])
+    return out
+
+
+@require_auth
+def _handle_save_goals(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle POST /profile/goals — save the swimmer's goals."""
+    user_id = event["auth_context"]["user_id"]
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return _error_response(400, "Invalid JSON body")
+
+    goals = body.get("goals")
+    if not isinstance(goals, dict):
+        return _error_response(400, "goals must be an object")
+
+    item: dict[str, Any] = {}
+
+    focus = goals.get("focus")
+    if isinstance(focus, list):
+        item["focus"] = [str(x)[:40] for x in focus][:12]
+
+    wd = goals.get("weekly_distance_m")
+    if wd is not None:
+        try:
+            wdf = float(wd)
+            if wdf > 0:
+                item["weekly_distance_m"] = Decimal(str(int(wdf)))
+        except (ValueError, TypeError):
+            pass
+
+    te = goals.get("target_event")
+    if te:
+        item["target_event"] = str(te)[:60]
+
+    tt = goals.get("target_time_seconds")
+    if tt is not None:
+        try:
+            ttf = float(tt)
+            if ttf > 0:
+                item["target_time_seconds"] = Decimal(str(round(ttf, 2)))
+        except (ValueError, TypeError):
+            pass
+
+    td = goals.get("target_date")
+    if td:
+        item["target_date"] = str(td)[:20]
+
+    notes = goals.get("notes")
+    if notes:
+        item["notes"] = str(notes)[:500]
+
+    table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
+    try:
+        table = boto3.resource("dynamodb").Table(table_name)
+        table.update_item(
+            Key={"user_id": user_id},
+            UpdateExpression="SET goals = :val",
+            ExpressionAttributeValues={":val": item},
+        )
+        return http_200_dict({"message": "Goals saved", "goals": _goals_to_json(item)})
+    except Exception as exc:
+        logger.error("Failed to save goals for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to save goals")
+
+
+@require_auth
+def _handle_get_goals(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /profile/goals — retrieve the swimmer's goals."""
+    user_id = event["auth_context"]["user_id"]
+    table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
+    try:
+        table = boto3.resource("dynamodb").Table(table_name)
+        response = table.get_item(
+            Key={"user_id": user_id},
+            ProjectionExpression="goals",
+        )
+        item = response.get("Item", {})
+        return http_200_dict({"goals": _goals_to_json(item.get("goals"))})
+    except Exception as exc:
+        logger.error("Failed to get goals for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to retrieve goals")
+
+
 @require_auth
 def _handle_get_assessment(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Handle GET /profile/assessment — retrieve ability assessment and time standards."""
@@ -1281,6 +1387,7 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # Fetch CSS pace and profile
     css_pace = None
     profile_info = ""
+    goals_data = None
     try:
         table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
         table = boto3.resource("dynamodb").Table(table_name)
@@ -1289,6 +1396,7 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
         css_val = item.get("css_pace_per_100m")
         if css_val is not None:
             css_pace = float(css_val)
+        goals_data = item.get("goals")
         # Get profile info for age group comparisons
         age = item.get("age")
         nationality = item.get("nationality")
@@ -1381,6 +1489,70 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
             + "\n".join(f"- {line}" for line in lines)
             + "\n"
         )
+
+    # Build goals guidance so the AI can assess how close/far the swimmer is.
+    goals_info = ""
+    if goals_data:
+        goal_focus_labels = {
+            "endurance": "Build endurance / swim further",
+            "speed": "Get faster (sprint speed)",
+            "technique": "Improve technique & efficiency",
+            "css": "Improve CSS / threshold",
+            "race": "Prepare for a race / event",
+            "consistency": "Swim more consistently",
+            "weight": "Fitness & weight management",
+            "open_water": "Open water swimming",
+        }
+        parts = ["\n\nThe swimmer has set the following GOALS. Assess how close or far they are "
+                 "from each goal using their session data, and give concrete steps to close the gap:\n"]
+        focus = goals_data.get("focus")
+        if isinstance(focus, list) and focus:
+            readable = [goal_focus_labels.get(str(f), str(f)) for f in focus]
+            parts.append(f"- Focus: {', '.join(readable)}\n")
+        wd = goals_data.get("weekly_distance_m")
+        if wd is not None:
+            try:
+                wdf = float(wd)
+                # Compute distance swum in the current (Mon-Sun) week.
+                from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+                now = _dt.now(tz=_tz.utc)
+                week_start = (now - _td(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+                week_distance = 0
+                for s in sessions:
+                    try:
+                        sd = _dt.fromisoformat(s.session_date.replace("Z", "+00:00"))
+                        if sd.tzinfo is None:
+                            sd = sd.replace(tzinfo=_tz.utc)
+                        if sd >= week_start:
+                            week_distance += s.total_distance_meters
+                    except (ValueError, AttributeError):
+                        pass
+                pct = (week_distance / wdf * 100) if wdf > 0 else 0
+                parts.append(
+                    f"- Weekly distance goal: {int(wdf)}m ({wdf/1000:.1f} km). "
+                    f"So far this week: {week_distance}m ({pct:.0f}% of goal).\n"
+                )
+            except (ValueError, TypeError):
+                pass
+        te = goals_data.get("target_event")
+        tt = goals_data.get("target_time_seconds")
+        if te and tt is not None:
+            try:
+                ttf = float(tt)
+                parts.append(
+                    f"- Target event: {te} in {int(ttf)//60}:{int(ttf)%60:02d} ({ttf:.1f}s)\n"
+                )
+            except (ValueError, TypeError):
+                parts.append(f"- Target event: {te}\n")
+        elif te:
+            parts.append(f"- Target event: {te}\n")
+        td = goals_data.get("target_date")
+        if td:
+            parts.append(f"- Target date: {td}\n")
+        notes = goals_data.get("notes")
+        if notes:
+            parts.append(f"- Additional notes: {notes}\n")
+        goals_info = "".join(parts)
     
     # Call Bedrock
     system_prompt = (
@@ -1395,12 +1567,15 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
         "Do not invent or estimate different times — reference the table directly.\n\n"
         "Provide insightful, specific analysis based on the data. Identify trends, strengths, "
         "weaknesses, and give concrete advice on how to improve and reach their targets.\n\n"
+        "If the swimmer has set GOALS, explicitly assess how close or far they are from each goal "
+        "using their data (e.g. weekly distance progress, gap to target race time), and give clear "
+        "steps to close the gap.\n\n"
         "Keep your response concise (2-4 paragraphs) but data-driven. Reference specific numbers "
         "from their sessions and the standards table when making points.\n"
         "Do not use markdown formatting — respond in plain text with line breaks for readability."
     )
     
-    user_message = f"{prompt}{intent_info}{profile_info}{css_info}{session_detail}{history_summary}"
+    user_message = f"{prompt}{intent_info}{goals_info}{profile_info}{css_info}{session_detail}{history_summary}"
     
     try:
         region = os.environ.get("AWS_REGION", "us-east-1")

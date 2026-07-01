@@ -95,6 +95,13 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
               <button
                 className="nav__dropdown-item"
                 role="menuitem"
+                onClick={() => { setProfileMenuOpen(false); navigate('/goals'); }}
+              >
+                Goals
+              </button>
+              <button
+                className="nav__dropdown-item"
+                role="menuitem"
                 onClick={() => { setProfileMenuOpen(false); navigate('/css'); }}
               >
                 Critical Swim Speed

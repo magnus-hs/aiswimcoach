@@ -53,6 +53,15 @@ export function SideNav() {
         <span className="sidenav__icon">🤖</span>
         <span className="sidenav__label">AI Coach</span>
       </NavLink>
+      <NavLink
+        to="/goals"
+        className={({ isActive }) =>
+          `sidenav__link${isActive ? ' sidenav__link--active' : ''}`
+        }
+      >
+        <span className="sidenav__icon">🎯</span>
+        <span className="sidenav__label">Goals</span>
+      </NavLink>
     </nav>
   );
 }
