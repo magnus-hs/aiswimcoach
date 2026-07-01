@@ -104,31 +104,26 @@ export function ActivityCard({
       tabIndex={0}
       aria-label={`${strokeLines.join(', ')} session on ${formatDate(sessionDate)}, ${totalDistanceMeters} meters`}
     >
-      <div className="activity-card__header">
+      <div className="activity-card__snapshot">
         <span className="activity-card__date">{formatDate(sessionDate)}</span>
-        <span className="activity-card__stroke">
-          {strokeLines.map((line, i) => (
-            <span key={i} className="activity-card__stroke-line">{line}</span>
-          ))}
-        </span>
-      </div>
 
-      <div className="activity-card__distance">
-        {totalDistanceMeters}m
-      </div>
+        <div className="activity-card__distance">
+          {totalDistanceMeters}m
+        </div>
 
-      <div className="activity-card__metrics">
-        <div className="activity-card__metric">
-          <span className="activity-card__metric-label">Time</span>
-          <span className="activity-card__metric-value">{formatTime(totalTimeSeconds)}</span>
-        </div>
-        <div className="activity-card__metric">
-          <span className="activity-card__metric-label">Pace</span>
-          <span className="activity-card__metric-value">{formatPace(averagePacePer100m)}</span>
-        </div>
-        <div className="activity-card__metric">
-          <span className="activity-card__metric-label">SWOLF</span>
-          <span className="activity-card__metric-value">{swolfScore}</span>
+        <div className="activity-card__metrics">
+          <div className="activity-card__metric">
+            <span className="activity-card__metric-label">Time</span>
+            <span className="activity-card__metric-value">{formatTime(totalTimeSeconds)}</span>
+          </div>
+          <div className="activity-card__metric">
+            <span className="activity-card__metric-label">Pace</span>
+            <span className="activity-card__metric-value">{formatPace(averagePacePer100m)}</span>
+          </div>
+          <div className="activity-card__metric">
+            <span className="activity-card__metric-label">SWOLF</span>
+            <span className="activity-card__metric-value">{swolfScore}</span>
+          </div>
         </div>
       </div>
 
@@ -138,6 +133,12 @@ export function ActivityCard({
           <span className="activity-card__session-text">{setSummary}</span>
         </div>
       )}
+
+      <span className="activity-card__stroke">
+        {strokeLines.map((line, i) => (
+          <span key={i} className="activity-card__stroke-line">{line}</span>
+        ))}
+      </span>
     </article>
   );
 }

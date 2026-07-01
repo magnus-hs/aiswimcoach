@@ -20,25 +20,19 @@
   outline-offset: 2px;
 }
 
-.activity-card__header {
-  position: relative;
+.activity-card__snapshot {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: var(--font-size-sm);
-  margin-bottom: var(--space-3);
+  flex-direction: column;
 }
 
 .activity-card__date {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-3);
 }
 
 .activity-card__stroke {
-  position: absolute;
-  top: 0;
-  right: 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   font-weight: var(--font-weight-medium);
@@ -126,20 +120,32 @@
   }
 }
 
-/* Desktop: stack the session summary in the middle of the card, between the
-   distance/overview and the metrics snapshot. */
+/* Desktop: 3 columns — snapshot | session data | stroke % */
 @media (min-width: 600px) {
-  .activity-card__header {
-    order: 1;
+  .activity-card {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr auto;
+    align-items: center;
+    gap: var(--space-5);
   }
-  .activity-card__distance {
-    order: 2;
-  }
+
   .activity-card__session {
-    order: 3;
     margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    padding-left: var(--space-5);
+    border-left: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+    flex-direction: column;
+    align-items: flex-start;
+    align-self: stretch;
+    justify-content: center;
+    gap: var(--space-1);
   }
-  .activity-card__metrics {
-    order: 4;
+
+  .activity-card__stroke {
+    padding-left: var(--space-5);
+    border-left: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+    align-self: stretch;
+    justify-content: center;
   }
 }
