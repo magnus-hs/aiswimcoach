@@ -226,6 +226,52 @@ export function FriendsPage() {
         </div>
       )}
 
+      <div className="friends-page__layout">
+        {/* LEFT COLUMN — Friends list with avatars */}
+        <aside className="friends-page__sidebar">
+          <h2 className="friends-page__sidebar-heading">My Friends</h2>
+          {friendsLoading && <div className="friends-page__loading">Loading...</div>}
+          {friendsError && (
+            <div className="friends-page__error-banner" role="alert">
+              {friendsError}
+              <button className="friends-page__retry-btn" onClick={loadFriends}>Retry</button>
+            </div>
+          )}
+          {!friendsLoading && !friendsError && friends.length === 0 && (
+            <p className="friends-page__empty">No friends yet</p>
+          )}
+          {friends.length > 0 && (
+            <ul className="friends-page__friend-list">
+              {friends.map((friend) => (
+                <li key={friend.user_id} className="friends-page__friend-item">
+                  <span className="friends-page__friend-avatar">
+                    <svg viewBox="0 0 48 24" xmlns="http://www.w3.org/2000/svg" className="friends-page__friend-avatar-logo">
+                      <ellipse cx="14" cy="12" rx="9" ry="7" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
+                      <ellipse cx="34" cy="12" rx="9" ry="7" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
+                      <path d="M23 10 C24 8, 24 8, 25 10" stroke="var(--color-primary)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+                    </svg>
+                  </span>
+                  <div className="friends-page__friend-details">
+                    <span className="friends-page__friend-name">{friend.display_name}</span>
+                    <span className="friends-page__friend-since">Since {new Date(friend.since).toLocaleDateString()}</span>
+                  </div>
+                  {confirmRemoveId === friend.user_id ? (
+                    <div className="friends-page__confirm">
+                      <button className="friends-page__btn friends-page__btn--danger" onClick={() => handleRemove(friend.user_id)}>Yes</button>
+                      <button className="friends-page__btn friends-page__btn--secondary" onClick={() => setConfirmRemoveId(null)}>No</button>
+                    </div>
+                  ) : (
+                    <button className="friends-page__btn friends-page__btn--secondary friends-page__btn--small" onClick={() => setConfirmRemoveId(friend.user_id)}>×</button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
+
+        {/* RIGHT COLUMN — Search, pending, privacy, invite */}
+        <div className="friends-page__main">
+
       {/* Search Section */}
       <section className="friends-page__card">
         <h2>Find Swimmers</h2>
@@ -346,59 +392,6 @@ export function FriendsPage() {
         )}
       </section>
 
-      {/* My Friends Section */}
-      <section className="friends-page__card">
-        <h2>My Friends</h2>
-        {friendsLoading && <div className="friends-page__loading">Loading...</div>}
-        {friendsError && (
-          <div className="friends-page__error-banner" role="alert">
-            {friendsError}
-            <button className="friends-page__retry-btn" onClick={loadFriends}>Retry</button>
-          </div>
-        )}
-        {!friendsLoading && !friendsError && friends.length === 0 && (
-          <p className="friends-page__empty">No friends yet. Search for swimmers to connect!</p>
-        )}
-        {friends.length > 0 && (
-          <ul className="friends-page__list">
-            {friends.map((friend) => (
-              <li key={friend.user_id} className="friends-page__list-item">
-                <div className="friends-page__user-info">
-                  <span className="friends-page__user-name">{friend.display_name}</span>
-                  <span className="friends-page__user-meta">
-                    Friends since {new Date(friend.since).toLocaleDateString()}
-                  </span>
-                </div>
-                {confirmRemoveId === friend.user_id ? (
-                  <div className="friends-page__confirm">
-                    <span className="friends-page__confirm-text">Remove?</span>
-                    <button
-                      className="friends-page__btn friends-page__btn--danger"
-                      onClick={() => handleRemove(friend.user_id)}
-                    >
-                      Yes
-                    </button>
-                    <button
-                      className="friends-page__btn friends-page__btn--secondary"
-                      onClick={() => setConfirmRemoveId(null)}
-                    >
-                      No
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    className="friends-page__btn friends-page__btn--secondary"
-                    onClick={() => setConfirmRemoveId(friend.user_id)}
-                  >
-                    Remove
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
       {/* Activity Sharing Section */}
       <section className="friends-page__card">
         <h2>Activity Sharing</h2>
@@ -474,6 +467,8 @@ export function FriendsPage() {
           </button>
         )}
       </section>
+        </div>
+      </div>
     </div>
   );
 }

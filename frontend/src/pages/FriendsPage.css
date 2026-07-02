@@ -1,5 +1,5 @@
 .friends-page {
-  max-width: 48rem;
+  max-width: 64rem;
   margin: 0 auto;
   padding: var(--space-6) var(--space-4);
 }
@@ -18,12 +18,108 @@
   margin: 0 0 var(--space-6);
 }
 
+/* Two-column layout */
+.friends-page__layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+/* Left sidebar — friends list */
+.friends-page__sidebar {
+  position: sticky;
+  top: 80px;
+}
+
+.friends-page__sidebar-heading {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--space-3);
+}
+
+.friends-page__friend-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.friends-page__friend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: background 0.1s ease;
+}
+
+.friends-page__friend-item:hover {
+  background: var(--color-gray-50);
+}
+
+.friends-page__friend-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--color-gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.friends-page__friend-avatar-logo {
+  width: 20px;
+  height: auto;
+}
+
+.friends-page__friend-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.friends-page__friend-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.friends-page__friend-since {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.friends-page__btn--small {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+  line-height: 1;
+  min-width: 24px;
+}
+
+/* Right column — main content */
+.friends-page__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
 .friends-page__card {
   background: var(--color-surface);
   border: 1px solid var(--color-gray-200);
   border-radius: var(--radius-md);
   padding: var(--space-5);
-  margin-bottom: var(--space-5);
 }
 
 .friends-page__card h2 {
@@ -347,6 +443,14 @@
 @media (max-width: 599px) {
   .friends-page {
     padding: var(--space-4) var(--space-3);
+  }
+
+  .friends-page__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .friends-page__sidebar {
+    position: static;
   }
 
   .friends-page__search-item,
