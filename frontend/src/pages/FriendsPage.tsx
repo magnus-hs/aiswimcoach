@@ -261,22 +261,26 @@ export function FriendsPage() {
                     </svg>
                   </span>
                   <div className="friends-page__friend-details">
-                    <span className="friends-page__friend-name">{friend.display_name}</span>
-                    {friend.ability_level && (
-                      <span className="friends-page__friend-meta">{friend.ability_level}</span>
-                    )}
-                    {friend.distance_ytd_meters != null && friend.distance_ytd_meters > 0 && (
-                      <span className="friends-page__friend-meta">
-                        {friend.distance_ytd_meters >= 1000
-                          ? `${(friend.distance_ytd_meters / 1000).toFixed(1)} km this year`
-                          : `${friend.distance_ytd_meters}m this year`}
-                      </span>
-                    )}
-                    {friend.member_since && (
-                      <span className="friends-page__friend-meta">
-                        Joined {new Date(friend.member_since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-                      </span>
-                    )}
+                    <div className="friends-page__friend-left">
+                      <span className="friends-page__friend-name">{friend.display_name}</span>
+                      {friend.ability_level && (
+                        <span className="friends-page__friend-meta">{friend.ability_level}</span>
+                      )}
+                    </div>
+                    <div className="friends-page__friend-right">
+                      {friend.distance_ytd_meters != null && friend.distance_ytd_meters > 0 && (
+                        <span className="friends-page__friend-meta">
+                          {friend.distance_ytd_meters >= 1000
+                            ? `${(friend.distance_ytd_meters / 1000).toFixed(1)} km this year`
+                            : `${friend.distance_ytd_meters}m this year`}
+                        </span>
+                      )}
+                      {friend.member_since && (
+                        <span className="friends-page__friend-meta">
+                          Joined {new Date(friend.member_since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   </div>
                   {confirmRemoveId === friend.user_id ? (

@@ -21,7 +21,7 @@
 /* Two-column layout */
 .friends-page__layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 380px 1fr;
   gap: var(--space-6);
   align-items: start;
 }
@@ -91,9 +91,24 @@
 
 .friends-page__friend-details {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   min-width: 0;
   flex: 1;
+  gap: var(--space-3);
+}
+
+.friends-page__friend-left {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.friends-page__friend-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
 }
 
 .friends-page__friend-name {
