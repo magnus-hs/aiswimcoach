@@ -253,7 +253,21 @@ export function FriendsPage() {
                   </span>
                   <div className="friends-page__friend-details">
                     <span className="friends-page__friend-name">{friend.display_name}</span>
-                    <span className="friends-page__friend-since">Since {new Date(friend.since).toLocaleDateString()}</span>
+                    {friend.ability_level && (
+                      <span className="friends-page__friend-meta">{friend.ability_level}</span>
+                    )}
+                    {friend.distance_ytd_meters != null && friend.distance_ytd_meters > 0 && (
+                      <span className="friends-page__friend-meta">
+                        {friend.distance_ytd_meters >= 1000
+                          ? `${(friend.distance_ytd_meters / 1000).toFixed(1)} km this year`
+                          : `${friend.distance_ytd_meters}m this year`}
+                      </span>
+                    )}
+                    {friend.member_since && (
+                      <span className="friends-page__friend-meta">
+                        Joined {new Date(friend.member_since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                      </span>
+                    )}
                   </div>
                   {confirmRemoveId === friend.user_id ? (
                     <div className="friends-page__confirm">

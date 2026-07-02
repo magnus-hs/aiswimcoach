@@ -21,7 +21,7 @@
 /* Two-column layout */
 .friends-page__layout {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 300px 1fr;
   gap: var(--space-6);
   align-items: start;
 }
@@ -99,6 +99,12 @@
 .friends-page__friend-since {
   font-size: 11px;
   color: var(--color-text-muted);
+}
+
+.friends-page__friend-meta {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-transform: capitalize;
 }
 
 .friends-page__btn--small {

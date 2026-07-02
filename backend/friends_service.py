@@ -324,13 +324,15 @@ def get_friends(user_id: str) -> list[dict]:
     """Get all confirmed friends for a user.
 
     Queries the main table with pk=USER#{user_id} and begins_with(sk, "FRIEND#").
-    Enriches each result with the friend's display name.
+    Enriches each result with the friend's display name, ability level,
+    total distance this year, and member-since date.
 
     Args:
         user_id: The user to get friends for
 
     Returns:
-        List of dicts with user_id, display_name, since
+        List of dicts with user_id, display_name, since, ability_level,
+        distance_ytd_meters, member_since
     """
     table = _get_friends_table()
 
@@ -348,10 +350,59 @@ def get_friends(user_id: str) -> list[dict]:
         friend_user_id = item["sk"].replace("FRIEND#", "")
         display_name = _get_display_name(friend_user_id)
 
+        # Get ability level from profile
+        ability_level = ""
+        try:
+            prof_resp = _get_profiles_table().get_item(
+                Key={"user_id": friend_user_id},
+                ProjectionExpression="ability_level",
+            )
+            ability_level = prof_resp.get("Item", {}).get("ability_level", "")
+        except ClientError:
+            pass
+
+        # Get member_since from users table
+        member_since = ""
+        try:
+            user_resp = _get_users_table().get_item(
+                Key={"user_id": friend_user_id},
+                ProjectionExpression="created_at",
+            )
+            member_since = user_resp.get("Item", {}).get("created_at", "")
+        except ClientError:
+            pass
+
+        # Get total distance this year from sessions
+        distance_ytd = 0
+        try:
+            from datetime import datetime, timezone
+            now = datetime.now(tz=timezone.utc)
+            year_start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+            sessions_table = _get_sessions_table()
+            sess_resp = sessions_table.query(
+                KeyConditionExpression=(
+                    Key("user_id").eq(friend_user_id)
+                    & Key("session_date").gte(year_start)
+                ),
+                ProjectionExpression="total_distance_meters, session_date",
+            )
+            for s in sess_resp.get("Items", []):
+                sd = s.get("session_date", "")
+                if sd.startswith("PLAN") or sd.startswith("MPLAN"):
+                    continue
+                dist = s.get("total_distance_meters")
+                if dist:
+                    distance_ytd += int(dist)
+        except (ClientError, Exception):
+            pass
+
         friends.append({
             "user_id": friend_user_id,
             "display_name": display_name,
             "since": item.get("created_at", ""),
+            "ability_level": ability_level,
+            "distance_ytd_meters": distance_ytd,
+            "member_since": member_since,
         })
 
     return friends

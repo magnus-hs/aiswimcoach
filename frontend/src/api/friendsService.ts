@@ -21,6 +21,9 @@ export interface Friend {
   user_id: string;
   display_name: string;
   since: string;
+  ability_level?: string;
+  distance_ytd_meters?: number;
+  member_since?: string;
 }
 
 export interface FriendActivity {
