@@ -199,8 +199,17 @@ export function ActivityFeed({ sessions, loading, error, onRetry }: ActivityFeed
       );
     }
 
+    // Unique friend names from the activities
+    const friendNames = [...new Set(sortedFriendsActivities.map((a) => a.friend_display_name))];
+
     return (
       <div className="activity-feed">
+        {friendNames.length > 0 && (
+          <div className="activity-feed__friends-header">
+            <span className="activity-feed__friends-label">Connected with:</span>
+            <span className="activity-feed__friends-names">{friendNames.join(', ')}</span>
+          </div>
+        )}
         {sortedFriendsActivities.map((activity) => (
           <div key={activity.session_id} className="activity-feed__friend-card">
             <span className="activity-feed__friend-name">{activity.friend_display_name}</span>

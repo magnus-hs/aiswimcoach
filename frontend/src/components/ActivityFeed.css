@@ -46,6 +46,29 @@
   gap: var(--space-1);
 }
 
+.activity-feed__friends-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1);
+  margin-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.activity-feed__friends-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.activity-feed__friends-names {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
 .activity-feed__friend-name {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
