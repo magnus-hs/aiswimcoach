@@ -18,6 +18,8 @@ export interface ActivityFeedProps {
   error?: string;
   /** Optional retry callback for recoverable errors. */
   onRetry?: () => void;
+  /** Optional default tab to show on mount. */
+  defaultTab?: 'my' | 'friends';
 }
 
 /**
@@ -27,10 +29,10 @@ export interface ActivityFeedProps {
  *
  * Validates: Requirements 3.5, 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 8.4, 8.5, 8.6, 12.1, 12.2, 12.4
  */
-export function ActivityFeed({ sessions, loading, error, onRetry }: ActivityFeedProps) {
+export function ActivityFeed({ sessions, loading, error, onRetry, defaultTab }: ActivityFeedProps) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const [activeTab, setActiveTab] = useState<'my' | 'friends'>('my');
+  const [activeTab, setActiveTab] = useState<'my' | 'friends'>(defaultTab || 'my');
 
   // Friends' activities state
   const [friendsActivities, setFriendsActivities] = useState<FriendActivity[]>([]);

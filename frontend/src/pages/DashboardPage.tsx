@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getUserSessions, SessionSummary } from '../api/sessionService';
 import { Sidebar } from '../components/Sidebar';
@@ -50,6 +50,8 @@ function computeSessionsPerWeek(sessions: SessionSummary[]): number[] {
  */
 export function DashboardPage() {
   const { email } = useAuth();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get('tab') === 'friends' ? 'friends' : 'my';
 
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -292,6 +294,7 @@ export function DashboardPage() {
           loading={loading}
           error={error}
           onRetry={fetchSessions}
+          defaultTab={defaultTab as 'my' | 'friends'}
         />
       </section>
     </div>

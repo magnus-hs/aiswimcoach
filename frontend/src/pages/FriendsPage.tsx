@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   searchUsers,
   sendFriendRequest,
@@ -16,6 +17,7 @@ import {
 import './FriendsPage.css';
 
 export function FriendsPage() {
+  const navigate = useNavigate();
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
@@ -244,6 +246,13 @@ export function FriendsPage() {
             <ul className="friends-page__friend-list">
               {friends.map((friend) => (
                 <li key={friend.user_id} className="friends-page__friend-item">
+                  <div
+                    className="friends-page__friend-clickable"
+                    onClick={() => navigate(`/?tab=friends`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/?tab=friends`); }}
+                  >
                   <span className="friends-page__friend-avatar">
                     <svg viewBox="0 0 48 24" xmlns="http://www.w3.org/2000/svg" className="friends-page__friend-avatar-logo">
                       <ellipse cx="14" cy="12" rx="9" ry="7" fill="none" stroke="var(--color-primary)" strokeWidth="2.5"/>
@@ -268,6 +277,7 @@ export function FriendsPage() {
                         Joined {new Date(friend.member_since).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
                       </span>
                     )}
+                  </div>
                   </div>
                   {confirmRemoveId === friend.user_id ? (
                     <div className="friends-page__confirm">
