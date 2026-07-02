@@ -23,7 +23,7 @@ export interface ActivityFeedProps {
 /**
  * Renders a list of ActivityCards in descending session date order.
  * Handles loading (skeleton cards), empty state (CTA), and error state (ErrorBanner + retry).
- * Includes tabs for "My Activities" and "Friends' Activities".
+ * Includes tabs for "My Activities" and "Friends".
  *
  * Validates: Requirements 3.5, 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 8.4, 8.5, 8.6, 12.1, 12.2, 12.4
  */
@@ -235,7 +235,7 @@ export function ActivityFeed({ sessions, loading, error, onRetry }: ActivityFeed
           className={`activity-feed__tab ${activeTab === 'friends' ? 'activity-feed__tab--active' : ''}`}
           onClick={() => setActiveTab('friends')}
         >
-          Friends' Activities
+          Friends
         </button>
       </div>
 

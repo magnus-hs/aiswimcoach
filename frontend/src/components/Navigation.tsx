@@ -58,15 +58,6 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
         >
           AI Coach
         </NavLink>
-        <NavLink
-          to="/plans"
-          className={({ isActive }) =>
-            `nav__link${isActive ? ' nav__link--active' : ''}`
-          }
-        >
-          Training Plans
-        </NavLink>
-        <NotificationBell />
         <div className="nav__profile-menu">
           <button
             type="button"
@@ -86,6 +77,13 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
                 onClick={() => { setProfileMenuOpen(false); navigate('/ability'); }}
               >
                 Ability Assessment
+              </button>
+              <button
+                className="nav__dropdown-item"
+                role="menuitem"
+                onClick={() => { setProfileMenuOpen(false); navigate('/plans'); }}
+              >
+                Training Plans
               </button>
               <button
                 className="nav__dropdown-item"
@@ -132,6 +130,7 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
             </div>
           )}
         </div>
+        <NotificationBell />
       </nav>
     </header>
   );
