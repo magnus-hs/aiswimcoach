@@ -62,7 +62,7 @@ function StatsOverlaySlide() {
 
 const SLIDES = [
   { component: <SwimmerPhotoSlide src={swimmerPhoto} alt="A swimmer training in a pool" />, caption: 'Every stroke, tracked and understood.' },
-  { component: <SwimmerPhotoSlide src={swimmerPhoto2} alt="A swimmer mid-stroke" />, caption: 'Built for lap swimmers, not just runners.' },
+  { component: <SwimmerPhotoSlide src={swimmerPhoto2} alt="A swimmer mid-stroke" />, caption: 'Built for lap and open water swimmers.' },
   { component: <SwimmerPhotoSlide src={swimmerPhoto3} alt="A swimmer pushing off the wall" />, caption: 'Real sessions. Real progress.' },
   { component: <StatsOverlaySlide />, caption: 'Your data, turned into real coaching.' },
 ];
