@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { SwimSlider } from '../components/SwimSlider';
 import './LandingPage.css';
 
 const FEATURES: { icon: string; title: string; description: string }[] = [
@@ -53,6 +54,7 @@ const STEPS: { number: string; title: string; description: string }[] = [
 export function LandingPage() {
   return (
     <div className="landing">
+      <span className="landing__beta-badge">Beta</span>
       {/* Header */}
       <header className="landing__header">
         <div className="landing__header-inner">
@@ -98,18 +100,15 @@ export function LandingPage() {
           </div>
           <p className="landing__hero-note">Free to use. No credit card required.</p>
         </div>
-        <div className="landing__hero-visual" aria-hidden="true">
-          <div className="landing__hero-card landing__hero-card--1">
+        <div className="landing__hero-visual">
+          <SwimSlider />
+          <div className="landing__hero-card landing__hero-card--1" aria-hidden="true">
             <span className="landing__hero-card-label">Distance</span>
             <span className="landing__hero-card-value">2,000m</span>
           </div>
-          <div className="landing__hero-card landing__hero-card--2">
+          <div className="landing__hero-card landing__hero-card--2" aria-hidden="true">
             <span className="landing__hero-card-label">CSS Pace</span>
             <span className="landing__hero-card-value">1:37 /100m</span>
-          </div>
-          <div className="landing__hero-card landing__hero-card--3">
-            <span className="landing__hero-card-label">This week</span>
-            <span className="landing__hero-card-value">62% of goal</span>
           </div>
         </div>
       </section>

@@ -6,6 +6,23 @@
 }
 
 /* ---------- Header ---------- */
+.landing__beta-badge {
+  position: fixed;
+  top: var(--space-3);
+  right: var(--space-4);
+  z-index: 200;
+  background: hsl(45, 95%, 50%);
+  color: hsl(220, 18%, 10%);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  box-shadow: var(--shadow-card);
+  pointer-events: none;
+}
+
 .landing__header {
   background: hsl(215, 45%, 7%);
   border-bottom: 1px solid rgba(120, 170, 255, 0.1);
@@ -152,10 +169,11 @@
   font-size: var(--font-size-lg);
 }
 
-/* Hero visual — floating stat cards */
+/* Hero visual — swim slider with floating stat cards */
 .landing__hero-visual {
   position: relative;
-  height: 320px;
+  display: flex;
+  justify-content: center;
 }
 
 .landing__hero-card {
@@ -185,18 +203,13 @@
 }
 
 .landing__hero-card--1 {
-  top: 10px;
-  left: 20px;
+  top: -16px;
+  left: -10px;
 }
 
 .landing__hero-card--2 {
-  top: 120px;
-  right: 10px;
-}
-
-.landing__hero-card--3 {
-  bottom: 10px;
-  left: 60px;
+  bottom: 40px;
+  right: -20px;
 }
 
 /* ---------- Sections ---------- */
@@ -359,10 +372,6 @@
     grid-template-columns: 1fr;
   }
 
-  .landing__hero-visual {
-    height: 220px;
-  }
-
   .landing__features {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -374,6 +383,13 @@
 }
 
 @media (max-width: 599px) {
+  .landing__beta-badge {
+    top: var(--space-2);
+    right: var(--space-2);
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
   .landing__hero {
     padding: var(--space-6) var(--space-4) var(--space-6);
   }
@@ -391,7 +407,7 @@
     align-items: stretch;
   }
 
-  .landing__hero-visual {
+  .landing__hero-card {
     display: none;
   }
 
