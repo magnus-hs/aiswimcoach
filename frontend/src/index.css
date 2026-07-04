@@ -121,6 +121,10 @@ body.auth-page-body {
   overflow-x: hidden;
 }
 
+.app-main--full {
+  padding: 0;
+}
+
 @media (max-width: 767px) {
   .app-main {
     padding: 1rem 0.75rem;

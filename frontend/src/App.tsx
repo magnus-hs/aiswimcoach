@@ -24,6 +24,7 @@ import { SupportPage } from './pages/SupportPage';
 import { FAQPage } from './pages/FAQPage';
 import { PlanDetailView } from './components/PlanDetailView';
 import { FriendsPage } from './pages/FriendsPage';
+import { LandingPage } from './pages/LandingPage';
 
 /**
  * Redirect component for backward compatibility.
@@ -53,6 +54,7 @@ function App() {
 
   // Determine if we should show sidebar layout
   const isPublicRoute = location.pathname === '/login' || location.pathname === '/register';
+  const isLandingRoute = location.pathname === '/' && !isAuthenticated;
   const showSidebar = isAuthenticated && !isPublicRoute;
   const showNavigation = isAuthenticated && !isPublicRoute;
 
@@ -63,7 +65,7 @@ function App() {
       )}
       <div className="app__body">
         {showSidebar && <SideNav />}
-        <main className={`app-main ${showSidebar ? 'app-main--with-sidebar' : ''}`}>
+        <main className={`app-main ${showSidebar ? 'app-main--with-sidebar' : ''} ${isLandingRoute ? 'app-main--full' : ''}`}>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -74,14 +76,16 @@ function App() {
           <Route path="/support" element={<SupportPage />} />
           <Route path="/faq" element={<FAQPage />} />
 
-          {/* Protected routes */}
+          {/* Root: showcase landing page for visitors, dashboard for logged-in users */}
           <Route
             path="/"
-            element={
+            element={isAuthenticated ? (
               <ProtectedRoute>
                 <DashboardPage />
               </ProtectedRoute>
-            }
+            ) : (
+              <LandingPage />
+            )}
           />
           <Route
             path="/activity/new"
