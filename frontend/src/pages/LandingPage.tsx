@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { SwimSlider } from '../components/SwimSlider';
-import { AppPreview } from '../components/AppPreview';
+import { ScreenshotShowcase } from '../components/ScreenshotShowcase';
 import './LandingPage.css';
 
 const FEATURES: { icon: string; title: string; description: string }[] = [
@@ -135,9 +135,9 @@ export function LandingPage() {
       <section className="landing__section">
         <h2 className="landing__section-title">See it in action</h2>
         <p className="landing__section-subtitle">
-          A look at the kind of detail you'll get on every swim — illustrative preview.
+          Real screens from the app — session detail, efficiency, heart rate, and technique tracking.
         </p>
-        <AppPreview />
+        <ScreenshotShowcase />
       </section>
 
       {/* How it works */}
