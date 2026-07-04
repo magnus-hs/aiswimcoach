@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
+import swimmerPhoto from '../assets/swimmer.jpg';
 import './SwimSlider.css';
+
+/**
+ * Real swimmer photo slide.
+ */
+function SwimmerPhotoSlide() {
+  return (
+    <img src={swimmerPhoto} alt="A swimmer training in a pool" className="swim-slider__photo" />
+  );
+}
 
 /**
  * A swimmer mid-stroke in a lane, viewed from above.
@@ -140,8 +150,9 @@ function StatsOverlaySlide() {
 }
 
 const SLIDES = [
-  { component: <SwimmerSlide />, caption: 'Every stroke, tracked and understood.' },
-  { component: <PoolLanesSlide />, caption: 'Built for lap swimmers, not just runners.' },
+  { component: <SwimmerPhotoSlide />, caption: 'Every stroke, tracked and understood.' },
+  { component: <SwimmerSlide />, caption: 'Built for lap swimmers, not just runners.' },
+  { component: <PoolLanesSlide />, caption: 'Real sessions. Real progress.' },
   { component: <StatsOverlaySlide />, caption: 'Your data, turned into real coaching.' },
 ];
 
