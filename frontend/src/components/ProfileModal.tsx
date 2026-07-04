@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { saveProfile, getProfile, uploadProfilePicture, UserProfile } from '../api/profileService';
 import { useAuth } from '../hooks/useAuth';
 import { ApiError } from '../types';
+import { ThemeToggle } from './ThemeToggle';
 import './ProfileModal.css';
 
 interface ProfileModalProps {
@@ -403,6 +404,15 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
                 <option value="advanced">Advanced</option>
                 <option value="elite">Elite</option>
               </select>
+            </div>
+
+            {/* Theme */}
+            <div className="modal__field">
+              <label className="modal__label">Appearance</label>
+              <div className="modal__theme-row">
+                <span className="modal__theme-label">Dark / Light theme</span>
+                <ThemeToggle variant="surface" />
+              </div>
             </div>
 
             {/* Submit */}

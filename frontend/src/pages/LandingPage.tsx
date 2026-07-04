@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { SwimSlider } from '../components/SwimSlider';
 import { ScreenshotShowcase } from '../components/ScreenshotShowcase';
+import { ThemeToggle } from '../components/ThemeToggle';
 import './LandingPage.css';
 
 const FEATURES: { icon: string; title: string; description: string }[] = [
@@ -75,6 +76,7 @@ export function LandingPage() {
             <span className="landing__brand-name">AI Swim Coach</span>
           </div>
           <nav className="landing__header-actions">
+            <ThemeToggle />
             <Link to="/login" className="landing__nav-link">Log In</Link>
             <Link to="/register" className="landing__nav-cta">Register</Link>
           </nav>

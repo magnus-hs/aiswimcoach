@@ -68,3 +68,30 @@
   --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.05);
   --shadow-elevated: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.08);
 }
+
+/* ---------------------------------------------------------------------------
+   Light theme — activated via <html data-theme="light">.
+   The nav/header/footer banners stay dark (see --color-nav-bg) for contrast;
+   the content area switches to a clean light palette.
+--------------------------------------------------------------------------- */
+:root[data-theme='light'] {
+  --color-bg: hsl(210, 25%, 97%);
+  --color-surface: hsl(0, 0%, 100%);
+  --color-text: hsl(220, 25%, 16%);
+  --color-text-muted: hsl(220, 10%, 42%);
+
+  --color-gray-50: hsl(220, 22%, 97%);
+  --color-gray-100: hsl(220, 20%, 94%);
+  --color-gray-200: hsl(220, 16%, 88%);
+  --color-gray-300: hsl(220, 14%, 80%);
+  --color-gray-400: hsl(220, 10%, 62%);
+  --color-gray-500: hsl(220, 8%, 50%);
+  --color-gray-600: hsl(220, 9%, 40%);
+  --color-gray-700: hsl(220, 12%, 28%);
+  --color-gray-800: hsl(220, 15%, 18%);
+  --color-gray-900: hsl(220, 18%, 10%);
+
+  --shadow-subtle: 0 1px 3px rgba(15, 30, 60, 0.08);
+  --shadow-card: 0 2px 12px rgba(15, 30, 60, 0.08), 0 0 1px rgba(15, 30, 60, 0.06);
+  --shadow-elevated: 0 8px 30px rgba(15, 30, 60, 0.14), 0 0 1px rgba(15, 30, 60, 0.08);
+}
