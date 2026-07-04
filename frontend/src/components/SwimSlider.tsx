@@ -1,103 +1,14 @@
 import { useEffect, useState } from 'react';
 import swimmerPhoto from '../assets/swimmer.jpg';
+import swimmerPhoto2 from '../assets/swimmer2.jpg';
+import swimmerPhoto3 from '../assets/swimmer3.jpg';
 import './SwimSlider.css';
 
 /**
  * Real swimmer photo slide.
  */
-function SwimmerPhotoSlide() {
-  return (
-    <img src={swimmerPhoto} alt="A swimmer training in a pool" className="swim-slider__photo" />
-  );
-}
-
-/**
- * A swimmer mid-stroke in a lane, viewed from above.
- */
-function SwimmerSlide() {
-  return (
-    <svg viewBox="0 0 400 240" className="swim-slider__art" role="img" aria-label="Swimmer in a pool lane">
-      <defs>
-        <linearGradient id="water1" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="hsl(205, 70%, 22%)" />
-          <stop offset="100%" stopColor="hsl(205, 75%, 14%)" />
-        </linearGradient>
-      </defs>
-      <rect width="400" height="240" fill="url(#water1)" />
-      {/* Lane lines */}
-      {[40, 90, 150, 210].map((y) => (
-        <line key={y} x1="0" y1={y} x2="400" y2={y} stroke="hsl(45, 90%, 55%)" strokeWidth="3" strokeDasharray="18 14" opacity="0.55" />
-      ))}
-      {/* Ripples */}
-      <g stroke="rgba(255,255,255,0.18)" strokeWidth="2" fill="none">
-        <path d="M20 190 q20 -8 40 0 t40 0 t40 0" />
-        <path d="M240 60 q20 -6 40 0 t40 0" />
-      </g>
-      {/* Swimmer body (front-crawl, top-down) */}
-      <g transform="translate(140,120) rotate(-6)">
-        <ellipse cx="0" cy="0" rx="58" ry="14" fill="hsl(210, 90%, 60%)" />
-        <circle cx="62" cy="-2" r="12" fill="hsl(28, 60%, 62%)" />
-        {/* Extended arm */}
-        <path d="M15 -8 Q55 -30 95 -18" stroke="hsl(28, 60%, 62%)" strokeWidth="9" strokeLinecap="round" fill="none" />
-        {/* Trailing arm */}
-        <path d="M-20 6 Q-45 26 -60 14" stroke="hsl(28, 60%, 62%)" strokeWidth="9" strokeLinecap="round" fill="none" />
-        {/* Legs / kick */}
-        <path d="M-58 0 Q-80 -14 -100 -4" stroke="hsl(210, 90%, 60%)" strokeWidth="10" strokeLinecap="round" fill="none" />
-        <path d="M-58 4 Q-82 18 -102 20" stroke="hsl(210, 80%, 50%)" strokeWidth="10" strokeLinecap="round" fill="none" />
-      </g>
-      {/* Splash */}
-      <g fill="rgba(255,255,255,0.5)">
-        <circle cx="238" cy="98" r="3" />
-        <circle cx="248" cy="106" r="2" />
-        <circle cx="228" cy="108" r="2.5" />
-        <circle cx="38" cy="132" r="2" />
-        <circle cx="30" cy="140" r="2.5" />
-      </g>
-    </svg>
-  );
-}
-
-/**
- * A pool viewed from the side with underwater lane markers — evokes lap swimming.
- */
-function PoolLanesSlide() {
-  return (
-    <svg viewBox="0 0 400 240" className="swim-slider__art" role="img" aria-label="Swimming pool lanes">
-      <defs>
-        <linearGradient id="water2" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="hsl(205, 75%, 26%)" />
-          <stop offset="100%" stopColor="hsl(205, 80%, 10%)" />
-        </linearGradient>
-      </defs>
-      <rect width="400" height="240" fill="url(#water2)" />
-      {/* Perspective lane lines converging */}
-      <g stroke="rgba(255,255,255,0.25)" strokeWidth="2">
-        <line x1="0" y1="30" x2="400" y2="10" />
-        <line x1="0" y1="80" x2="400" y2="70" />
-        <line x1="0" y1="130" x2="400" y2="130" />
-        <line x1="0" y1="180" x2="400" y2="190" />
-        <line x1="0" y1="230" x2="400" y2="250" />
-      </g>
-      {/* Floating lane rope with buoys */}
-      <g>
-        <line x1="0" y1="105" x2="400" y2="100" stroke="hsl(45, 90%, 55%)" strokeWidth="3" opacity="0.8" />
-        {[20, 70, 120, 170, 220, 270, 320, 370].map((x, i) => (
-          <circle key={x} cx={x} cy={101 - (i % 2)} r="8" fill={i % 2 === 0 ? 'hsl(45, 90%, 55%)' : 'hsl(210, 90%, 60%)'} />
-        ))}
-      </g>
-      {/* Sunlight glints */}
-      <g fill="rgba(255,255,255,0.35)">
-        <ellipse cx="90" cy="55" rx="22" ry="4" />
-        <ellipse cx="280" cy="150" rx="30" ry="5" />
-        <ellipse cx="180" cy="200" rx="18" ry="3" />
-      </g>
-      {/* Distant swimmer silhouette */}
-      <g transform="translate(300,60) scale(0.6) rotate(4)">
-        <ellipse cx="0" cy="0" rx="50" ry="12" fill="hsl(210, 85%, 55%)" opacity="0.9" />
-        <circle cx="54" cy="-2" r="10" fill="hsl(28, 55%, 58%)" opacity="0.9" />
-      </g>
-    </svg>
-  );
+function SwimmerPhotoSlide({ src, alt }: { src: string; alt: string }) {
+  return <img src={src} alt={alt} className="swim-slider__photo" />;
 }
 
 /**
@@ -150,9 +61,9 @@ function StatsOverlaySlide() {
 }
 
 const SLIDES = [
-  { component: <SwimmerPhotoSlide />, caption: 'Every stroke, tracked and understood.' },
-  { component: <SwimmerSlide />, caption: 'Built for lap swimmers, not just runners.' },
-  { component: <PoolLanesSlide />, caption: 'Real sessions. Real progress.' },
+  { component: <SwimmerPhotoSlide src={swimmerPhoto} alt="A swimmer training in a pool" />, caption: 'Every stroke, tracked and understood.' },
+  { component: <SwimmerPhotoSlide src={swimmerPhoto2} alt="A swimmer mid-stroke" />, caption: 'Built for lap swimmers, not just runners.' },
+  { component: <SwimmerPhotoSlide src={swimmerPhoto3} alt="A swimmer pushing off the wall" />, caption: 'Real sessions. Real progress.' },
   { component: <StatsOverlaySlide />, caption: 'Your data, turned into real coaching.' },
 ];
 

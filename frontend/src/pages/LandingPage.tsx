@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { SwimSlider } from '../components/SwimSlider';
+import { AppPreview } from '../components/AppPreview';
 import './LandingPage.css';
 
 const FEATURES: { icon: string; title: string; description: string }[] = [
@@ -75,7 +76,7 @@ export function LandingPage() {
           </div>
           <nav className="landing__header-actions">
             <Link to="/login" className="landing__nav-link">Log In</Link>
-            <Link to="/register" className="landing__nav-cta">Get Started Free</Link>
+            <Link to="/register" className="landing__nav-cta">Register</Link>
           </nav>
         </div>
       </header>
@@ -128,6 +129,15 @@ export function LandingPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Product preview */}
+      <section className="landing__section">
+        <h2 className="landing__section-title">See it in action</h2>
+        <p className="landing__section-subtitle">
+          A look at the kind of detail you'll get on every swim — illustrative preview.
+        </p>
+        <AppPreview />
       </section>
 
       {/* How it works */}
