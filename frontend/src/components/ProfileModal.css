@@ -120,6 +120,12 @@
   color: var(--color-error);
 }
 
+.modal__field-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
 .modal__theme-row {
   display: flex;
   align-items: center;

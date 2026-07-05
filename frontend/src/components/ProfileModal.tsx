@@ -29,7 +29,7 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
   const { logout } = useAuth();
 
   // Form state
-  const [age, setAge] = useState<string>('');
+  const [dateOfBirth, setDateOfBirth] = useState<string>('');
   const [nationality, setNationality] = useState<string>('');
   const [locality, setLocality] = useState<string>('');
   const [abilityLevel, setAbilityLevel] = useState<string>('');
@@ -52,7 +52,34 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
   const [loadingProfile, setLoadingProfile] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [ageError, setAgeError] = useState<string>('');
+  const [dobError, setDobError] = useState<string>('');
+
+  // Compute age from DOB
+  const computeAge = useCallback((dob: string): number | null => {
+    if (!dob) return null;
+    const birth = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  }, []);
+
+  // Validate DOB on change
+  const handleDobChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setDateOfBirth(value);
+    setDobError('');
+
+    if (value === '') return;
+
+    const age = computeAge(value);
+    if (age === null || age < 10 || age > 100) {
+      setDobError('Age must be between 10 and 100');
+    }
+  }, [computeAge]);
 
   // Load profile when modal opens
   useEffect(() => {
@@ -67,7 +94,7 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
       try {
         const profile = await getProfile();
         if (profile) {
-          setAge(profile.age.toString());
+          setDateOfBirth((profile as any).date_of_birth || '');
           setNationality(profile.nationality || '');
           setLocality(profile.locality || '');
           setAbilityLevel(profile.ability_level);
@@ -188,20 +215,6 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
     e.stopPropagation();
   }, []);
 
-  // Validate age on change
-  const handleAgeChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setAge(value);
-    setAgeError('');
-
-    if (value === '') return;
-
-    const ageNum = parseInt(value, 10);
-    if (isNaN(ageNum) || ageNum < 10 || ageNum > 100) {
-      setAgeError('Age must be between 10 and 100');
-    }
-  }, []);
-
   // Handle profile picture selection
   const handlePictureChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -217,12 +230,12 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
 
   // Check if form is valid
   const isFormValid = useCallback(() => {
-    if (age === '' || ageError !== '' || abilityLevel === '') {
+    if (dateOfBirth === '' || dobError !== '' || abilityLevel === '') {
       return false;
     }
-    const ageNum = parseInt(age, 10);
-    return !isNaN(ageNum) && ageNum >= 10 && ageNum <= 100;
-  }, [age, ageError, abilityLevel]);
+    const age = computeAge(dateOfBirth);
+    return age !== null && age >= 10 && age <= 100;
+  }, [dateOfBirth, dobError, abilityLevel, computeAge]);
 
   // Handle form submission
   const handleSubmit = useCallback(async (e: FormEvent<HTMLFormElement>) => {
@@ -239,11 +252,13 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
     setLoading(true);
 
     try {
+      const derivedAge = computeAge(dateOfBirth) || 0;
       const profile: UserProfile = {
-        age: parseInt(age, 10),
+        age: derivedAge,
         nationality: nationality.trim(),
         locality: locality.trim(),
         ability_level: abilityLevel as 'beginner' | 'intermediate' | 'advanced' | 'elite',
+        date_of_birth: dateOfBirth,
       };
 
       await saveProfile(profile);
@@ -264,7 +279,7 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
     } finally {
       setLoading(false);
     }
-  }, [age, nationality, locality, abilityLevel, profilePicture, isFormValid]);
+  }, [dateOfBirth, nationality, locality, abilityLevel, profilePicture, isFormValid, computeAge]);
 
   if (!isOpen) return null;
 
@@ -331,24 +346,24 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
               </div>
             </div>
 
-            {/* Age */}
+            {/* Date of Birth */}
             <div className="modal__field">
-              <label htmlFor="modal-age" className="modal__label modal__label--required">
-                Age
+              <label htmlFor="modal-dob" className="modal__label modal__label--required">
+                Date of Birth
               </label>
               <input
-                id="modal-age"
-                type="number"
-                min="10"
-                max="100"
-                value={age}
-                onChange={handleAgeChange}
+                id="modal-dob"
+                type="date"
+                value={dateOfBirth}
+                onChange={handleDobChange}
                 disabled={loading}
                 className="modal__input"
-                placeholder="Enter your age (10-100)"
                 required
               />
-              {ageError && <div className="modal__field-error">{ageError}</div>}
+              {dobError && <div className="modal__field-error">{dobError}</div>}
+              {dateOfBirth && !dobError && (
+                <div className="modal__field-hint">Age: {computeAge(dateOfBirth)}</div>
+              )}
             </div>
 
             {/* Nationality */}

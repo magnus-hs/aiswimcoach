@@ -1105,8 +1105,24 @@ def _handle_save_profile(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _error_response(400, f"Invalid JSON body: {exc}")
     
     try:
+        # Derive age from date_of_birth if provided, otherwise use age field
+        age = None
+        dob = payload.get("date_of_birth")
+        if dob:
+            from datetime import date
+            try:
+                birth = date.fromisoformat(dob)
+                today = date.today()
+                age = today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+            except (ValueError, TypeError):
+                return _error_response(400, "Invalid date_of_birth format. Use YYYY-MM-DD.")
+        elif "age" in payload:
+            age = int(payload["age"])
+        else:
+            return _error_response(400, "Either date_of_birth or age is required")
+
         profile = UserProfile(
-            age=int(payload["age"]),
+            age=age,
             nationality=payload.get("nationality", ""),
             locality=payload.get("locality", ""),
             ability_level=payload["ability_level"],
