@@ -4,61 +4,46 @@
 
 ```mermaid
 graph TB
-    %% Client Layer
-    subgraph Client ["Client (Browser)"]
-        FE["React SPA<br/>TypeScript · Vite · Recharts"]
-    end
+    %% Client
+    FE["🌐 React SPA<br/>TypeScript · Vite · Recharts"]
 
-    %% AWS Hosting
-    subgraph Hosting ["Hosting & Delivery"]
-        AMP["AWS Amplify<br/>Static Hosting · CI/CD<br/>main branch auto-deploy"]
-    end
+    %% Hosting
+    AMP["☁️ AWS Amplify<br/>Static Hosting · CI/CD"]
 
-    %% API Layer
-    subgraph API ["API Layer"]
-        APIGW["API Gateway (REST)<br/>Regional Endpoint<br/>29s timeout · CORS · 10MB limit"]
-    end
+    %% API
+    APIGW["🔀 API Gateway REST<br/>Regional · 29s timeout · CORS"]
 
-    %% Compute Layer
-    subgraph Compute ["Compute"]
-        LAM["Lambda (Python 3.12)<br/>ai-swim-coach<br/>256MB · 28s timeout"]
-    end
+    %% Compute
+    LAM["⚡ Lambda Python 3.12<br/>ai-swim-coach · 256MB · 28s"]
 
-    %% AI Layer
-    subgraph AI ["AI / ML"]
-        BED["Amazon Bedrock<br/>Claude Haiku 4.5<br/>Tool Use API"]
-    end
+    %% AI
+    BED["🧠 Amazon Bedrock<br/>Claude Haiku 4.5<br/>Tool Use API"]
 
-    %% Storage Layer
-    subgraph Storage ["Storage"]
-        subgraph DDB ["DynamoDB (6 tables, On-Demand)"]
-            T_USERS["ai-swim-coach-users<br/>PK: user_id · GSI: email"]
-            T_PROF["ai-swim-coach-user-profiles<br/>PK: user_id"]
-            T_SESS["ai-swim-coach-sessions<br/>PK: user_id · SK: session_date<br/>GSI: session_id"]
-            T_FRIENDS["ai-swim-coach-friends<br/>PK: pk · SK: sk · GSI: sk-pk"]
-            T_NOTES["ai-swim-coach-notes<br/>PK: user_id · SK: note_id"]
-            T_RL["ai-swim-coach-rate-limits<br/>PK: rl_key · TTL"]
-        end
+    %% DynamoDB Tables
+    T_USERS[("👤 Users Table<br/>PK: user_id · GSI: email")]
+    T_PROF[("📋 Profiles Table<br/>PK: user_id")]
+    T_SESS[("🏊 Sessions Table<br/>PK: user_id · SK: session_date")]
+    T_FRIENDS[("🤝 Friends Table<br/>PK: pk · SK: sk")]
+    T_NOTES[("📝 Notes Table<br/>PK: user_id · SK: note_id")]
+    T_RL[("🚦 Rate Limits<br/>PK: rl_key · TTL")]
 
-        subgraph S3 ["S3 Buckets"]
-            S3_DATA["ai-swim-coach-data<br/>FIT files · Chat history<br/>(private)"]
-            S3_PICS["ai-swim-coach-profile-pictures<br/>Profile photos<br/>(public read)"]
-        end
-    end
+    %% S3 Buckets
+    S3_DATA[("📦 S3: swim-coach-data<br/>FIT files · Chat history")]
+    S3_PICS[("🖼️ S3: profile-pictures<br/>Public read")]
 
     %% Connections
     FE -->|HTTPS| AMP
-    FE -->|REST API calls| APIGW
-    APIGW -->|Lambda Proxy| LAM
+    FE -->|REST API| APIGW
+    APIGW -->|Proxy| LAM
     LAM -->|InvokeModel| BED
-    LAM -->|CRUD| T_USERS
-    LAM -->|CRUD| T_PROF
-    LAM -->|CRUD| T_SESS
-    LAM -->|CRUD| T_FRIENDS
-    LAM -->|CRUD| T_NOTES
-    LAM -->|Rate check| T_RL
-    LAM -->|Get/Put objects| S3_DATA
-    LAM -->|Put/Get objects| S3_PICS
+    LAM --> T_USERS
+    LAM --> T_PROF
+    LAM --> T_SESS
+    LAM --> T_FRIENDS
+    LAM --> T_NOTES
+    LAM --> T_RL
+    LAM -->|Get/Put| S3_DATA
+    LAM -->|Get/Put| S3_PICS
 ```
 
 ## Detailed Component Architecture
