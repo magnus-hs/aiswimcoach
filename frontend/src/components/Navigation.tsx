@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { NotificationBell } from './NotificationBell';
+import { ThemeToggle } from './ThemeToggle';
 import './Navigation.css';
 
 interface NavigationProps {
@@ -137,6 +138,7 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
             </div>
           )}
         </div>
+        <ThemeToggle />
         <NotificationBell />
       </nav>
     </header>
