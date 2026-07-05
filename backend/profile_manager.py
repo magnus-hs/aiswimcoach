@@ -94,7 +94,20 @@ def save_profile(user_id: str, profile: UserProfile) -> None:
     
     table = _get_dynamodb().Table(table_name)
     try:
-        table.put_item(Item=item)
+        table.update_item(
+            Key={"user_id": user_id},
+            UpdateExpression=(
+                "SET age = :age, nationality = :nat, locality = :loc, "
+                "ability_level = :lvl, updated_at = :ts"
+            ),
+            ExpressionAttributeValues={
+                ":age": profile.age,
+                ":nat": profile.nationality,
+                ":loc": profile.locality,
+                ":lvl": profile.ability_level,
+                ":ts": updated_at,
+            },
+        )
     except ClientError as e:
         raise StorageError(f"Failed to save profile to DynamoDB: {e}") from e
 
