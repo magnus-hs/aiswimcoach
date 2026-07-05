@@ -1514,16 +1514,23 @@ def _handle_create_note(event: dict[str, Any], context: Any) -> dict[str, Any]:
     if not isinstance(text, str):
         return _error_response(400, "text must be a string")
 
+    session_id = body.get("session_id")
+    if session_id is not None and not isinstance(session_id, str):
+        return _error_response(400, "session_id must be a string")
+
     try:
-        note = notes_service.create_note(user_id, text)
+        note = notes_service.create_note(user_id, text, session_id=session_id or None)
+        response_body: dict[str, Any] = {
+            "note_id": note.note_id,
+            "text": note.text,
+            "timestamp": note.timestamp,
+        }
+        if note.session_id:
+            response_body["session_id"] = note.session_id
         return {
             "statusCode": 201,
             "headers": response_headers({"Content-Type": "application/json"}),
-            "body": json.dumps({
-                "note_id": note.note_id,
-                "text": note.text,
-                "timestamp": note.timestamp,
-            }),
+            "body": json.dumps(response_body),
         }
     except ValueError as exc:
         return _error_response(400, str(exc))
@@ -1534,24 +1541,33 @@ def _handle_create_note(event: dict[str, Any], context: Any) -> dict[str, Any]:
 
 @require_auth
 def _handle_get_notes(event: dict[str, Any], context: Any) -> dict[str, Any]:
-    """Handle GET /notes — retrieve all training notes for the user.
+    """Handle GET /notes — retrieve training notes for the user.
+
+    Query params:
+        session_id (optional): If provided, return only notes for that session.
+                               If omitted, return only global notes (no session_id).
 
     Response (200):
-        {"notes": [{"note_id": "...", "text": "...", "timestamp": "..."}, ...]}
+        {"notes": [{"note_id": "...", "text": "...", "timestamp": "...", "session_id": "..."}, ...]}
 
     Errors:
         500: Storage failure
     """
     user_id = event["auth_context"]["user_id"]
 
+    # Extract optional session_id from query parameters
+    query_params = event.get("queryStringParameters") or {}
+    session_id = query_params.get("session_id")
+
     try:
-        notes_list = notes_service.get_notes(user_id)
+        notes_list = notes_service.get_notes(user_id, session_id=session_id)
         return http_200_dict({
             "notes": [
                 {
                     "note_id": n.note_id,
                     "text": n.text,
                     "timestamp": n.timestamp,
+                    **({"session_id": n.session_id} if n.session_id else {}),
                 }
                 for n in notes_list
             ]

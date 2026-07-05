@@ -25,6 +25,7 @@ import { FAQPage } from './pages/FAQPage';
 import { PlanDetailView } from './components/PlanDetailView';
 import { FriendsPage } from './pages/FriendsPage';
 import { LandingPage } from './pages/LandingPage';
+import { TrainingNotesPage } from './pages/TrainingNotesPage';
 
 /**
  * Redirect component for backward compatibility.
@@ -164,6 +165,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <FriendsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notes"
+            element={
+              <ProtectedRoute>
+                <TrainingNotesPage />
               </ProtectedRoute>
             }
           />

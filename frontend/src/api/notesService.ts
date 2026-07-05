@@ -6,6 +6,7 @@ export interface TrainingNote {
   note_id: string;
   text: string;
   timestamp: string;
+  session_id?: string;
 }
 
 // --- Helpers ---
@@ -72,29 +73,39 @@ const BASE = () => import.meta.env.VITE_API_ENDPOINT;
  * Create a new training note.
  *
  * @param text - Note text (1–500 characters)
+ * @param sessionId - Optional session ID to associate the note with a specific swim
  * @returns The created training note with generated note_id and timestamp
  * @throws {ApiError} When the server returns a non-2xx response
  * @throws {Error} When a network error prevents the request from completing
  */
-export async function createNote(text: string): Promise<TrainingNote> {
+export async function createNote(text: string, sessionId?: string): Promise<TrainingNote> {
   const url = `${BASE()}/notes`;
+  const body: Record<string, string> = { text };
+  if (sessionId) {
+    body.session_id = sessionId;
+  }
   const response = await authFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(body),
   });
   return response.json() as Promise<TrainingNote>;
 }
 
 /**
- * Retrieve all training notes for the authenticated user.
+ * Retrieve training notes for the authenticated user.
  *
+ * @param sessionId - If provided, return only notes for that session.
+ *                    If omitted, return only global notes (no session_id).
  * @returns Array of training notes ordered by timestamp descending
  * @throws {ApiError} When the server returns a non-2xx response
  * @throws {Error} When a network error prevents the request from completing
  */
-export async function getNotes(): Promise<TrainingNote[]> {
-  const url = `${BASE()}/notes`;
+export async function getNotes(sessionId?: string): Promise<TrainingNote[]> {
+  let url = `${BASE()}/notes`;
+  if (sessionId) {
+    url += `?session_id=${encodeURIComponent(sessionId)}`;
+  }
   const response = await authFetch(url, { method: 'GET' });
   const data = await response.json();
   return (data.notes ?? data) as TrainingNote[];

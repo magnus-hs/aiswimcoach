@@ -21,6 +21,7 @@ import { FileDropZone } from '../components/FileDropZone';
 import { LoadingIndicator } from '../components/LoadingIndicator';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { InteractionsPanel } from '../components/InteractionsPanel';
+import { SessionNotesSection } from '../components/SessionNotesSection';
 import './ActivityDetailPage.css';
 
 export interface ActivityDetailPageProps {
@@ -218,6 +219,9 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
           <CoachingResult tips={data.coaching.tips} drill={data.coaching.drill} />
         )}
         {data.training_plan && <TrainingPlanResult plan={data.training_plan} />}
+        {id && isCurrentUserOwner() && (
+          <SessionNotesSection sessionId={id} />
+        )}
         {id && (
           <InteractionsPanel
             sessionId={id}

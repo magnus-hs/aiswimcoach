@@ -205,7 +205,29 @@ export function ActivityFeed({ sessions, loading, error, onRetry, defaultTab }: 
       <div className="activity-feed">
         {sortedFriendsActivities.map((activity) => (
           <div key={activity.session_id} className="activity-feed__friend-card">
-            <span className="activity-feed__friend-name">{activity.friend_display_name}</span>
+            <div className="activity-feed__friend-header">
+              {activity.profile_picture_url ? (
+                <img
+                  src={activity.profile_picture_url}
+                  alt={activity.friend_display_name}
+                  className="activity-feed__friend-avatar"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.style.display = 'none';
+                    const placeholder = target.nextElementSibling as HTMLElement | null;
+                    if (placeholder) placeholder.style.display = 'inline-flex';
+                  }}
+                />
+              ) : null}
+              <span
+                className="activity-feed__friend-avatar activity-feed__friend-avatar--placeholder"
+                aria-label={activity.friend_display_name}
+                style={{ display: activity.profile_picture_url ? 'none' : 'inline-flex' }}
+              >
+                {activity.friend_display_name.charAt(0).toUpperCase()}
+              </span>
+              <span className="activity-feed__friend-name">{activity.friend_display_name}</span>
+            </div>
             <ActivityCard
               sessionId={activity.session_id}
               sessionDate={activity.session_date}

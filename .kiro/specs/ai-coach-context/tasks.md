@@ -22,12 +22,12 @@ This plan implements conversational memory (S3 chat history) and personal traini
     - Use existing `S3_BUCKET` env var and boto3 S3 client pattern from `s3_store.py`
     - _Requirements: 1.1, 1.2, 1.7, 6.1, 6.2_
 
-  - [ ] 2.2 Write property test: chat history round-trip (Property 1)
+  - [x] 2.2 Write property test: chat history round-trip (Property 1)
     - **Property 1: Chat history round-trip**
     - For any list of valid QAEntry objects, serialize to JSON and deserialize back, assert equivalence
     - **Validates: Requirements 1.2, 1.8**
 
-  - [ ] 2.3 Write property test: history size bounded at 50 (Property 2)
+  - [x] 2.3 Write property test: history size bounded at 50 (Property 2)
     - **Property 2: History size bounded at 50**
     - For any sequence of N appends (N ≥ 1), assert stored history ≤ 50 entries, and when N > 50, oldest N-50 entries are discarded
     - **Validates: Requirements 1.7, 6.1, 6.2**
@@ -41,17 +41,17 @@ This plan implements conversational memory (S3 chat history) and personal traini
     - Use `NOTES_TABLE` env var (default: `ai-swim-coach-notes`)
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
 
-  - [ ] 3.2 Write property test: note text validation (Property 6)
+  - [x] 3.2 Write property test: note text validation (Property 6)
     - **Property 6: Note text validation**
     - For any string input, assert acceptance iff trimmed length is between 1 and 500 chars inclusive
     - **Validates: Requirements 3.2, 3.3**
 
-  - [ ] 3.3 Write property test: note deletion ownership (Property 7)
+  - [x] 3.3 Write property test: note deletion ownership (Property 7)
     - **Property 7: Note deletion ownership**
     - For any note belonging to user A and delete request from user B, assert success iff A == B
     - **Validates: Requirements 3.5, 3.6**
 
-  - [ ] 3.4 Write property test: notes retrieval ordering and bound (Property 8)
+  - [x] 3.4 Write property test: notes retrieval ordering and bound (Property 8)
     - **Property 8: Notes retrieval ordering and bound**
     - For any set of notes for a user, assert response ordered by timestamp descending and contains ≤ 200 entries
     - **Validates: Requirements 3.4**
@@ -69,27 +69,27 @@ This plan implements conversational memory (S3 chat history) and personal traini
     - Return `(system_prompt, messages_array)`
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 5.1, 5.2, 5.3, 5.5, 6.3, 6.4, 6.5_
 
-  - [ ] 4.2 Write property test: prompt includes at most 10 recent exchanges (Property 3)
+  - [x] 4.2 Write property test: prompt includes at most 10 recent exchanges (Property 3)
     - **Property 3: Prompt includes at most 10 most-recent exchanges**
     - For any history of N exchanges, assert output includes min(N, 10) exchanges and they are the most recent
     - **Validates: Requirements 1.4, 2.3**
 
-  - [ ] 4.3 Write property test: conversation history chronological ordering (Property 4)
+  - [x] 4.3 Write property test: conversation history chronological ordering (Property 4)
     - **Property 4: Conversation history chronological ordering**
     - For any valid history entries, assert messages array is chronological (oldest first) with current prompt last
     - **Validates: Requirements 2.1, 2.2**
 
-  - [ ] 4.4 Write property test: malformed entries filtered (Property 5)
+  - [x] 4.4 Write property test: malformed entries filtered (Property 5)
     - **Property 5: Malformed entries filtered**
     - For any mix of valid and malformed entries, assert output contains exactly valid entries and zero malformed
     - **Validates: Requirements 2.6**
 
-  - [ ] 4.5 Write property test: notes in prompt limited and formatted (Property 10)
+  - [x] 4.5 Write property test: notes in prompt limited and formatted (Property 10)
     - **Property 10: Notes in prompt limited and formatted**
     - For any set of 0–200 notes, assert prompt includes ≤ 20 notes formatted as "[timestamp]: [text]" per line, ordered timestamp desc
     - **Validates: Requirements 5.2**
 
-  - [ ] 4.6 Write property test: character-budget truncation (Property 11)
+  - [x] 4.6 Write property test: character-budget truncation (Property 11)
     - **Property 11: Character-budget truncation**
     - For any history, assert total chars of included exchanges ≤ 4000 after truncation, and oldest entries removed first
     - **Validates: Requirements 6.3, 6.4**
@@ -113,7 +113,7 @@ This plan implements conversational memory (S3 chat history) and personal traini
     - After successful Bedrock response, call `chat_history_store.append_entry` (best-effort, log ERROR on failure)
     - _Requirements: 1.1, 1.3, 1.4, 1.5, 1.6, 2.1, 2.2, 2.3, 2.4, 5.1, 5.4_
 
-  - [ ] 6.3 Write unit tests for handler notes routes and chat integration
+  - [x] 6.3 Write unit tests for handler notes routes and chat integration
     - Test POST /notes success (201), validation failure (400), storage failure (500)
     - Test GET /notes success (200), storage failure (500)
     - Test DELETE /notes success (200), not found (404), wrong owner (404)
@@ -134,13 +134,13 @@ This plan implements conversational memory (S3 chat history) and personal traini
     - Follow existing API service patterns (authService.ts, friendsService.ts)
     - _Requirements: 3.1, 3.4, 3.5_
 
-- [ ] 9. Frontend TrainingNotes component
+- [x] 9. Frontend TrainingNotes component
   - [x] 9.1 Create `frontend/src/utils/relativeTime.ts`
     - Implement `formatRelativeTime(timestamp: string): string`
     - Return "just now" for < 60s, "N minutes ago" for < 3600s, "N hours ago" for < 86400s, "N days ago" otherwise
     - _Requirements: 4.7_
 
-  - [ ] 9.2 Write property test for relative timestamp formatting (Property 9)
+  - [x] 9.2 Write property test for relative timestamp formatting (Property 9)
     - **Property 9: Relative timestamp formatting**
     - Use fast-check to generate timestamp/now pairs and assert correct threshold-based formatting
     - Create `frontend/src/utils/relativeTime.test.ts`
@@ -171,18 +171,18 @@ This plan implements conversational memory (S3 chat history) and personal traini
 - [x] 11. Checkpoint - Frontend complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Deploy
-  - [-] 12.1 Deploy backend Lambda
+- [x] 12. Deploy
+  - [x] 12.1 Deploy backend Lambda
     - Run `bash build-lambda.sh && aws lambda update-function-code --function-name ai-swim-coach --zip-file fileb://backend.zip --region us-east-1`
     - Verify Lambda function updated successfully
     - _Requirements: 1.1, 3.1_
 
-  - [-] 12.2 Deploy frontend via git push
+  - [x] 12.2 Deploy frontend via git push
     - Run `cd frontend && npm run build` to verify build succeeds
     - Commit and push to trigger Amplify deployment
     - _Requirements: 4.1_
 
-- [ ] 13. Final checkpoint - Ensure all tests pass
+- [x] 13. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

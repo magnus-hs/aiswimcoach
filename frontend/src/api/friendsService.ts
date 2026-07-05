@@ -36,6 +36,7 @@ export interface FriendActivity {
   swolf_score: number;
   friend_display_name: string;
   friend_user_id: string;
+  profile_picture_url?: string | null;
 }
 
 // --- Helpers ---

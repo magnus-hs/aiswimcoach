@@ -10,6 +10,8 @@ Tests cover:
   - save_history writes valid JSON to S3
   - append_entry appends and persists
   - append_entry enforces 50-entry cap via read-modify-write
+  - Property 1: Chat history round-trip
+  - Property 2: History size bounded at 50
 """
 from __future__ import annotations
 
@@ -18,6 +20,8 @@ import os
 
 import boto3
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 from moto import mock_aws
 
 from backend.chat_history_store import (
@@ -222,3 +226,127 @@ def test_qa_entry_user_prompt_stored_up_to_2000_chars() -> None:
     result = get_history("user-long")
     assert len(result) == 1
     assert len(result[0].user_prompt) == 2000
+
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Feature: ai-coach-context, Property 1: Chat history round-trip
+# For any list of valid QAEntry objects, serialize to JSON and deserialize back,
+# assert equivalence.
+# Validates: Requirements 1.2, 1.8
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+def _iso8601_timestamp_strategy() -> st.SearchStrategy[str]:
+    """Generate valid ISO 8601 UTC timestamps."""
+    return st.builds(
+        lambda y, mo, d, h, mi, s: f"{y:04d}-{mo:02d}-{d:02d}T{h:02d}:{mi:02d}:{s:02d}.000Z",
+        y=st.integers(min_value=2020, max_value=2030),
+        mo=st.integers(min_value=1, max_value=12),
+        d=st.integers(min_value=1, max_value=28),
+        h=st.integers(min_value=0, max_value=23),
+        mi=st.integers(min_value=0, max_value=59),
+        s=st.integers(min_value=0, max_value=59),
+    )
+
+
+def _qa_entry_strategy() -> st.SearchStrategy[QAEntry]:
+    """Generate valid QAEntry objects with non-empty fields and max 2000-char prompt."""
+    return st.builds(
+        QAEntry,
+        user_prompt=st.text(min_size=1, max_size=2000, alphabet=st.characters(blacklist_categories=("Cs",))),
+        ai_response=st.text(min_size=1, alphabet=st.characters(blacklist_categories=("Cs",))),
+        timestamp=_iso8601_timestamp_strategy(),
+    )
+
+
+@mock_aws
+@settings(max_examples=100, deadline=None)
+@given(entries=st.lists(_qa_entry_strategy(), min_size=0, max_size=50))
+def test_property_chat_history_round_trip(entries: list[QAEntry]) -> None:
+    """
+    Property 1: Chat history round-trip.
+
+    For any list of valid QAEntry objects (each with a non-empty user prompt
+    ≤ 2000 chars, a non-empty AI response, and a valid ISO 8601 timestamp),
+    serializing to S3 JSON format and then deserializing SHALL produce an
+    equivalent list of entries.
+
+    **Validates: Requirements 1.2, 1.8**
+    """
+    # Set up mocked S3
+    os.environ["S3_BUCKET"] = BUCKET_NAME
+    s3 = boto3.client("s3", region_name="us-east-1")
+    s3.create_bucket(Bucket=BUCKET_NAME)
+
+    user_id = "property-test-user"
+
+    # Serialize (save) to S3
+    save_history(user_id, entries)
+
+    # Deserialize (read) from S3
+    result = get_history(user_id)
+
+    # Assert equivalence
+    assert len(result) == len(entries)
+    for original, restored in zip(entries, result):
+        assert restored.user_prompt == original.user_prompt
+        assert restored.ai_response == original.ai_response
+        assert restored.timestamp == original.timestamp
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Feature: ai-coach-context, Property 2: History size bounded at 50
+# For any sequence of N appends (N ≥ 1), assert stored history ≤ 50 entries,
+# and when N > 50, oldest N-50 entries are discarded.
+# Validates: Requirements 1.7, 6.1, 6.2
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+@settings(max_examples=100, deadline=None)
+@given(entries=st.lists(_qa_entry_strategy(), min_size=1, max_size=120))
+def test_property_history_size_bounded_at_50(entries: list[QAEntry]) -> None:
+    """
+    Property 2: History size bounded at 50.
+
+    For any sequence of N append operations (N ≥ 1) on a user's chat history,
+    the resulting stored history SHALL contain at most 50 entries, and when
+    N > 50 the oldest N − 50 entries SHALL have been discarded.
+
+    **Validates: Requirements 1.7, 6.1, 6.2**
+    """
+    with mock_aws():
+        # Set up fresh mocked S3 for each iteration
+        os.environ["S3_BUCKET"] = BUCKET_NAME
+        s3 = boto3.client("s3", region_name="us-east-1")
+        s3.create_bucket(Bucket=BUCKET_NAME)
+
+        user_id = "property2-user"
+        n = len(entries)
+
+        # Perform N sequential appends
+        for entry in entries:
+            append_entry(user_id, entry)
+
+        # Read back the stored history
+        result = get_history(user_id)
+
+        # Assert: stored history never exceeds 50 entries
+        assert len(result) <= MAX_ENTRIES
+
+        # Assert: when N > 50, exactly 50 entries are kept (the most recent ones)
+        if n > MAX_ENTRIES:
+            assert len(result) == MAX_ENTRIES
+            # The kept entries should be the last 50 that were appended
+            expected_entries = entries[-MAX_ENTRIES:]
+            for stored, expected in zip(result, expected_entries):
+                assert stored.user_prompt == expected.user_prompt
+                assert stored.ai_response == expected.ai_response
+                assert stored.timestamp == expected.timestamp
+        else:
+            # When N <= 50, all entries should be present
+            assert len(result) == n
+            for stored, expected in zip(result, entries):
+                assert stored.user_prompt == expected.user_prompt
+                assert stored.ai_response == expected.ai_response
+                assert stored.timestamp == expected.timestamp

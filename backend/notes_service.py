@@ -45,6 +45,7 @@ class TrainingNote:
     note_id: str  # UUID v4
     text: str  # 1–500 chars (trimmed)
     timestamp: str  # ISO 8601 UTC
+    session_id: str | None = None  # Optional: links note to a specific swim session
 
 
 # ---------------------------------------------------------------------------
@@ -73,7 +74,7 @@ def _get_notes_table():
 # ---------------------------------------------------------------------------
 
 
-def create_note(user_id: str, text: str) -> TrainingNote:
+def create_note(user_id: str, text: str, session_id: str | None = None) -> TrainingNote:
     """Create a new training note for a user.
 
     Validates the text (1-500 chars after trimming), generates a UUID v4 and
@@ -82,6 +83,7 @@ def create_note(user_id: str, text: str) -> TrainingNote:
     Args:
         user_id: The authenticated user's ID.
         text: The note text (will be trimmed).
+        session_id: Optional session ID to associate the note with a specific swim.
 
     Returns:
         The created TrainingNote.
@@ -105,22 +107,25 @@ def create_note(user_id: str, text: str) -> TrainingNote:
         note_id=note_id,
         text=trimmed,
         timestamp=timestamp,
+        session_id=session_id,
     )
 
+    item: dict = {
+        "user_id": note.user_id,
+        "note_id": note.note_id,
+        "text": note.text,
+        "timestamp": note.timestamp,
+    }
+    if session_id:
+        item["session_id"] = session_id
+
     table = _get_notes_table()
-    table.put_item(
-        Item={
-            "user_id": note.user_id,
-            "note_id": note.note_id,
-            "text": note.text,
-            "timestamp": note.timestamp,
-        }
-    )
+    table.put_item(Item=item)
 
     return note
 
 
-def get_notes(user_id: str, limit: int = 200) -> list[TrainingNote]:
+def get_notes(user_id: str, session_id: str | None = None, limit: int = 200) -> list[TrainingNote]:
     """Retrieve training notes for a user, ordered by timestamp descending.
 
     Queries all notes for the user from DynamoDB and sorts by timestamp
@@ -128,6 +133,8 @@ def get_notes(user_id: str, limit: int = 200) -> list[TrainingNote]:
 
     Args:
         user_id: The user whose notes to retrieve.
+        session_id: If provided, return only notes with this session_id.
+                    If None, return only notes without a session_id (global notes).
         limit: Maximum number of notes to return (default 200).
 
     Returns:
@@ -150,6 +157,12 @@ def get_notes(user_id: str, limit: int = 200) -> list[TrainingNote]:
         )
         items.extend(response.get("Items", []))
 
+    # Filter by session_id
+    if session_id is not None:
+        items = [item for item in items if item.get("session_id") == session_id]
+    else:
+        items = [item for item in items if not item.get("session_id")]
+
     # Sort by timestamp descending in Python
     items.sort(key=lambda item: item.get("timestamp", ""), reverse=True)
 
@@ -162,6 +175,7 @@ def get_notes(user_id: str, limit: int = 200) -> list[TrainingNote]:
             note_id=item["note_id"],
             text=item["text"],
             timestamp=item["timestamp"],
+            session_id=item.get("session_id"),
         )
         for item in items
     ]

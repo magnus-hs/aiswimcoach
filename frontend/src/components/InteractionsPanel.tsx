@@ -159,7 +159,7 @@ export function InteractionsPanel({ sessionId, isOwner, canInteract }: Interacti
     );
   }
 
-  const canGiveKudos = canInteract && !isOwner;
+  const canGiveKudos = canInteract || isOwner;
   const canComment = isOwner || canInteract;
 
   return (

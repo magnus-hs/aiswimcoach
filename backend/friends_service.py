@@ -670,10 +670,16 @@ def get_friends_activities(user_id: str) -> list[dict]:
     # Query sessions for each sharing friend
     sessions_table = _get_sessions_table()
     all_sessions = []
+    profile_pic_cache: dict[str, str | None] = {}
 
     for friend in sharing_friends:
         friend_id = friend["user_id"]
         friend_display_name = friend["display_name"]
+
+        # Cache profile picture URL per friend to avoid repeated DynamoDB reads
+        if friend_id not in profile_pic_cache:
+            profile_pic_cache[friend_id] = _get_profile_picture_url(friend_id)
+        profile_picture_url = profile_pic_cache[friend_id]
 
         try:
             response = sessions_table.query(
@@ -700,6 +706,7 @@ def get_friends_activities(user_id: str) -> list[dict]:
                     "swolf_score": int(item.get("swolf_score", 0)),
                     "friend_display_name": friend_display_name,
                     "friend_user_id": friend_id,
+                    "profile_picture_url": profile_picture_url,
                 })
         except ClientError:
             continue
