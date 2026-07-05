@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StrokeBreakdownEntry } from '../api/sessionService';
-import { strokeLabel } from '../utils/strokeBreakdown';
+import { strokeLabel, strokeColor } from '../utils/strokeBreakdown';
 import { summarizeSets } from '../utils/groupSplits';
 import { LengthSplit } from '../types';
 import { KudosIcon } from './KudosIcon';
@@ -106,14 +106,16 @@ export function ActivityCard({
 
   const strokeLines =
     strokeBreakdown && strokeBreakdown.length > 0
-      ? strokeBreakdown.map((b) => `${Math.round(b.percent)}% ${strokeLabel(b.stroke)}`)
-      : [strokeType];
+      ? strokeBreakdown.map((b) => ({ text: `${Math.round(b.percent)}% ${strokeLabel(b.stroke)}`, color: strokeColor(b.stroke) }))
+      : [{ text: strokeType, color: strokeColor(strokeType) }];
 
   const setSummary =
     splits && splits.length > 0
       ? summarizeSets(splits, poolLengthMeters && poolLengthMeters > 0 ? poolLengthMeters : 25)
       : '';
   const sessionLines = setSummary ? setSummary.split(', ') : [];
+
+  const drillCount = splits?.filter(s => s.stroke === 'drill').length ?? 0;
 
   // Adaptive desktop session layout: prefer 1 interval per line; if the
   // content would exceed the card's natural height (driven by the left
@@ -177,7 +179,7 @@ export function ActivityCard({
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
-      aria-label={`${strokeLines.join(', ')} session on ${formatDate(sessionDate)}, ${totalDistanceMeters} meters`}
+      aria-label={`${strokeLines.map(l => l.text).join(', ')} session on ${formatDate(sessionDate)}, ${totalDistanceMeters} meters`}
     >
       <div className="activity-card__snapshot" ref={snapshotRef}>
         <span className="activity-card__date">{formatDate(sessionDate)}</span>
@@ -232,9 +234,15 @@ export function ActivityCard({
 
       <span className="activity-card__stroke">
         {strokeLines.map((line, i) => (
-          <span key={i} className="activity-card__stroke-line">{line}</span>
+          <span key={i} className="activity-card__stroke-line" style={{ color: line.color }}>{line.text}</span>
         ))}
       </span>
+
+      {drillCount > 0 && (
+        <span className="activity-card__drill-badge" aria-label={`${drillCount} drill length${drillCount > 1 ? 's' : ''}`}>
+          🏊‍♂️ {drillCount} drill{drillCount > 1 ? 's' : ''}
+        </span>
+      )}
 
       {(kudosCount != null && kudosCount > 0) || (commentsCount != null && commentsCount > 0) ? (
         <span className="activity-card__social">

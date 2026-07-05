@@ -10,6 +10,15 @@
   --color-primary-dark: hsl(210, 95%, 45%);
   --color-secondary: hsl(185, 60%, 55%);
 
+  /* Stroke category colors */
+  --color-stroke-freestyle: hsl(210, 80%, 62%);
+  --color-stroke-backstroke: hsl(145, 55%, 52%);
+  --color-stroke-breaststroke: hsl(280, 55%, 62%);
+  --color-stroke-butterfly: hsl(45, 85%, 55%);
+  --color-stroke-drill: hsl(25, 90%, 58%);
+  --color-stroke-im: hsl(320, 55%, 58%);
+  --color-stroke-mixed: hsl(220, 15%, 58%);
+
   /* Dark neutrals */
   --color-gray-50: hsl(220, 15%, 13%);
   --color-gray-100: hsl(220, 14%, 16%);

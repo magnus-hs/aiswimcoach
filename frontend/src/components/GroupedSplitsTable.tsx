@@ -143,7 +143,9 @@ function GroupRow({
       {!hasMultiple && <span className="grouped-splits__arrow-placeholder" />}
       <span className="grouped-splits__distance">{group.totalDistance}m</span>
       <span className="grouped-splits__time">{formatTime(group.totalTime)}</span>
-      <span className="grouped-splits__stroke">{capitalize(group.stroke)}</span>
+      <span className="grouped-splits__stroke">
+        {group.stroke === 'drill' ? <span className="drill-indicator">Drill</span> : capitalize(group.stroke)}
+      </span>
       <span className="grouped-splits__dps">{groupDps != null ? `${groupDps.toFixed(2)} m/str` : '—'}</span>
       {hasHR && (
         <span className="grouped-splits__hr">
@@ -192,19 +194,22 @@ function DetailRows({
           </tr>
         </thead>
         <tbody>
-          {group.splits.map((split, i) => (
-            <tr key={split.length_number}>
-              <td>{split.length_number}</td>
-              <td>{i + 1}/{group.splits.length}</td>
-              <td>{split.time_seconds.toFixed(1)}s</td>
-              <td className="grouped-splits__cum-cell">{formatTime(cumTimes[i])}</td>
-              <td>{split.strokes}</td>
-              <td>{split.strokes > 0 ? `${(poolLengthM / split.strokes).toFixed(2)} m` : '—'}</td>
-              <td>{capitalize(split.stroke)}</td>
-              {hasHR && <td>{split.avg_hr != null ? `${split.avg_hr}` : '—'}</td>}
-              <td className="grouped-splits__cum-cell">{startCumulative + (i + 1) * poolLengthM}m</td>
-            </tr>
-          ))}
+          {group.splits.map((split, i) => {
+            const isDrill = split.stroke === 'drill';
+            return (
+              <tr key={split.length_number} className={isDrill ? 'grouped-splits__row--drill' : ''}>
+                <td>{split.length_number}</td>
+                <td>{i + 1}/{group.splits.length}</td>
+                <td>{split.time_seconds.toFixed(1)}s</td>
+                <td className="grouped-splits__cum-cell">{formatTime(cumTimes[i])}</td>
+                <td>{split.strokes > 0 ? split.strokes : '—'}</td>
+                <td>{split.strokes > 0 ? `${(poolLengthM / split.strokes).toFixed(2)} m` : '—'}</td>
+                <td>{isDrill ? <span className="drill-indicator">Drill</span> : capitalize(split.stroke)}</td>
+                {hasHR && <td>{split.avg_hr != null ? `${split.avg_hr}` : '—'}</td>}
+                <td className="grouped-splits__cum-cell">{startCumulative + (i + 1) * poolLengthM}m</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

@@ -1,6 +1,33 @@
 import { StrokeBreakdownEntry } from '../api/sessionService';
 import { LengthSplit } from '../types';
 
+/**
+ * Returns the CSS variable for a stroke category color.
+ * Drill gets a distinct orange to stand out from swimming stroke colors.
+ */
+export function strokeColor(stroke: string): string {
+  const s = (stroke || '').toLowerCase();
+  switch (s) {
+    case 'freestyle':
+      return 'var(--color-stroke-freestyle)';
+    case 'backstroke':
+      return 'var(--color-stroke-backstroke)';
+    case 'breaststroke':
+      return 'var(--color-stroke-breaststroke)';
+    case 'butterfly':
+      return 'var(--color-stroke-butterfly)';
+    case 'im':
+    case 'medley':
+      return 'var(--color-stroke-im)';
+    case 'mixed':
+      return 'var(--color-stroke-mixed)';
+    case 'drill':
+      return 'var(--color-stroke-drill)';
+    default:
+      return 'var(--color-text)';
+  }
+}
+
 /** Short, readable label for a stroke name. */
 export function strokeLabel(stroke: string): string {
   const s = (stroke || '').toLowerCase();

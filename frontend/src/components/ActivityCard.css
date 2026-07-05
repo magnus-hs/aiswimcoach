@@ -196,3 +196,18 @@
   color: var(--color-text-muted);
   font-weight: var(--font-weight-medium);
 }
+
+/* Drill badge indicator */
+.activity-card__drill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border-radius: var(--radius-sm, 4px);
+  padding: 2px 8px;
+  margin-top: var(--space-2);
+  width: fit-content;
+}

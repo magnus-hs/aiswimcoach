@@ -210,3 +210,23 @@
     min-width: 400px;
   }
 }
+
+/* Drill row styling */
+.grouped-splits__row--drill {
+  background-color: var(--color-gray-50);
+}
+
+.grouped-splits__detail-table tbody tr.grouped-splits__row--drill {
+  background-color: rgba(139, 92, 246, 0.06);
+}
+
+.drill-indicator {
+  display: inline-block;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: #7c3aed;
+  background: rgba(139, 92, 246, 0.1);
+  padding: 1px var(--space-2);
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+}

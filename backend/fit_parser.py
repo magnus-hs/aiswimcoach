@@ -156,47 +156,71 @@ def parse_fit(fit_bytes: bytes) -> Metrics:
     swolf_values: list[float] = []
     stroke_rate_values: list[float] = []
 
+    # Drill-specific accumulation lists for fallback when all lengths are drills
+    drill_pace_values: list[float] = []
+    drill_swolf_values: list[float] = []
+    drill_stroke_rate_values: list[float] = []
+
     # Prefer per-length records; fall back to per-lap records.
     for record_type in ("length", "lap"):
         for record in fitfile.get_messages(record_type):
             data = {f.name: f.value for f in record}
 
+            stroke_val = data.get("swim_stroke")
+            is_drill = _stroke_name(stroke_val) == "drill"
+
             # Pace from avg_speed (m/s → seconds per 100 m)
             avg_speed = data.get("avg_speed")
             if avg_speed is not None and avg_speed > 0:
-                pace_values.append(speed_to_pace(avg_speed))
+                if not is_drill:
+                    pace_values.append(speed_to_pace(avg_speed))
+                else:
+                    drill_pace_values.append(speed_to_pace(avg_speed))
 
             # Stroke rate from avg_swimming_cadence (strokes per minute)
             cadence = data.get("avg_swimming_cadence")
-            if cadence is not None:
-                stroke_rate_values.append(float(cadence))
+            if cadence is not None and cadence > 0:
+                if not is_drill:
+                    stroke_rate_values.append(float(cadence))
+                else:
+                    drill_stroke_rate_values.append(float(cadence))
 
             # SWOLF: use pre-computed field or calculate from components
             swolf = compute_swolf(data, pool_length)
             if swolf is not None:
-                swolf_values.append(swolf)
+                if not is_drill:
+                    swolf_values.append(swolf)
+                else:
+                    drill_swolf_values.append(swolf)
 
         # If we found any per-length data, stop — no need for lap fallback.
         if pace_values or swolf_values or stroke_rate_values:
             break
+        if drill_pace_values or drill_swolf_values or drill_stroke_rate_values:
+            break
+
+    # Fall back to drill values if no regular swim data exists
+    final_pace = pace_values or drill_pace_values
+    final_swolf = swolf_values or drill_swolf_values
+    final_stroke_rate = stroke_rate_values or drill_stroke_rate_values
 
     # Collect all missing metrics before raising so the caller gets one error
     # that names every absent field.
     missing: list[str] = []
-    if not pace_values:
+    if not final_pace:
         missing.append("pace")
-    if not swolf_values:
+    if not final_swolf:
         missing.append("SWOLF")
-    if not stroke_rate_values:
+    if not final_stroke_rate:
         missing.append("stroke_rate")
 
     if missing:
         raise MetricsMissingError(missing)
 
     return Metrics(
-        pace=_average(pace_values),
-        swolf=_average(swolf_values),
-        stroke_rate=_average(stroke_rate_values),
+        pace=_average(final_pace),
+        swolf=_average(final_swolf),
+        stroke_rate=_average(final_stroke_rate),
     )
 
 

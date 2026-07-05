@@ -1,6 +1,6 @@
 import { SessionInfo, LengthSplit } from '../types';
 import { StrokeBreakdownEntry } from '../api/sessionService';
-import { strokeLabel } from '../utils/strokeBreakdown';
+import { strokeLabel, strokeColor } from '../utils/strokeBreakdown';
 import './SessionSummary.css';
 
 interface SessionSummaryProps {
@@ -43,8 +43,8 @@ function capitalize(s: string): string {
 export function SessionSummary({ session, strokeBreakdown, splits }: SessionSummaryProps) {
   const strokeLines =
     strokeBreakdown && strokeBreakdown.length > 0
-      ? strokeBreakdown.map((b) => `${Math.round(b.percent)}% ${strokeLabel(b.stroke)}`)
-      : [capitalize(session.stroke)];
+      ? strokeBreakdown.map((b) => ({ text: `${Math.round(b.percent)}% ${strokeLabel(b.stroke)}`, color: strokeColor(b.stroke) }))
+      : [{ text: capitalize(session.stroke), color: strokeColor(session.stroke) }];
 
   // Average distance per stroke across valid lengths (metres per stroke).
   const validSplits = (splits ?? []).filter((s) => s.strokes > 0 && s.time_seconds > 0);
@@ -80,7 +80,7 @@ export function SessionSummary({ session, strokeBreakdown, splits }: SessionSumm
           <span className="session-summary__label">Stroke</span>
           <span className="session-summary__value">
             {strokeLines.map((line, i) => (
-              <span key={i} className="session-summary__stroke-line">{line}</span>
+              <span key={i} className="session-summary__stroke-line" style={{ color: line.color }}>{line.text}</span>
             ))}
           </span>
         </div>

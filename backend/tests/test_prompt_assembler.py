@@ -840,3 +840,325 @@ class TestPropertyCharBudgetTruncation:
                 "Included exchanges are not a contiguous suffix of the "
                 "exchange-count-truncated history (oldest-first removal violated)"
             )
+
+
+# ---------------------------------------------------------------------------
+# Tests: DrillContext computation and formatting
+# ---------------------------------------------------------------------------
+
+from prompt_assembler import compute_drill_context, format_drill_context, DrillContext
+
+
+class TestComputeDrillContext:
+    """Unit tests for compute_drill_context function."""
+
+    def test_no_drills_returns_none(self):
+        """No drill splits → returns None."""
+        splits = [
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "backstroke", "time_seconds": 35},
+        ]
+        assert compute_drill_context(splits, 25.0) is None
+
+    def test_empty_splits_returns_none(self):
+        """Empty splits list → returns None."""
+        assert compute_drill_context([], 25.0) is None
+
+    def test_drill_count(self):
+        """Drill count matches number of drill splits."""
+        splits = [
+            {"stroke": "drill", "time_seconds": 40},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "drill", "time_seconds": 50},
+        ]
+        ctx = compute_drill_context(splits, 25.0)
+        assert ctx.drill_count == 2
+
+    def test_drill_distance(self):
+        """Drill distance equals count * pool_length_m."""
+        splits = [
+            {"stroke": "drill", "time_seconds": 40},
+            {"stroke": "drill", "time_seconds": 50},
+            {"stroke": "freestyle", "time_seconds": 30},
+        ]
+        ctx = compute_drill_context(splits, 50.0)
+        assert ctx.drill_distance_m == 100.0
+
+    def test_drill_time(self):
+        """Drill time equals sum of drill time_seconds."""
+        splits = [
+            {"stroke": "drill", "time_seconds": 40},
+            {"stroke": "drill", "time_seconds": 50},
+            {"stroke": "freestyle", "time_seconds": 30},
+        ]
+        ctx = compute_drill_context(splits, 25.0)
+        assert ctx.drill_time_seconds == 90.0
+
+    def test_position_beginning(self):
+        """Drills in the first third → position is 'beginning'."""
+        splits = [
+            {"stroke": "drill", "time_seconds": 40},
+            {"stroke": "drill", "time_seconds": 50},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+        ]
+        ctx = compute_drill_context(splits, 25.0)
+        assert ctx.drill_position == "beginning"
+
+    def test_position_end(self):
+        """Drills in the last third → position is 'end'."""
+        splits = [
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "drill", "time_seconds": 40},
+            {"stroke": "drill", "time_seconds": 50},
+        ]
+        ctx = compute_drill_context(splits, 25.0)
+        assert ctx.drill_position == "end"
+
+    def test_position_middle(self):
+        """Drills all in the middle third → position is 'middle'."""
+        splits = [
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "drill", "time_seconds": 40},
+            {"stroke": "drill", "time_seconds": 50},
+            {"stroke": "drill", "time_seconds": 45},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+        ]
+        ctx = compute_drill_context(splits, 25.0)
+        assert ctx.drill_position == "middle"
+
+    def test_position_throughout(self):
+        """Drills spread across all thirds → position is 'throughout'."""
+        splits = [
+            {"stroke": "drill", "time_seconds": 40},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "drill", "time_seconds": 40},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "drill", "time_seconds": 40},
+        ]
+        ctx = compute_drill_context(splits, 25.0)
+        assert ctx.drill_position == "throughout"
+
+    def test_single_drill_split(self):
+        """Single split that is a drill → position 'throughout'."""
+        splits = [{"stroke": "drill", "time_seconds": 45}]
+        ctx = compute_drill_context(splits, 50.0)
+        assert ctx.drill_count == 1
+        assert ctx.drill_distance_m == 50.0
+        assert ctx.drill_time_seconds == 45.0
+        assert ctx.drill_position == "throughout"
+
+    def test_missing_time_seconds_defaults_to_zero(self):
+        """If time_seconds is missing from a drill split, it defaults to 0."""
+        splits = [
+            {"stroke": "drill"},
+            {"stroke": "drill", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 25},
+        ]
+        ctx = compute_drill_context(splits, 25.0)
+        assert ctx.drill_time_seconds == 30.0
+
+
+class TestFormatDrillContext:
+    """Unit tests for format_drill_context function."""
+
+    def test_basic_format(self):
+        """Formats drill context into expected string."""
+        ctx = DrillContext(
+            drill_count=4,
+            drill_distance_m=100.0,
+            drill_time_seconds=200.0,
+            drill_position="beginning",
+        )
+        result = format_drill_context(ctx)
+        assert "4 drill lengths" in result
+        assert "100m" in result
+        assert "3m 20s" in result
+        assert "beginning" in result
+
+    def test_format_less_than_minute(self):
+        """Time under 60 seconds shows just seconds."""
+        ctx = DrillContext(
+            drill_count=1,
+            drill_distance_m=25.0,
+            drill_time_seconds=45.0,
+            drill_position="end",
+        )
+        result = format_drill_context(ctx)
+        assert "45s" in result
+        assert "end" in result
+
+    def test_format_exact_minute(self):
+        """Time that is exactly a minute."""
+        ctx = DrillContext(
+            drill_count=2,
+            drill_distance_m=50.0,
+            drill_time_seconds=60.0,
+            drill_position="middle",
+        )
+        result = format_drill_context(ctx)
+        assert "1m 00s" in result
+
+    def test_format_throughout_position(self):
+        """Throughout position in formatted string."""
+        ctx = DrillContext(
+            drill_count=6,
+            drill_distance_m=150.0,
+            drill_time_seconds=360.0,
+            drill_position="throughout",
+        )
+        result = format_drill_context(ctx)
+        assert "throughout" in result
+        assert "6 drill lengths" in result
+        assert "150m" in result
+        assert "6m 00s" in result
+
+
+# ---------------------------------------------------------------------------
+# Tests: build_chat_messages drill context integration
+# ---------------------------------------------------------------------------
+
+
+class TestBuildChatMessagesDrillIntegration:
+    """Integration tests for drill context in build_chat_messages."""
+
+    def test_drill_context_included_when_session_has_drills(self):
+        """System prompt includes formatted drill context when splits contain drills."""
+        splits = [
+            {"stroke": "drill", "time_seconds": 40},
+            {"stroke": "drill", "time_seconds": 50},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+        ]
+        system_prompt, _ = build_chat_messages(
+            current_prompt="How was my session?",
+            conversation_history=[],
+            notes=[],
+            session_splits=splits,
+            pool_length_m=25.0,
+        )
+        assert "Drill work:" in system_prompt
+        assert "2 drill lengths" in system_prompt
+        assert "50m" in system_prompt
+        assert "beginning" in system_prompt
+
+    def test_no_drill_context_when_session_has_zero_drills(self):
+        """System prompt does not include drill context when no drills in splits."""
+        splits = [
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "backstroke", "time_seconds": 35},
+            {"stroke": "freestyle", "time_seconds": 28},
+        ]
+        system_prompt, _ = build_chat_messages(
+            current_prompt="How was my session?",
+            conversation_history=[],
+            notes=[],
+            session_splits=splits,
+            pool_length_m=25.0,
+        )
+        assert "Drill work:" not in system_prompt
+        assert "drill" not in system_prompt.lower()
+
+    def test_no_drill_context_when_session_splits_none(self):
+        """System prompt has no drill context when session_splits is not provided."""
+        system_prompt, _ = build_chat_messages(
+            current_prompt="Give me tips.",
+            conversation_history=[],
+            notes=[],
+        )
+        assert "Drill work:" not in system_prompt
+        assert "drill" not in system_prompt.lower()
+
+    def test_drill_context_with_end_position(self):
+        """System prompt correctly reflects drills at the end of session."""
+        splits = [
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "drill", "time_seconds": 45},
+            {"stroke": "drill", "time_seconds": 50},
+        ]
+        system_prompt, _ = build_chat_messages(
+            current_prompt="Analyze my drills.",
+            conversation_history=[],
+            notes=[],
+            session_splits=splits,
+            pool_length_m=50.0,
+        )
+        assert "Drill work:" in system_prompt
+        assert "2 drill lengths" in system_prompt
+        assert "100m" in system_prompt
+        assert "end" in system_prompt
+
+    def test_drill_context_with_custom_pool_length(self):
+        """Drill distance computed with the provided pool length."""
+        splits = [
+            {"stroke": "drill", "time_seconds": 60},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+        ]
+        system_prompt, _ = build_chat_messages(
+            current_prompt="Tips please.",
+            conversation_history=[],
+            notes=[],
+            session_splits=splits,
+            pool_length_m=50.0,
+        )
+        assert "50m" in system_prompt
+
+    def test_drill_context_coexists_with_notes_and_history(self):
+        """Drill context, notes, and history all appear together in system prompt."""
+        splits = [
+            {"stroke": "drill", "time_seconds": 40},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+            {"stroke": "freestyle", "time_seconds": 30},
+        ]
+        notes = [FakeNote(text="Focus on catch", timestamp="2024-01-15")]
+        history = [
+            {"role": "user", "content": "Hi"},
+            {"role": "assistant", "content": "Hello!"},
+        ]
+        system_prompt, messages = build_chat_messages(
+            current_prompt="What about my drills?",
+            conversation_history=history,
+            notes=notes,
+            session_splits=splits,
+            pool_length_m=25.0,
+        )
+        # Drill context present
+        assert "Drill work:" in system_prompt
+        # Notes present
+        assert "Focus on catch" in system_prompt
+        # History continuity instruction present
+        assert "continuity" in system_prompt.lower()
+        # Messages include history + current prompt
+        assert len(messages) == 3

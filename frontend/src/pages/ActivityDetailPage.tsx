@@ -22,6 +22,7 @@ import { LoadingIndicator } from '../components/LoadingIndicator';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { InteractionsPanel } from '../components/InteractionsPanel';
 import { SessionNotesSection } from '../components/SessionNotesSection';
+import { DrillSummary } from '../components/DrillSummary';
 import './ActivityDetailPage.css';
 
 export interface ActivityDetailPageProps {
@@ -189,6 +190,9 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
               : undefined
           }
         />
+        {data.splits && data.splits.length > 0 && (
+          <DrillSummary splits={data.splits} poolLengthM={data.session.pool_length_m} />
+        )}
         <AICoachChat currentSession={{
           total_distance_m: data.session.total_distance_m,
           pace: (data as any).metrics?.pace,

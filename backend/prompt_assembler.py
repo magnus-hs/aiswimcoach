@@ -4,6 +4,85 @@ Builds the system prompt and messages array for Bedrock invocation,
 incorporating conversation history and user training notes.
 """
 
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass
+class DrillContext:
+    """Aggregated drill information for AI coaching context."""
+
+    drill_count: int
+    drill_distance_m: float
+    drill_time_seconds: float
+    drill_position: str  # "beginning", "middle", "end", or "throughout"
+
+
+def compute_drill_context(
+    splits: list[dict], pool_length_m: float
+) -> DrillContext | None:
+    """Compute drill summary from session splits.
+
+    Args:
+        splits: List of split dicts with 'stroke' and 'time_seconds' fields.
+        pool_length_m: Pool length in meters.
+
+    Returns:
+        DrillContext if drills exist, None otherwise.
+    """
+    drill_indices = [
+        i for i, s in enumerate(splits) if s.get("stroke") == "drill"
+    ]
+    if not drill_indices:
+        return None
+
+    drill_count = len(drill_indices)
+    drill_distance = drill_count * pool_length_m
+    drill_time = sum(
+        splits[i].get("time_seconds", 0) for i in drill_indices
+    )
+
+    # Determine position
+    total = len(splits)
+    if total <= 1:
+        position = "throughout"
+    else:
+        avg_position = sum(drill_indices) / len(drill_indices)
+        relative = avg_position / (total - 1)
+        if relative <= 0.33:
+            position = "beginning"
+        elif relative >= 0.67:
+            position = "end"
+        elif all(
+            total * 0.33 <= i < total * 0.67 for i in drill_indices
+        ):
+            position = "middle"
+        else:
+            position = "throughout"
+
+    return DrillContext(
+        drill_count=drill_count,
+        drill_distance_m=drill_distance,
+        drill_time_seconds=drill_time,
+        drill_position=position,
+    )
+
+
+def format_drill_context(ctx: DrillContext) -> str:
+    """Format drill context into a readable string for the coaching prompt."""
+    minutes = int(ctx.drill_time_seconds // 60)
+    seconds = int(ctx.drill_time_seconds % 60)
+    if minutes > 0:
+        time_str = f"{minutes}m {seconds:02d}s"
+    else:
+        time_str = f"{seconds}s"
+    return (
+        f"Drill work: {ctx.drill_count} drill lengths "
+        f"({ctx.drill_distance_m:.0f}m, {time_str}), "
+        f"positioned at the {ctx.drill_position} of the session."
+    )
+
 
 def _get_note_field(note, field: str) -> str:
     """Access a note field via attribute or dict access."""
@@ -21,6 +100,8 @@ def build_chat_messages(
     max_exchanges: int = 10,
     max_history_chars: int = 4000,
     max_notes: int = 20,
+    session_splits: list[dict] | None = None,
+    pool_length_m: float = 25.0,
 ) -> tuple[str, list[dict]]:
     """
     Assemble a system prompt and messages array for Bedrock invocation.
@@ -32,6 +113,8 @@ def build_chat_messages(
         max_exchanges: Maximum number of exchanges (user+assistant pairs) to include.
         max_history_chars: Maximum total characters for all history content.
         max_notes: Maximum number of notes to include in the system prompt.
+        session_splits: Optional list of split dicts with 'stroke' and 'time_seconds' fields.
+        pool_length_m: Pool length in meters (default 25.0).
 
     Returns:
         A tuple of (system_prompt, messages) where messages is the array
@@ -93,6 +176,11 @@ def build_chat_messages(
             "The user has provided personal training notes. Use these to explain "
             "anomalies or context changes:\n" + notes_block
         )
+
+    if session_splits is not None:
+        drill_ctx = compute_drill_context(session_splits, pool_length_m)
+        if drill_ctx is not None:
+            system_parts.append(format_drill_context(drill_ctx))
 
     if exchanges:
         system_parts.append(
