@@ -28,6 +28,7 @@ export function AICoachChat({ currentSession, externalPrompt, intents }: AICoach
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState<{role: string, content: string}[]>([]);
 
   // When an external prompt is set (from clicking an example), populate the input
   useEffect(() => {
@@ -56,6 +57,7 @@ export function AICoachChat({ currentSession, externalPrompt, intents }: AICoach
           prompt,
           current_session: currentSession || undefined,
           intents: intents && intents.length > 0 ? intents : undefined,
+          conversation_history: conversationHistory.length > 0 ? conversationHistory : undefined,
         }),
       });
 
@@ -66,6 +68,16 @@ export function AICoachChat({ currentSession, externalPrompt, intents }: AICoach
       const data = await response.json();
       const aiMsg: Message = { role: 'assistant', text: data.response };
       setMessages(prev => [...prev, aiMsg]);
+
+      // Append user + AI entries to conversation history, keep last 10 exchanges (20 entries)
+      setConversationHistory(prev => {
+        const updated = [
+          ...prev,
+          { role: 'user', content: prompt },
+          { role: 'assistant', content: data.response },
+        ];
+        return updated.slice(-20);
+      });
     } catch {
       const errMsg: Message = { role: 'assistant', text: 'Sorry, I couldn\'t analyse that right now. Please try again.' };
       setMessages(prev => [...prev, errMsg]);

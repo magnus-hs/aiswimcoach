@@ -5,6 +5,7 @@ import { getUserSessions, SessionSummary } from '../api/sessionService';
 import { Sidebar } from '../components/Sidebar';
 import { DistanceChartPoint } from '../components/DistanceChart';
 import { ActivityFeed } from '../components/ActivityFeed';
+import { TrainingNotes } from '../components/TrainingNotes';
 import './DashboardPage.css';
 
 /**
@@ -270,6 +271,7 @@ export function DashboardPage() {
           monthlyGoalMeters={monthlyGoalM}
           yearlyGoalMeters={yearlyGoalM}
         />
+        <TrainingNotes />
       </aside>
       <section className="dashboard__feed">
         <div className="dashboard__feed-header">

@@ -23,6 +23,7 @@ import s3_store  # noqa: E402
 import fit_parser  # noqa: E402
 import bedrock_client  # noqa: E402
 import profile_manager  # noqa: E402
+import chat_history_store  # noqa: E402
 
 # Register the same module objects under both names
 sys.modules.setdefault('backend.auth', auth)
@@ -34,3 +35,4 @@ sys.modules.setdefault('backend.s3_store', s3_store)
 sys.modules.setdefault('backend.fit_parser', fit_parser)
 sys.modules.setdefault('backend.bedrock_client', bedrock_client)
 sys.modules.setdefault('backend.profile_manager', profile_manager)
+sys.modules.setdefault('backend.chat_history_store', chat_history_store)

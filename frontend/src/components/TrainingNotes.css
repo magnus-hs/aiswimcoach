@@ -1,0 +1,173 @@
+/* TrainingNotes — personal training note management */
+
+.training-notes {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+  border: 1px solid var(--color-gray-200);
+}
+
+.training-notes__heading {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin: 0 0 var(--space-1);
+}
+
+.training-notes__subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-4);
+}
+
+/* --- Input Section --- */
+
+.training-notes__input-section {
+  margin-bottom: var(--space-4);
+}
+
+.training-notes__textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: var(--space-3);
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.training-notes__textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px hsla(215, 35%, 45%, 0.1);
+}
+
+.training-notes__input-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-2);
+}
+
+.training-notes__char-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.training-notes__submit-btn {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.training-notes__submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.training-notes__submit-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+/* --- Error Message --- */
+
+.training-notes__error {
+  padding: var(--space-3);
+  background: hsla(0, 70%, 60%, 0.1);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-3);
+}
+
+/* --- Notes List --- */
+
+.training-notes__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+.training-notes__empty {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+  padding: var(--space-4) 0;
+}
+
+/* --- Note Card --- */
+
+.training-notes__note {
+  padding: var(--space-3);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-md);
+  position: relative;
+}
+
+.training-notes__note-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  line-height: var(--line-height-normal);
+  word-break: break-word;
+  margin: 0 0 var(--space-1);
+  padding-right: var(--space-5);
+}
+
+.training-notes__note-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.training-notes__note-delete {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.training-notes__note:hover .training-notes__note-delete {
+  opacity: 1;
+}
+
+.training-notes__note-delete:hover {
+  color: var(--color-error);
+}
+
+/* --- Loading State --- */
+
+.training-notes__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}

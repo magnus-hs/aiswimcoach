@@ -63,6 +63,11 @@ from interactions_service import (
     get_notifications,
     clear_notifications,
 )
+from notes_service import NotFoundError as NotesNotFoundError
+import notes_service
+import chat_history_store
+from chat_history_store import QAEntry
+from prompt_assembler import build_chat_messages
 from http_headers import response_headers
 from rate_limit import check_rate_limit
 
@@ -213,6 +218,17 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # AI chat analysis (auth required)
     elif path == "/ai/chat" and http_method == "POST":
         return _handle_ai_chat(event, context)
+
+    # Notes CRUD routes (auth required)
+    elif path == "/notes" and http_method == "POST":
+        return _handle_create_note(event, context)
+    elif path == "/notes" and http_method == "GET":
+        return _handle_get_notes(event, context)
+    elif path.startswith("/notes/") and http_method == "DELETE":
+        note_id = path.split("/notes/")[1]
+        if note_id:
+            event["note_id"] = note_id
+            return _handle_delete_note(event, context)
 
     # Training plans route (auth required)
     elif path == "/plans" and http_method == "GET":
@@ -1468,6 +1484,107 @@ def _handle_get_assessment(event: dict[str, Any], context: Any) -> dict[str, Any
         return _error_response(500, "Failed to retrieve assessment")
 
 
+# ---------------------------------------------------------------------------
+# Notes CRUD handlers (require authentication)
+# ---------------------------------------------------------------------------
+
+
+@require_auth
+def _handle_create_note(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle POST /notes — create a new training note.
+
+    Request body (JSON):
+        {"text": "Shoulder felt tight after 1500m"}
+
+    Response (201):
+        {"note_id": "...", "text": "...", "timestamp": "..."}
+
+    Errors:
+        400: Validation failure (empty/too long)
+        500: Storage failure
+    """
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return _error_response(400, "Invalid JSON body")
+
+    text = body.get("text", "")
+    if not isinstance(text, str):
+        return _error_response(400, "text must be a string")
+
+    try:
+        note = notes_service.create_note(user_id, text)
+        return {
+            "statusCode": 201,
+            "headers": response_headers({"Content-Type": "application/json"}),
+            "body": json.dumps({
+                "note_id": note.note_id,
+                "text": note.text,
+                "timestamp": note.timestamp,
+            }),
+        }
+    except ValueError as exc:
+        return _error_response(400, str(exc))
+    except Exception as exc:
+        logger.error("Failed to create note for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to create note")
+
+
+@require_auth
+def _handle_get_notes(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /notes — retrieve all training notes for the user.
+
+    Response (200):
+        {"notes": [{"note_id": "...", "text": "...", "timestamp": "..."}, ...]}
+
+    Errors:
+        500: Storage failure
+    """
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        notes_list = notes_service.get_notes(user_id)
+        return http_200_dict({
+            "notes": [
+                {
+                    "note_id": n.note_id,
+                    "text": n.text,
+                    "timestamp": n.timestamp,
+                }
+                for n in notes_list
+            ]
+        })
+    except Exception as exc:
+        logger.error("Failed to get notes for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to retrieve notes")
+
+
+@require_auth
+def _handle_delete_note(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle DELETE /notes/{note_id} — delete a training note.
+
+    Response (200):
+        {"message": "Note deleted"}
+
+    Errors:
+        404: Note not found or not owned by user
+        500: Storage failure
+    """
+    user_id = event["auth_context"]["user_id"]
+    note_id = event.get("note_id", "")
+
+    try:
+        notes_service.delete_note(user_id, note_id)
+        return http_200_dict({"message": "Note deleted"})
+    except NotesNotFoundError:
+        return _error_response(404, "Note not found")
+    except Exception as exc:
+        logger.error("Failed to delete note %s for user %s: %s", note_id, user_id, exc)
+        return _error_response(500, "Failed to delete note")
+
+
 @require_auth
 def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Handle POST /ai/chat — interactive AI coaching chat.
@@ -1488,7 +1605,29 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     
     current_session = body.get("current_session")  # Optional: current session data
     intents = body.get("intents") or []  # Optional: coaching focus categories
-    
+    conversation_history = body.get("conversation_history") or []  # Optional: client-side history
+
+    # Retrieve chat history from S3 (best-effort)
+    stored_history: list = []
+    try:
+        stored_entries = chat_history_store.get_history(user_id)
+        # Convert QAEntry objects to the role/content format expected by prompt_assembler
+        for entry in stored_entries:
+            stored_history.append({"role": "user", "content": entry.user_prompt})
+            stored_history.append({"role": "assistant", "content": entry.ai_response})
+    except Exception as exc:
+        logger.error("Failed to retrieve chat history for user %s: %s", user_id, exc)
+
+    # Retrieve training notes (best-effort)
+    user_notes: list = []
+    try:
+        user_notes = notes_service.get_notes(user_id)
+    except Exception as exc:
+        logger.error("Failed to retrieve notes for user %s: %s", user_id, exc)
+
+    # Use client-provided conversation_history if available, otherwise use stored history
+    effective_history = conversation_history if conversation_history else stored_history
+
     # Fetch all user sessions for trend analysis
     try:
         sessions = get_user_sessions(user_id)
@@ -1715,28 +1854,16 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
             parts.append(f"- Additional notes: {notes}\n")
         goals_info = "".join(parts)
     
-    # Call Bedrock
-    system_prompt = (
-        "You are an elite competitive swim coach analysing a swimmer's training data.\n"
-        "You have access to their full session history, current session details, profile, CSS pace, "
-        "and official Masters Swimming time standards for their age group.\n\n"
-        "CRITICAL: CSS pace is a TRAINING pace (threshold), NOT a race time. "
-        "Race times are typically 3-8 seconds per 100m faster than CSS depending on distance. "
-        "When comparing to standards, use the ESTIMATED RACE TIMES and PRE-COMPUTED CLASSIFICATIONS provided. "
-        "Do NOT do your own time arithmetic or conversions — use the pre-computed values exactly as given.\n\n"
-        "When the swimmer's time standards table is provided, use THOSE EXACT NUMBERS for comparisons. "
-        "Do not invent or estimate different times — reference the table directly.\n\n"
-        "Provide insightful, specific analysis based on the data. Identify trends, strengths, "
-        "weaknesses, and give concrete advice on how to improve and reach their targets.\n\n"
-        "If the swimmer has set GOALS, explicitly assess how close or far they are from each goal "
-        "using their data (e.g. weekly distance progress, gap to target race time), and give clear "
-        "steps to close the gap.\n\n"
-        "Keep your response concise (2-4 paragraphs) but data-driven. Reference specific numbers "
-        "from their sessions and the standards table when making points.\n"
-        "Do not use markdown formatting — respond in plain text with line breaks for readability."
-    )
-    
+    # Build enriched prompt with context data
     user_message = f"{prompt}{intent_info}{goals_info}{profile_info}{css_info}{session_detail}{history_summary}"
+
+    # Use prompt_assembler to build system prompt and messages array
+    # incorporating conversation history and training notes
+    assembled_system_prompt, assembled_messages = build_chat_messages(
+        current_prompt=user_message,
+        conversation_history=effective_history,
+        notes=user_notes,
+    )
     
     try:
         region = os.environ.get("AWS_REGION", "us-east-1")
@@ -1744,8 +1871,8 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
         
         request_body = {
             "anthropic_version": "bedrock-2023-05-31",
-            "system": system_prompt,
-            "messages": [{"role": "user", "content": user_message}],
+            "system": assembled_system_prompt,
+            "messages": assembled_messages,
             "max_tokens": 1024,
         }
         
@@ -1763,6 +1890,18 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
             if block.get("type") == "text":
                 text += block.get("text", "")
         
+        # Persist Q&A entry to chat history (best-effort)
+        try:
+            from datetime import datetime, timezone
+            entry = QAEntry(
+                user_prompt=prompt[:2000],
+                ai_response=text,
+                timestamp=datetime.now(tz=timezone.utc).isoformat(),
+            )
+            chat_history_store.append_entry(user_id, entry)
+        except Exception as save_exc:
+            logger.error("Failed to save chat history for user %s: %s", user_id, save_exc)
+
         return http_200_dict({"response": text})
     
     except Exception as exc:
