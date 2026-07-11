@@ -1,5 +1,5 @@
 .statistics-page {
-  max-width: 900px;
+  max-width: 800px;
   margin: 0 auto;
   padding: var(--space-6) var(--space-4);
 }
@@ -19,7 +19,7 @@
 }
 
 .statistics-page__subtitle {
-  color: var(--color-text-secondary);
+  color: var(--color-text-muted);
   margin-bottom: var(--space-6);
 }
 
@@ -27,8 +27,7 @@
 .statistics-page__error,
 .statistics-page__empty {
   color: var(--color-text-muted);
-  text-align: center;
-  padding: var(--space-6) 0;
+  padding: var(--space-4) 0;
 }
 
 .statistics-page__error {
@@ -45,43 +44,41 @@
   margin-bottom: var(--space-4);
 }
 
-.statistics-page__grid {
+.statistics-page__totals-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-4);
 }
 
-.statistics-page__stat {
+.statistics-page__total-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--space-4);
+  padding: var(--space-5);
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
 }
 
-.statistics-page__stat-value {
+.statistics-page__total-value {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-primary);
 }
 
-.statistics-page__stat-label {
-  font-size: var(--font-size-xs);
+.statistics-page__total-label {
+  font-size: var(--font-size-sm);
   color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   margin-top: var(--space-1);
 }
 
-/* Yearly section */
-.statistics-page__yearly h2 {
+/* Years section */
+.statistics-page__years h2 {
   font-size: var(--font-size-lg);
   margin-bottom: var(--space-4);
 }
 
-.statistics-page__years {
+.statistics-page__year-cards {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -94,46 +91,51 @@
   box-shadow: var(--shadow-card);
 }
 
-.statistics-page__year-heading {
+.statistics-page__year-title {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: var(--color-primary);
-  margin: 0 0 var(--space-3);
+  margin: 0 0 var(--space-4);
 }
 
 .statistics-page__year-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--space-3);
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
 }
 
-.statistics-page__year-stat {
+.statistics-page__stat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
 }
 
-.statistics-page__year-value {
+.statistics-page__stat-value {
   font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text);
 }
 
-.statistics-page__year-label {
+.statistics-page__stat-label {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   margin-top: var(--space-1);
 }
 
+/* Mobile */
 @media (max-width: 599px) {
-  .statistics-page__grid {
-    grid-template-columns: repeat(2, 1fr);
+  .statistics-page__totals-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
   }
 
   .statistics-page__year-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-2);
+    gap: var(--space-3);
+  }
+
+  .statistics-page__total-item {
+    padding: var(--space-3);
   }
 
   .statistics-page__year-card {
