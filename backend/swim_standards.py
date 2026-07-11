@@ -161,6 +161,8 @@ MASTERS_STANDARDS = {
 }
 
 DATA_SOURCE = "British Masters Swimming & World Aquatics time standards (2024/2025 season)"
+DATA_SOURCE_URL = "https://www.swimming.org/masters/results-archive/"
+DATA_RESULTS_URL = "https://www.swimmingresults.org/mastersdata/results/"
 DATA_NOTE = "Standards are updated annually. Next update expected: September 2025."
 
 
@@ -205,6 +207,7 @@ def get_standards_for_swimmer(age: int, gender: str = "male") -> str:
     lines = [
         f"\nSwimming Time Standards ({gender_key.title()}, age group {age_group}):",
         f"Source: {DATA_SOURCE}",
+        f"Results archive: {DATA_SOURCE_URL}",
         f"Note: {DATA_NOTE}",
         f"Pool: Short course (25m)",
         "",

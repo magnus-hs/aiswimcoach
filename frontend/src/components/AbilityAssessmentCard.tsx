@@ -46,6 +46,12 @@ export function AbilityAssessmentCard({ assessment }: AbilityAssessmentCardProps
           <p className="ability-assessment-card__analysis">{assessment.competitive_analysis}</p>
         </div>
       </div>
+      <p className="ability-assessment-card__source">
+        Data sourced from{' '}
+        <a href="https://www.swimming.org/masters/results-archive/" target="_blank" rel="noopener noreferrer">
+          Swim England Masters Results Archive
+        </a>
+      </p>
     </section>
   );
 }

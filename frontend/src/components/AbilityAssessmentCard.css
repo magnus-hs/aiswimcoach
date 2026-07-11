@@ -53,3 +53,20 @@
   color: var(--color-gray-600);
   margin: 0;
 }
+
+.ability-assessment-card__source {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.ability-assessment-card__source a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.ability-assessment-card__source a:hover {
+  text-decoration: underline;
+}

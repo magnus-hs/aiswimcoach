@@ -129,7 +129,14 @@ export function AbilityAssessmentPage() {
           <h2>Time Standards — {ageGroup} Male</h2>
           <p className="ability-page__standards-note">
             Source: British Masters Swimming & Scottish Swimming (2024/2025 season).
-            Updated annually. This may change in the next version of AI Swim Coach.
+            Updated annually. Data sourced from{' '}
+            <a href="https://www.swimming.org/masters/results-archive/" target="_blank" rel="noopener noreferrer">
+              Swim England Masters Results Archive
+            </a>{' '}
+            and{' '}
+            <a href="https://www.swimmingresults.org/mastersdata/results/" target="_blank" rel="noopener noreferrer">
+              swimmingresults.org
+            </a>.
           </p>
 
           <div className="ability-page__filters">
