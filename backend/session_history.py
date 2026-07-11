@@ -331,6 +331,12 @@ def get_user_sessions(
         query_params["KeyConditionExpression"] &= Key("session_date").lte(
             end_date
         )
+    else:
+        # Default: only fetch sessions with valid ISO date format (1990-2030)
+        # This excludes garbage dates like "9634", "92125", "PLAN#..." at the DynamoDB level
+        query_params["KeyConditionExpression"] &= Key("session_date").between(
+            "1990", "2030-12-31T23:59:59"
+        )
     
     # Execute query — with pagination support and optional limit
     items = []
