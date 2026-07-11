@@ -116,6 +116,12 @@ resource "aws_iam_role_policy" "lambda_permissions" {
           aws_dynamodb_table.friends.arn,
           "${aws_dynamodb_table.friends.arn}/index/sk-pk-index"
         ]
+      },
+      {
+        Sid      = "SecretsManagerReadJWT"
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = "${aws_secretsmanager_secret.jwt.arn}"
       }
     ]
   })

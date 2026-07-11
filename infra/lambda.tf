@@ -27,7 +27,10 @@ resource "aws_lambda_function" "swim_coach" {
       USERS_TABLE             = aws_dynamodb_table.users.name
       PROFILES_TABLE          = aws_dynamodb_table.user_profiles.name
       SESSIONS_TABLE          = aws_dynamodb_table.sessions.name
+      # JWT secret is resolved from Secrets Manager (current/previous rotation).
+      # JWT_SECRET is retained as a fallback for local/dev use.
       JWT_SECRET              = var.jwt_secret
+      JWT_SECRET_ARN          = aws_secretsmanager_secret.jwt.arn
     }
   }
 }

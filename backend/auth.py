@@ -4,13 +4,25 @@ Authentication module for the AI Swim Coach backend.
 Provides user registration, login, JWT token generation and verification,
 and password hashing using bcrypt.
 
+JWT secret resolution (in priority order):
+    1. AWS Secrets Manager, if JWT_SECRET_ARN is set. The secret value may be
+       either a plain string, or JSON: {"current": "...", "previous": "..."}.
+       Tokens are SIGNED with `current` and VERIFIED against both `current` and
+       `previous`, giving a zero-downtime rotation window (rotating the secret
+       does not log existing users out until `previous` is dropped).
+    2. Environment variables JWT_SECRET (+ optional JWT_SECRET_PREVIOUS).
+
 Environment Variables:
-    JWT_SECRET: Secret key for signing JWT tokens (256-bit minimum)
-    USERS_TABLE: DynamoDB table name for user storage
+    JWT_SECRET_ARN:      (preferred) Secrets Manager ARN/name for the JWT secret
+    JWT_SECRET:          Fallback signing secret (256-bit minimum)
+    JWT_SECRET_PREVIOUS: Optional previous secret accepted during rotation
+    USERS_TABLE:         DynamoDB table name for user storage
 """
 from __future__ import annotations
 
+import json
 import os
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -23,6 +35,61 @@ from botocore.exceptions import ClientError
 
 # Initialize DynamoDB client
 dynamodb = boto3.resource("dynamodb")
+
+# --- JWT secret resolution (cached) ---
+_secret_cache: dict[str, Any] = {"value": None, "ts": 0.0}
+_SECRET_TTL = 300  # seconds
+
+
+def _load_secrets() -> tuple[str, list[str]]:
+    """Return (signing_secret, [verification_secrets]).
+
+    Cached for _SECRET_TTL seconds so we don't call Secrets Manager per request.
+    Raises ValueError if no secret can be resolved.
+    """
+    now = time.time()
+    cached = _secret_cache["value"]
+    if cached is not None and (now - _secret_cache["ts"]) < _SECRET_TTL:
+        return cached
+
+    signing: str | None = None
+    verify: list[str] = []
+
+    arn = os.environ.get("JWT_SECRET_ARN")
+    if arn:
+        try:
+            client = boto3.client("secretsmanager")
+            resp = client.get_secret_value(SecretId=arn)
+            raw = resp.get("SecretString") or ""
+            try:
+                data = json.loads(raw)
+                signing = data.get("current")
+                if signing:
+                    verify.append(signing)
+                prev = data.get("previous")
+                if prev:
+                    verify.append(prev)
+            except (ValueError, TypeError):
+                # Plain-string secret
+                signing = raw
+                verify.append(raw)
+        except Exception:
+            signing = None  # fall through to env fallback
+
+    if not signing:
+        env_secret = os.environ.get("JWT_SECRET")
+        if not env_secret:
+            raise ValueError("No JWT secret configured (JWT_SECRET_ARN or JWT_SECRET)")
+        signing = env_secret
+        verify = [env_secret]
+        prev = os.environ.get("JWT_SECRET_PREVIOUS")
+        if prev:
+            verify.append(prev)
+
+    result = (signing, verify)
+    _secret_cache["value"] = result
+    _secret_cache["ts"] = now
+    return result
 
 
 class AuthenticationError(Exception):
@@ -104,10 +171,8 @@ def generate_jwt_token(user_id: str, email: str) -> str:
     
     Requirements: 21.16-21.17
     """
-    jwt_secret = os.environ.get("JWT_SECRET")
-    if not jwt_secret:
-        raise ValueError("JWT_SECRET environment variable not configured")
-    
+    signing, _ = _load_secrets()
+
     now = datetime.now(timezone.utc)
     expiration = now + timedelta(days=7)
     
@@ -118,7 +183,7 @@ def generate_jwt_token(user_id: str, email: str) -> str:
         "exp": expiration,
     }
     
-    token = jwt.encode(payload, jwt_secret, algorithm="HS256")
+    token = jwt.encode(payload, signing, algorithm="HS256")
     return token
 
 
@@ -137,20 +202,24 @@ def verify_token(token: str) -> dict[str, str]:
     
     Requirements: 21.21-21.22
     """
-    jwt_secret = os.environ.get("JWT_SECRET")
-    if not jwt_secret:
-        raise ValueError("JWT_SECRET environment variable not configured")
-    
-    try:
-        payload = jwt.decode(token, jwt_secret, algorithms=["HS256"])
-        return {
-            "user_id": payload["user_id"],
-            "email": payload["email"],
-        }
-    except jwt.ExpiredSignatureError:
-        raise AuthenticationError("Token has expired")
-    except jwt.InvalidTokenError as e:
-        raise AuthenticationError(f"Invalid token: {e}")
+    _, verify_secrets = _load_secrets()
+
+    last_err: Exception | None = None
+    for secret in verify_secrets:
+        try:
+            payload = jwt.decode(token, secret, algorithms=["HS256"])
+            return {
+                "user_id": payload["user_id"],
+                "email": payload["email"],
+            }
+        except jwt.ExpiredSignatureError:
+            # Expiry is independent of which secret signed it — fail fast.
+            raise AuthenticationError("Token has expired")
+        except jwt.InvalidTokenError as e:
+            last_err = e
+            continue  # Try the next (previous) secret during rotation
+
+    raise AuthenticationError(f"Invalid token: {last_err}")
 
 
 def _get_users_table():
