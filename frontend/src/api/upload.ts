@@ -63,6 +63,45 @@ export async function uploadFitFile(file: File): Promise<FullResponse> {
 
 
 /**
+ * Uploads a .fit file in bulk-import mode (skips AI coaching).
+ * Returns session info, splits, and metrics but with coaching=null.
+ *
+ * @param file - The .fit file to upload.
+ * @returns The full response from the backend (coaching will be null).
+ * @throws {ApiError} When the server returns a non-2xx response.
+ * @throws {Error} When a network error prevents the request from completing.
+ */
+export async function uploadFitFileBulk(file: File): Promise<FullResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const token = localStorage.getItem('auth_token');
+  const headers: HeadersInit = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(import.meta.env.VITE_API_ENDPOINT + '/upload?skip_coaching=true', {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+  } catch {
+    throw new ApiError(0, 'Could not reach the server. Check your connection and retry.');
+  }
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new ApiError(response.status, errorMessageForStatus(response.status, text));
+  }
+
+  return response.json() as Promise<FullResponse>;
+}
+
+
+/**
  * Generates a training plan from current metrics and a training goal.
  *
  * @param metrics - Current swim performance metrics.

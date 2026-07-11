@@ -23,6 +23,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { InteractionsPanel } from '../components/InteractionsPanel';
 import { SessionNotesSection } from '../components/SessionNotesSection';
 import { DrillSummary } from '../components/DrillSummary';
+import { BulkImportPanel } from '../components/BulkImportPanel';
 import './ActivityDetailPage.css';
 
 export interface ActivityDetailPageProps {
@@ -51,6 +52,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadResult, setUploadResult] = useState<FullResponse | null>(null);
   const [cssPace, setCssPace] = useState<number | null>(null);
+  const [bulkFiles, setBulkFiles] = useState<File[] | null>(null);
 
   // Fetch user's CSS pace
   useEffect(() => {
@@ -143,27 +145,14 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
   }, []);
 
   const handleFilesAccepted = useCallback(async (files: File[]) => {
-    setUploading(true);
-    setUploadError(null);
-    let lastResult = null;
-    let uploadCount = 0;
-
-    for (const file of files) {
-      try {
-        lastResult = await uploadFitFile(file);
-        uploadCount++;
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : `Upload failed for ${file.name}`;
-        setUploadError(`${uploadCount}/${files.length} uploaded. Error: ${message}`);
-        break;
-      }
+    if (files.length > 1) {
+      // Bulk import mode
+      setBulkFiles(files);
+    } else if (files.length === 1) {
+      // Single upload flow
+      handleFileAccepted(files[0]);
     }
-
-    if (lastResult) {
-      setUploadResult(lastResult);
-    }
-    setUploading(false);
-  }, []);
+  }, [handleFileAccepted]);
 
   const handleFileRejected = useCallback((reason: string) => {
     setUploadError(reason);
@@ -275,7 +264,14 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
       {/* Upload mode: show file drop zone or upload result */}
       {isUploadMode && (
         <>
-          {!uploadResult && (
+          {bulkFiles && (
+            <div className="activity-detail__upload-section">
+              <h1 className="activity-detail__heading">Bulk Import</h1>
+              <BulkImportPanel files={bulkFiles} onComplete={() => setBulkFiles(null)} />
+            </div>
+          )}
+
+          {!bulkFiles && !uploadResult && (
             <div className="activity-detail__upload-section">
               <h1 className="activity-detail__heading">Upload Activity</h1>
               <FileDropZone

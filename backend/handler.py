@@ -838,39 +838,47 @@ def _handle_file_upload(event: dict[str, Any], context: Any) -> dict[str, Any]:
         logger.warning("FIT session parse error: %s", exc)
         return _error_response(422, exc.message)
 
-    try:
-        # 5. Build session context for richer AI coaching
-        session_context: dict[str, Any] = {
-            "total_distance_m": session_info.total_distance_m,
-            "total_time_seconds": session_info.total_time_seconds,
-            "num_lengths": session_info.num_lengths,
-        }
-        
-        # Compute SWOLF drift and set count from splits
-        if splits:
-            valid_splits = [s for s in splits if s.strokes > 0 and s.time_seconds > 0]
-            session_context["num_sets"] = sum(1 for s in splits if s.rest_after_seconds is not None) + 1
-            
-            if len(valid_splits) >= 4:
-                # SWOLF for first and last quarter
-                quarter = max(1, len(valid_splits) // 4)
-                first_swolfs = [s.time_seconds + s.strokes for s in valid_splits[:quarter]]
-                last_swolfs = [s.time_seconds + s.strokes for s in valid_splits[-quarter:]]
-                avg_first = sum(first_swolfs) / len(first_swolfs)
-                avg_last = sum(last_swolfs) / len(last_swolfs)
-                session_context["swolf_drift"] = round(avg_last - avg_first, 1)
+    # Check if coaching should be skipped (bulk import mode)
+    query_params = event.get("queryStringParameters") or {}
+    skip_coaching = query_params.get("skip_coaching") == "true"
 
-        # Invoke Bedrock with enriched context
-        coaching = invoke_bedrock(metrics, session_context)
-    except BedrockError as exc:
-        logger.error("Bedrock invocation failed: %s", exc)
-        return _error_response(502, str(exc))
+    coaching = None
+
+    if not skip_coaching:
+        try:
+            # 5. Build session context for richer AI coaching
+            session_context: dict[str, Any] = {
+                "total_distance_m": session_info.total_distance_m,
+                "total_time_seconds": session_info.total_time_seconds,
+                "num_lengths": session_info.num_lengths,
+            }
+            
+            # Compute SWOLF drift and set count from splits
+            if splits:
+                valid_splits = [s for s in splits if s.strokes > 0 and s.time_seconds > 0]
+                session_context["num_sets"] = sum(1 for s in splits if s.rest_after_seconds is not None) + 1
+                
+                if len(valid_splits) >= 4:
+                    # SWOLF for first and last quarter
+                    quarter = max(1, len(valid_splits) // 4)
+                    first_swolfs = [s.time_seconds + s.strokes for s in valid_splits[:quarter]]
+                    last_swolfs = [s.time_seconds + s.strokes for s in valid_splits[-quarter:]]
+                    avg_first = sum(first_swolfs) / len(first_swolfs)
+                    avg_last = sum(last_swolfs) / len(last_swolfs)
+                    session_context["swolf_drift"] = round(avg_last - avg_first, 1)
+
+            # Invoke Bedrock with enriched context
+            coaching = invoke_bedrock(metrics, session_context)
+        except BedrockError as exc:
+            logger.error("Bedrock invocation failed: %s", exc)
+            return _error_response(502, str(exc))
 
     # 6. Persist to DynamoDB (best-effort — failure must not block the response)
-    try:
-        save_to_dynamodb(s3_key, metrics, coaching)
-    except Exception as exc:
-        logger.error("DynamoDB write failed for %s: %s", s3_key, exc)
+    if coaching is not None:
+        try:
+            save_to_dynamodb(s3_key, metrics, coaching)
+        except Exception as exc:
+            logger.error("DynamoDB write failed for %s: %s", s3_key, exc)
 
     # 6.5. Calculate HR zones if user has profile with age (best-effort)
     # Requirements: 12.1-12.7
@@ -938,7 +946,7 @@ def _handle_file_upload(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # Requirements: 7.1-7.12
     ability_assessment = None
     
-    if auth_context:
+    if not skip_coaching and auth_context:
         user_id = auth_context.get("user_id")
         
         if user_id:
