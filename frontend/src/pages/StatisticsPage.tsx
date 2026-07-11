@@ -52,7 +52,7 @@ export function StatisticsPage() {
   useEffect(() => {
     async function loadStats() {
       try {
-        const sessions = await getUserSessions();
+        const sessions = await getUserSessions(undefined, undefined, { all: true });
         const byYear = new Map<number, SessionSummary[]>();
 
         for (const session of sessions) {

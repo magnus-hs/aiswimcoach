@@ -164,8 +164,10 @@ function isValidSessionDate(dateStr: string): boolean {
 export async function getUserSessions(
   startDate?: string,
   endDate?: string,
+  options?: { all?: boolean },
 ): Promise<SessionSummary[]> {
-  const cacheKey = `${startDate || ''}_${endDate || ''}`;
+  const fetchAll = options?.all ?? false;
+  const cacheKey = `${startDate || ''}_${endDate || ''}_${fetchAll ? 'all' : ''}`;
 
   // Return cached if fresh
   if (_sessionsCache && _sessionsCache.key === cacheKey && (Date.now() - _sessionsCache.ts) < CACHE_TTL_MS) {
@@ -180,6 +182,9 @@ export async function getUserSessions(
   }
   if (endDate) {
     queryParams.append('end_date', endDate);
+  }
+  if (fetchAll) {
+    queryParams.append('all', 'true');
   }
 
   const url = `${import.meta.env.VITE_API_ENDPOINT}/sessions${

@@ -2441,32 +2441,16 @@ def _handle_get_sessions(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """Handle GET /sessions endpoint.
     
     Retrieves user's session history with optional date range filtering.
+    Supports `limit` parameter for pagination (default 50).
     
     Query parameters (optional):
         - start_date: ISO 8601 date (inclusive)
         - end_date: ISO 8601 date (inclusive)
+        - limit: Maximum number of sessions to return (default 50, max 500)
+        - all: If "true", return all sessions (for statistics page)
     
     Response (200):
-        {
-            "sessions": [
-                {
-                    "session_id": "uuid",
-                    "session_date": "2024-01-15T10:00:00Z",
-                    "pool_length_meters": 25,
-                    "total_distance_meters": 2000,
-                    "total_time_seconds": 2400,
-                    "stroke_type": "freestyle",
-                    "average_pace_per_100m": 120.0,
-                    "swolf_score": 45,
-                    "stroke_rate": 30.0,
-                    "uploaded_at": "2024-01-15T11:00:00Z",
-                    "s3_key": "uploads/file.fit",
-                    "hr_zones": {...},
-                    "ability_assessment": {...}
-                },
-                ...
-            ]
-        }
+        { "sessions": [...] }
     
     Errors:
         500: Session retrieval failure
@@ -2479,18 +2463,50 @@ def _handle_get_sessions(event: dict[str, Any], context: Any) -> dict[str, Any]:
     query_params = event.get("queryStringParameters") or {}
     start_date = query_params.get("start_date")
     end_date = query_params.get("end_date")
+    fetch_all = query_params.get("all") == "true"
+    
+    try:
+        limit_str = query_params.get("limit", "50")
+        limit = min(int(limit_str), 500) if not fetch_all else 9999
+    except (ValueError, TypeError):
+        limit = 50
     
     try:
         sessions = get_user_sessions(user_id, start_date, end_date)
         
-        # Convert Session objects to dicts
-        sessions_data = [dataclasses.asdict(session) for session in sessions]
-
-        # Add a per-stroke percentage breakdown for the activity feed.
-        for session_obj, session_dict in zip(sessions, sessions_data):
+        # Apply limit (sessions are already sorted most-recent first)
+        limited_sessions = sessions[:limit]
+        
+        # Convert Session objects to dicts — STRIP heavy fields for list view
+        sessions_data = []
+        for session_obj in limited_sessions:
+            session_dict = {
+                "session_id": session_obj.session_id,
+                "session_date": session_obj.session_date,
+                "pool_length_meters": session_obj.pool_length_meters,
+                "total_distance_meters": session_obj.total_distance_meters,
+                "total_time_seconds": session_obj.total_time_seconds,
+                "stroke_type": session_obj.stroke_type,
+                "average_pace_per_100m": session_obj.average_pace_per_100m,
+                "swolf_score": session_obj.swolf_score,
+                "stroke_rate": session_obj.stroke_rate,
+                "kudos": session_obj.kudos,
+                "comments": session_obj.comments,
+            }
+            
+            # Only include splits for stroke breakdown (lightweight version)
+            if session_obj.splits:
+                # Only include stroke + time_seconds for each split (not full data)
+                session_dict["splits"] = [
+                    {"stroke": s.get("stroke", "unknown"), "time_seconds": s.get("time_seconds", 0), "strokes": s.get("strokes", 0), "rest_after_seconds": s.get("rest_after_seconds")}
+                    for s in (session_obj.splits if isinstance(session_obj.splits, list) else [])
+                ]
+            
             session_dict["stroke_breakdown"] = compute_stroke_breakdown(
                 session_dict.get("splits"), session_obj.stroke_type
             )
+            
+            sessions_data.append(session_dict)
 
         return http_200_dict({"sessions": sessions_data})
     except Exception as exc:
