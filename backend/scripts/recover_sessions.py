@@ -111,45 +111,58 @@ def main() -> None:
     recovered = 0
     skipped_nonswim = 0
     errors = 0
+    processed = 0
 
-    for i, key in enumerate(orphans):
-        if i % 200 == 0:
-            print(f"[{i}/{len(orphans)}] recovered={recovered} nonswim={skipped_nonswim} errors={errors}")
+    from concurrent.futures import ThreadPoolExecutor
+    import dataclasses
+
+    def download_and_parse(key: str):
+        """Download + parse a single file (runs in worker threads)."""
         try:
             obj = s3.get_object(Bucket=args.bucket, Key=key)
             fit_bytes = obj["Body"].read()
-        except ClientError as exc:
-            errors += 1
-            continue
-
+        except ClientError:
+            return (key, "error", None)
         try:
             metrics = parse_fit(fit_bytes)
             session_info, splits = extract_session_info(fit_bytes)
+            return (key, "swim", (metrics, session_info, splits))
         except (ParseError, MetricsMissingError):
-            # Not a valid pool swim (run/cycle/openwater without metrics) — skip
-            skipped_nonswim += 1
-            continue
+            return (key, "nonswim", None)
         except Exception:
-            errors += 1
-            continue
+            return (key, "error", None)
 
-        if args.dry_run:
-            recovered += 1
-            continue
+    # Download + parse in parallel (I/O bound); save serially (safe).
+    with ThreadPoolExecutor(max_workers=20) as pool:
+        for key, kind, payload in pool.map(download_and_parse, orphans):
+            processed += 1
+            if processed % 500 == 0:
+                print(f"[{processed}/{len(orphans)}] recovered={recovered} nonswim={skipped_nonswim} errors={errors}")
 
-        try:
-            import dataclasses
-            save_session(
-                user_id=args.user_id,
-                session_info=session_info,
-                metrics=metrics,
-                s3_key=key,
-                splits=[dataclasses.asdict(s) for s in splits] if splits else None,
-            )
-            recovered += 1
-        except Exception as exc:
-            print(f"  save failed for {key}: {exc}")
-            errors += 1
+            if kind == "nonswim":
+                skipped_nonswim += 1
+                continue
+            if kind == "error":
+                errors += 1
+                continue
+
+            if args.dry_run:
+                recovered += 1
+                continue
+
+            metrics, session_info, splits = payload
+            try:
+                save_session(
+                    user_id=args.user_id,
+                    session_info=session_info,
+                    metrics=metrics,
+                    s3_key=key,
+                    splits=[dataclasses.asdict(s) for s in splits] if splits else None,
+                )
+                recovered += 1
+            except Exception as exc:
+                print(f"  save failed for {key}: {exc}")
+                errors += 1
 
     print("-" * 60)
     print(f"DONE. recoverable/recovered={recovered}, non-swim skipped={skipped_nonswim}, errors={errors}")
