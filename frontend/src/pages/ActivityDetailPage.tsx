@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getSessionById, SessionDetail } from '../api/sessionService';
 import { uploadFitFile } from '../api/upload';
+import { invalidateSessionsCache } from '../api/sessionService';
 import { FullResponse } from '../types';
 import { SessionSummary } from '../components/SessionSummary';
 import { GroupedSplitsTable } from '../components/GroupedSplitsTable';
@@ -136,6 +137,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
     try {
       const result = await uploadFitFile(file);
       setUploadResult(result);
+      invalidateSessionsCache();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Upload failed. Please try again.';
       setUploadError(message);
@@ -310,7 +312,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
           {bulkFiles && (
             <div className="activity-detail__upload-section">
               <h1 className="activity-detail__heading">Bulk Import</h1>
-              <BulkImportPanel files={bulkFiles} onComplete={() => setBulkFiles(null)} />
+              <BulkImportPanel files={bulkFiles} onComplete={() => { setBulkFiles(null); invalidateSessionsCache(); }} />
             </div>
           )}
 

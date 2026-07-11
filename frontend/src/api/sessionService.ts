@@ -143,10 +143,35 @@ function getAuthToken(): string {
  * @returns List of session summaries ordered by session_date descending.
  * @throws {ApiError} When the server returns a non-2xx response.
  */
+
+// --- Session cache (5-minute TTL) ---
+let _sessionsCache: { data: SessionSummary[]; ts: number; key: string } | null = null;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+/** Clear the sessions cache (call after new upload). */
+export function invalidateSessionsCache(): void {
+  _sessionsCache = null;
+}
+
+function isValidSessionDate(dateStr: string): boolean {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return false;
+  const year = d.getFullYear();
+  return year >= 1990 && year <= 2030;
+}
+
 export async function getUserSessions(
   startDate?: string,
   endDate?: string,
 ): Promise<SessionSummary[]> {
+  const cacheKey = `${startDate || ''}_${endDate || ''}`;
+
+  // Return cached if fresh
+  if (_sessionsCache && _sessionsCache.key === cacheKey && (Date.now() - _sessionsCache.ts) < CACHE_TTL_MS) {
+    return _sessionsCache.data;
+  }
+
   const token = getAuthToken();
 
   const queryParams = new URLSearchParams();
@@ -179,7 +204,11 @@ export async function getUserSessions(
   }
 
   const data = await response.json();
-  return (data.sessions ?? data) as SessionSummary[];
+  const sessions = ((data.sessions ?? data) as SessionSummary[])
+    .filter(s => isValidSessionDate(s.session_date));
+
+  _sessionsCache = { data: sessions, ts: Date.now(), key: cacheKey };
+  return sessions;
 }
 
 /**
