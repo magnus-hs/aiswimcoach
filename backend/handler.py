@@ -2466,7 +2466,7 @@ def _handle_get_sessions(event: dict[str, Any], context: Any) -> dict[str, Any]:
     fetch_all = query_params.get("all") == "true"
     
     try:
-        limit_str = query_params.get("limit", "50")
+        limit_str = query_params.get("limit", "10")
         limit = min(int(limit_str), 500) if not fetch_all else 9999
     except (ValueError, TypeError):
         limit = 50

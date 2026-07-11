@@ -315,7 +315,7 @@ def get_user_sessions(
             "session_id, user_id, session_date, pool_length_meters, "
             "total_distance_meters, total_time_seconds, stroke_type, "
             "average_pace_per_100m, swolf_score, stroke_rate, "
-            "uploaded_at, s3_key, kudos, comments, splits"
+            "uploaded_at, s3_key, kudos, comments"
         )
     
     # Add date range filtering if provided
