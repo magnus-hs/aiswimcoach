@@ -49,6 +49,34 @@ def recompute_user_statistics(user_id: str) -> dict:
 
     sessions = get_user_sessions(user_id, lightweight=True)
 
+    def _sane_time(s) -> int:
+        """Return a plausible session duration in seconds.
+
+        Some FIT files recorded absurd elapsed times (watch left running for
+        hours). If the stored time implies a pace slower than 600 s/100m
+        (impossibly slow), fall back to the sum of the per-length swim times,
+        or a nominal 120 s/100m estimate if no splits are available.
+        """
+        dist = s.total_distance_meters or 0
+        stored = s.total_time_seconds or 0
+        if dist <= 0:
+            return stored
+        implied_pace = stored / (dist / 100.0)
+        if implied_pace <= 600:
+            return stored
+        # Implausible — recompute from splits if we have them
+        splits = s.splits or []
+        split_sum = 0
+        for sp in splits:
+            try:
+                split_sum += int(float(sp.get("time_seconds", 0)))
+            except (TypeError, ValueError):
+                pass
+        if split_sum > 0:
+            return split_sum
+        # No splits — estimate at 120 s/100m
+        return int((dist / 100.0) * 120)
+
     # Group by year
     by_year: dict[int, list] = {}
     for s in sessions:
@@ -67,7 +95,7 @@ def recompute_user_statistics(user_id: str) -> dict:
     for year in sorted(by_year.keys(), reverse=True):
         year_sessions = by_year[year]
         total_dist = sum(s.total_distance_meters for s in year_sessions)
-        total_time = sum(s.total_time_seconds for s in year_sessions)
+        total_time = sum(_sane_time(s) for s in year_sessions)
         paces = [s.average_pace_per_100m for s in year_sessions if s.average_pace_per_100m > 0]
         swolfs = [s.swolf_score for s in year_sessions if s.swolf_score > 0]
         longest = max((s.total_distance_meters for s in year_sessions), default=0)
@@ -85,7 +113,7 @@ def recompute_user_statistics(user_id: str) -> dict:
     # All-time totals
     total_sessions = sum(len(v) for v in by_year.values())
     total_distance = sum(s.total_distance_meters for ss in by_year.values() for s in ss)
-    total_time = sum(s.total_time_seconds for ss in by_year.values() for s in ss)
+    total_time = sum(_sane_time(s) for ss in by_year.values() for s in ss)
 
     stats = {
         "all_time": {

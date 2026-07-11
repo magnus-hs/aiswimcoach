@@ -285,7 +285,10 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
         td = data.get("total_distance")
         if td is not None:
             total_distance_m = float(td)
-        tt = data.get("total_elapsed_time") or data.get("total_timer_time")
+        # Prefer total_timer_time (moving/active time) over total_elapsed_time
+        # (wall-clock, which includes long pauses and forgotten-running watches
+        # that produce absurd session durations).
+        tt = data.get("total_timer_time") or data.get("total_elapsed_time")
         if tt is not None:
             total_time_seconds = float(tt)
         break  # only need first session record
