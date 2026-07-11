@@ -260,8 +260,14 @@ def upload_profile_picture(
     except ClientError as e:
         raise StorageError(f"Failed to upload image to S3: {e}") from e
     
-    # Construct S3 URL
-    s3_url = f"https://{bucket_name}.s3.amazonaws.com/{filename}"
+    # Construct the public URL. Prefer the CloudFront CDN domain if configured
+    # (serves over HTTPS with caching and keeps the bucket name hidden); fall
+    # back to the direct S3 URL otherwise.
+    cf_domain = os.environ.get("CLOUDFRONT_DOMAIN")
+    if cf_domain:
+        s3_url = f"https://{cf_domain}/{filename}"
+    else:
+        s3_url = f"https://{bucket_name}.s3.amazonaws.com/{filename}"
     
     # Update Users table with profile_picture_url (requirement 23.10)
     users_table_name = os.environ["USERS_TABLE"]
