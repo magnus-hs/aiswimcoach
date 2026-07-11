@@ -22,7 +22,7 @@ export function BulkImportPanel({ files, onComplete }: BulkImportPanelProps) {
   const [done, setDone] = useState(false);
   const [showFailures, setShowFailures] = useState(false);
   const cancelledRef = useRef(false);
-  const CONCURRENCY = 5;
+  const CONCURRENCY = 20;
 
   useEffect(() => {
     let active = true;
