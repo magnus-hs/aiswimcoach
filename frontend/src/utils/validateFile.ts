@@ -13,13 +13,14 @@ export type ValidationResult =
 /**
  * Validates a File before upload.
  *
- * - Rejects files whose name does not end with `.fit` (case-insensitive).
+ * - Accepts files ending with `.fit` or `.zip` (case-insensitive).
  * - Rejects files whose size exceeds 100 MB (104,857,600 bytes).
  * - Returns `{ valid: true }` otherwise.
  */
 export function validateFile(file: File): ValidationResult {
-  if (!file.name.toLowerCase().endsWith('.fit')) {
-    return { valid: false, reason: 'Only .fit files are accepted.' };
+  const name = file.name.toLowerCase();
+  if (!name.endsWith('.fit') && !name.endsWith('.zip')) {
+    return { valid: false, reason: 'Only .fit and .zip files are accepted.' };
   }
 
   if (file.size > MAX_FILE_SIZE) {

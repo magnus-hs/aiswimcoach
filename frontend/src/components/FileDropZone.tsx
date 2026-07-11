@@ -70,7 +70,7 @@ export function FileDropZone({
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     onDropRejected,
-    accept: { 'application/octet-stream': ['.fit'] },
+    accept: { 'application/octet-stream': ['.fit'], 'application/zip': ['.zip'], 'application/x-zip-compressed': ['.zip'] },
     disabled,
     multiple,
   });
@@ -86,9 +86,9 @@ export function FileDropZone({
         {disabled ? (
           <p>Upload in progress…</p>
         ) : isDragActive ? (
-          <p>Drop your .fit file(s) here…</p>
+          <p>Drop your .fit or .zip file(s) here…</p>
         ) : (
-          <p>Drop your .fit file(s) here, or click to select</p>
+          <p>Drop your .fit or .zip file(s) here, or click to select</p>
         )}
       </div>
       <div aria-live="polite" aria-atomic="true" className="sr-only">

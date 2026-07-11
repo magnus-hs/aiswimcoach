@@ -145,12 +145,55 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
   }, []);
 
   const handleFilesAccepted = useCallback(async (files: File[]) => {
-    if (files.length > 1) {
+    // Check if any file is a .zip — extract FIT files from it
+    const zipFiles = files.filter(f => f.name.toLowerCase().endsWith('.zip'));
+    const fitFiles = files.filter(f => f.name.toLowerCase().endsWith('.fit'));
+
+    if (zipFiles.length > 0) {
+      // Unzip all zip files client-side and extract .fit files
+      setUploading(true);
+      setUploadError(null);
+      try {
+        const JSZip = (await import('jszip')).default;
+        const extractedFiles: File[] = [...fitFiles];
+
+        for (const zipFile of zipFiles) {
+          const zip = await JSZip.loadAsync(zipFile);
+          const entries = Object.entries(zip.files);
+          for (const [path, entry] of entries) {
+            if (entry.dir) continue;
+            if (!path.toLowerCase().endsWith('.fit')) continue;
+            const blob = await entry.async('blob');
+            const fileName = path.split('/').pop() || path;
+            extractedFiles.push(new File([blob], fileName, { type: 'application/octet-stream' }));
+          }
+        }
+
+        setUploading(false);
+
+        if (extractedFiles.length === 0) {
+          setUploadError('No .fit files found in the zip archive.');
+          return;
+        }
+
+        if (extractedFiles.length === 1) {
+          handleFileAccepted(extractedFiles[0]);
+        } else {
+          setBulkFiles(extractedFiles);
+        }
+      } catch (err) {
+        setUploading(false);
+        setUploadError(err instanceof Error ? err.message : 'Failed to extract zip file.');
+      }
+      return;
+    }
+
+    if (fitFiles.length > 1) {
       // Bulk import mode
-      setBulkFiles(files);
-    } else if (files.length === 1) {
+      setBulkFiles(fitFiles);
+    } else if (fitFiles.length === 1) {
       // Single upload flow
-      handleFileAccepted(files[0]);
+      handleFileAccepted(fitFiles[0]);
     }
   }, [handleFileAccepted]);
 
