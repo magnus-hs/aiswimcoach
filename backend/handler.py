@@ -2472,14 +2472,15 @@ def _handle_get_sessions(event: dict[str, Any], context: Any) -> dict[str, Any]:
         limit = 50
     
     try:
-        sessions = get_user_sessions(user_id, start_date, end_date)
-        
-        # Apply limit (sessions are already sorted most-recent first)
-        limited_sessions = sessions[:limit]
+        sessions = get_user_sessions(
+            user_id, start_date, end_date,
+            limit=limit,
+            lightweight=not fetch_all,
+        )
         
         # Convert Session objects to dicts — STRIP heavy fields for list view
         sessions_data = []
-        for session_obj in limited_sessions:
+        for session_obj in sessions:
             session_dict = {
                 "session_id": session_obj.session_id,
                 "session_date": session_obj.session_date,

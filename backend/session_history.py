@@ -277,6 +277,8 @@ def get_user_sessions(
     user_id: str,
     start_date: str | None = None,
     end_date: str | None = None,
+    limit: int | None = None,
+    lightweight: bool = False,
 ) -> list[Session]:
     """Retrieve user's session history.
     
@@ -288,6 +290,8 @@ def get_user_sessions(
         user_id: User identifier (UUID v4)
         start_date: Optional ISO 8601 date filter (inclusive)
         end_date: Optional ISO 8601 date filter (inclusive)
+        limit: Optional max number of sessions to return (DynamoDB-level)
+        lightweight: If True, use ProjectionExpression to skip heavy fields
     
     Returns:
         List of Session objects ordered by session_date descending
@@ -300,59 +304,83 @@ def get_user_sessions(
     table = _get_dynamodb().Table(table_name)
     
     # Build query parameters
-    query_params = {
+    query_params: dict = {
         "KeyConditionExpression": Key("user_id").eq(user_id),
         "ScanIndexForward": False,  # Descending order (most recent first)
     }
     
+    # For lightweight list view, only fetch fields needed for activity cards
+    if lightweight:
+        query_params["ProjectionExpression"] = (
+            "session_id, user_id, session_date, pool_length_meters, "
+            "total_distance_meters, total_time_seconds, stroke_type, "
+            "average_pace_per_100m, swolf_score, stroke_rate, "
+            "uploaded_at, s3_key, kudos, comments, splits"
+        )
+    
     # Add date range filtering if provided
     if start_date is not None and end_date is not None:
-        # Both start and end date provided
         query_params["KeyConditionExpression"] &= Key("session_date").between(
             start_date, end_date
         )
     elif start_date is not None:
-        # Only start date provided
         query_params["KeyConditionExpression"] &= Key("session_date").gte(
             start_date
         )
     elif end_date is not None:
-        # Only end date provided
         query_params["KeyConditionExpression"] &= Key("session_date").lte(
             end_date
         )
     
-    # Execute query
-    response = table.query(**query_params)
-    items = response.get("Items", [])
+    # Execute query — with pagination support and optional limit
+    items = []
+    sessions_found = 0
+    target_limit = limit or 999999
     
-    # Deserialize items into Session objects (skip PLAN items)
+    while True:
+        response = table.query(**query_params)
+        batch_items = response.get("Items", [])
+        
+        for item in batch_items:
+            # Skip plan items
+            if item.get("session_date", "").startswith("PLAN#"):
+                continue
+            if item.get("session_date", "").startswith("MPLAN#"):
+                continue
+            if "session_id" not in item:
+                continue
+            items.append(item)
+            sessions_found += 1
+            if sessions_found >= target_limit:
+                break
+        
+        if sessions_found >= target_limit:
+            break
+        if "LastEvaluatedKey" not in response:
+            break
+        query_params["ExclusiveStartKey"] = response["LastEvaluatedKey"]
+    
+    # Deserialize items into Session objects
     sessions = []
     for item in items:
-        # Skip training plan items stored in the same table
-        if item.get("session_date", "").startswith("PLAN#"):
-            continue
-        # Skip items that don't have session_id (safety check)
-        if "session_id" not in item:
-            continue
         session = Session(
             session_id=item["session_id"],
             user_id=item["user_id"],
             session_date=item["session_date"],
-            pool_length_meters=int(item["pool_length_meters"]),
-            total_distance_meters=int(item["total_distance_meters"]),
-            total_time_seconds=int(item["total_time_seconds"]),
-            stroke_type=item["stroke_type"],
-            average_pace_per_100m=float(item["average_pace_per_100m"]),
-            swolf_score=int(item["swolf_score"]),
-            stroke_rate=float(item["stroke_rate"]),
-            uploaded_at=item["uploaded_at"],
-            s3_key=item["s3_key"],
-            hr_zones=_deserialize_hr_zones(item.get("hr_zones")),
-            ability_assessment=_deserialize_ability_assessment(item.get("ability_assessment")),
+            pool_length_meters=int(item.get("pool_length_meters", 25)),
+            total_distance_meters=int(item.get("total_distance_meters", 0)),
+            total_time_seconds=int(item.get("total_time_seconds", 0)),
+            stroke_type=item.get("stroke_type", "unknown"),
+            average_pace_per_100m=float(item.get("average_pace_per_100m", 0)),
+            swolf_score=int(item.get("swolf_score", 0)),
+            stroke_rate=float(item.get("stroke_rate", 0)),
+            uploaded_at=item.get("uploaded_at", ""),
+            s3_key=item.get("s3_key", ""),
+            hr_zones=_deserialize_hr_zones(item.get("hr_zones")) if not lightweight else None,
+            ability_assessment=_deserialize_ability_assessment(item.get("ability_assessment")) if not lightweight else None,
             splits=_deserialize_splits(item.get("splits")),
-            coaching=item.get("coaching"),
-            hr_timeseries=_deserialize_hr_timeseries(item.get("hr_timeseries")),
+            coaching=item.get("coaching") if not lightweight else None,
+            hr_timeseries=_deserialize_hr_timeseries(item.get("hr_timeseries")) if not lightweight else None,
             kudos=item.get("kudos"),
             comments=item.get("comments"),
         )
