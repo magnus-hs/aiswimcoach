@@ -8,8 +8,10 @@ interface BulkImportPanelProps {
 }
 
 /**
- * Bulk Import Panel — uploads multiple FIT files sequentially,
+ * Bulk Import Panel — uploads multiple FIT files in parallel batches,
  * showing progress and a summary when complete.
+ *
+ * Uses 5 concurrent uploads for significantly faster throughput.
  *
  * Validates: Requirements 2.1-2.5, 3.1-3.5, 5.1-5.4, 6.1-6.5, 7.1-7.4
  */
@@ -20,25 +22,35 @@ export function BulkImportPanel({ files, onComplete }: BulkImportPanelProps) {
   const [done, setDone] = useState(false);
   const [showFailures, setShowFailures] = useState(false);
   const cancelledRef = useRef(false);
+  const CONCURRENCY = 5;
 
   useEffect(() => {
     let active = true;
 
     async function processFiles() {
-      for (let i = 0; i < files.length; i++) {
-        if (cancelledRef.current) break;
-        if (!active) break;
+      let index = 0;
 
-        try {
-          await uploadFitFileBulk(files[i]);
-          if (!active) break;
-          setSuccesses(prev => prev + 1);
-        } catch (err: unknown) {
-          if (!active) break;
-          const message = err instanceof Error ? err.message : 'Unknown error';
-          setFailures(prev => [...prev, { name: files[i].name, error: message }]);
+      async function worker() {
+        while (index < files.length) {
+          if (cancelledRef.current || !active) return;
+          const i = index++;
+          if (i >= files.length) return;
+
+          try {
+            await uploadFitFileBulk(files[i]);
+            if (!active) return;
+            setSuccesses(prev => prev + 1);
+          } catch (err: unknown) {
+            if (!active) return;
+            const message = err instanceof Error ? err.message : 'Unknown error';
+            setFailures(prev => [...prev, { name: files[i].name, error: message }]);
+          }
         }
       }
+
+      // Launch N concurrent workers
+      const workers = Array.from({ length: CONCURRENCY }, () => worker());
+      await Promise.all(workers);
 
       if (active) {
         setDone(true);
