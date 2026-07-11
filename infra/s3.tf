@@ -36,32 +36,37 @@ resource "aws_s3_bucket" "profile_pictures" {
   }
 }
 
-# Allow public read access for profile pictures
+# Profile pictures are private and served only via CloudFront (OAC).
+# Direct public S3 access is fully blocked.
 resource "aws_s3_bucket_public_access_block" "profile_pictures" {
   bucket = aws_s3_bucket.profile_pictures.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
-# Bucket policy for public read access
-resource "aws_s3_bucket_policy" "profile_pictures_public_read" {
+# Bucket policy: allow ONLY the CloudFront distribution (via OAC) to read.
+resource "aws_s3_bucket_policy" "profile_pictures_cloudfront" {
   bucket = aws_s3_bucket.profile_pictures.id
 
-  # Ensure public access block is configured first
   depends_on = [aws_s3_bucket_public_access_block.profile_pictures]
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "PublicReadGetObject"
+        Sid       = "AllowCloudFrontOAC"
         Effect    = "Allow"
-        Principal = "*"
+        Principal = { Service = "cloudfront.amazonaws.com" }
         Action    = "s3:GetObject"
         Resource  = "${aws_s3_bucket.profile_pictures.arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.profile_pics.arn
+          }
+        }
       }
     ]
   })
