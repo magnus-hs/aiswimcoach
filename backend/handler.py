@@ -37,7 +37,7 @@ from profile_manager import (
 )
 from auth import AuthenticationError, ConflictError, register_user, login_user, verify_token, get_user_info
 from middleware import require_auth
-from session_history import get_user_sessions, get_session_by_id, save_session, compute_stroke_breakdown
+from session_history import get_user_sessions, get_session_by_id, save_session, compute_stroke_breakdown, claim_content_hash
 from training_plan_store import save_training_plan, get_user_plans
 from plan_generator import generate_multi_week_plan, PlanGenerationError
 from pb_resolver import save_personal_best, get_personal_bests, delete_personal_best, reject_derived_pb, PBResolverError
@@ -814,12 +814,39 @@ def _handle_file_upload(event: dict[str, Any], context: Any) -> dict[str, Any]:
     
     Requires authentication to save sessions to user's history.
     """
+    # Rate limit uploads per user to prevent abuse/cost blowup. Bulk imports
+    # (skip_coaching=true) are cheap (no Bedrock) so they get a high ceiling;
+    # normal uploads invoke Bedrock so they're throttled more tightly.
+    _auth = event.get("auth_context") or {}
+    _uid = _auth.get("user_id") or _client_ip(event)
+    _qp = event.get("queryStringParameters") or {}
+    _is_bulk = _qp.get("skip_coaching") == "true"
+    if _is_bulk:
+        if not check_rate_limit("upload_bulk", _uid, 20000, 3600):
+            return _error_response(429, "Upload rate limit exceeded. Please slow down.")
+    else:
+        if not check_rate_limit("upload", _uid, 120, 3600):
+            return _error_response(429, "Upload rate limit exceeded. Try again shortly.")
+
     try:
         # 1. Parse multipart body
         fit_bytes = parse_multipart(event)
     except MultipartParseError as exc:
         logger.warning("Multipart parse failed: %s", exc)
         return _error_response(400, str(exc))
+
+    # Content-based de-duplication: if this exact file was already uploaded by
+    # the user, skip re-processing so we never store the same swim twice.
+    import hashlib
+    content_hash = hashlib.sha256(fit_bytes).hexdigest()
+    if _auth.get("user_id"):
+        try:
+            is_new = claim_content_hash(_auth["user_id"], content_hash)
+            if not is_new:
+                logger.info("Duplicate upload skipped for user %s (hash %s)", _uid, content_hash[:12])
+                return http_200_dict({"duplicate": True, "message": "This swim was already uploaded."})
+        except Exception as exc:
+            logger.warning("Dedup check failed (proceeding): %s", exc)
 
     try:
         # 2. Store in S3
@@ -1646,7 +1673,12 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     to provide trend analysis. Returns AI-generated response text.
     """
     user_id = event["auth_context"]["user_id"]
-    
+
+    # Rate limit AI chat per user — this is the most expensive endpoint (Bedrock).
+    # 60 requests/hour per user protects against runaway cost/abuse.
+    if not check_rate_limit("ai_chat", user_id, 60, 3600):
+        return _error_response(429, "You've reached the AI coach limit for now. Please try again later.")
+
     try:
         body = json.loads(event.get("body") or "{}")
     except (json.JSONDecodeError, TypeError):

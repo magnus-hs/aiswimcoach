@@ -281,6 +281,41 @@ def save_session(
     return session_id
 
 
+def claim_content_hash(user_id: str, content_hash: str) -> bool:
+    """Atomically claim a FIT-file content hash for a user.
+
+    Returns True if this hash is new (claim succeeded, caller should process the
+    upload) or False if a file with identical content was already uploaded by
+    this user (duplicate — caller should skip).
+
+    Uses a conditional put on a marker row (session_date = "DEDUP#{hash}") in the
+    sessions table. The marker sorts outside the valid date range (1990–2031) so
+    it never appears in activity feeds or statistics.
+
+    Fails OPEN: on any DynamoDB error the upload is allowed to proceed.
+    """
+    from botocore.exceptions import ClientError as _ClientError
+
+    table_name = os.environ.get("SESSIONS_TABLE", "Sessions")
+    table = _get_dynamodb().Table(table_name)
+    try:
+        table.put_item(
+            Item={
+                "user_id": user_id,
+                "session_date": f"DEDUP#{content_hash}",
+                "claimed_at": datetime.now(tz=timezone.utc).isoformat(),
+            },
+            ConditionExpression="attribute_not_exists(user_id)",
+        )
+        return True
+    except _ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") == "ConditionalCheckFailedException":
+            return False  # Duplicate content
+        return True  # Fail open on other errors
+    except Exception:
+        return True
+
+
 def get_user_sessions(
     user_id: str,
     start_date: str | None = None,

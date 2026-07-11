@@ -274,11 +274,20 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
     total_distance_m = 0.0
     total_time_seconds = 0.0
 
+    def _valid_iso(ts) -> str:
+        """Return an ISO string if ts is a real datetime in a plausible range
+        (2000–2035), else "". Rejects garbage timestamps from unset device
+        clocks (e.g. raw ints like 9634) that would otherwise corrupt dates."""
+        if ts is None or not hasattr(ts, "isoformat") or not hasattr(ts, "year"):
+            return ""
+        if 2000 <= ts.year <= 2035:
+            return ts.isoformat()
+        return ""
+
     for record in fitfile.get_messages("session"):
         data = {f.name: f.value for f in record}
         ts = data.get("start_time") or data.get("timestamp")
-        if ts is not None:
-            start_time = ts.isoformat() if hasattr(ts, "isoformat") else str(ts)
+        start_time = _valid_iso(ts)
         pl = data.get("pool_length")
         if pl is not None and pl > 0:
             pool_length_m = float(pl)
@@ -292,6 +301,21 @@ def extract_session_info(fit_bytes: bytes) -> tuple[SessionInfo, list[LengthSpli
         if tt is not None:
             total_time_seconds = float(tt)
         break  # only need first session record
+
+    # Date fallbacks when the session record had no valid timestamp:
+    # try file_id.time_created, then the first length/lap start_time.
+    if not start_time:
+        for record in fitfile.get_messages("file_id"):
+            data = {f.name: f.value for f in record}
+            start_time = _valid_iso(data.get("time_created"))
+            if start_time:
+                break
+    if not start_time:
+        for record in fitfile.get_messages("length"):
+            data = {f.name: f.value for f in record}
+            start_time = _valid_iso(data.get("start_time") or data.get("timestamp"))
+            if start_time:
+                break
 
     # ------------------------------------------------------------------
     # Build lap boundaries. Garmin swim files record a "lap" message every
