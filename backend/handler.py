@@ -40,7 +40,7 @@ from middleware import require_auth
 from session_history import get_user_sessions, get_session_by_id, save_session, compute_stroke_breakdown
 from training_plan_store import save_training_plan, get_user_plans
 from plan_generator import generate_multi_week_plan, PlanGenerationError
-from pb_resolver import save_personal_best, get_personal_bests, delete_personal_best, PBResolverError
+from pb_resolver import save_personal_best, get_personal_bests, delete_personal_best, reject_derived_pb, PBResolverError
 from plan_lifecycle import activate_plan, archive_plan
 from structured_plan_store import get_user_structured_plans, get_plan_by_id
 from friends_service import (
@@ -214,6 +214,8 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_get_personal_bests(event, context)
     elif path == "/personal-bests" and http_method == "DELETE":
         return _handle_delete_personal_best(event, context)
+    elif path == "/personal-bests/reject" and http_method == "POST":
+        return _handle_reject_derived_pb(event, context)
     
     # AI chat analysis (auth required)
     elif path == "/ai/chat" and http_method == "POST":
@@ -2392,6 +2394,41 @@ def _handle_delete_personal_best(event: dict[str, Any], context: Any) -> dict[st
     except Exception as exc:
         logger.error("Unexpected error deleting PB for user %s: %s", user_id, exc)
         return _error_response(500, "Failed to delete personal best")
+
+
+@require_auth
+def _handle_reject_derived_pb(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle POST /personal-bests/reject endpoint.
+
+    Marks a derived PB as rejected so it won't appear again.
+
+    Request body (JSON):
+        { "event": "400m Freestyle" }
+
+    Errors:
+        400: Missing event field
+        500: Rejection failure
+    """
+    user_id = event["auth_context"]["user_id"]
+
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return _error_response(400, "Invalid JSON body")
+
+    event_name = body.get("event", "").strip()
+    if not event_name:
+        return _error_response(400, "Missing required field: event")
+
+    try:
+        reject_derived_pb(user_id, event_name)
+        return http_200_dict({"message": "Derived PB rejected"})
+    except PBResolverError as exc:
+        logger.error("PB rejection failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to reject derived PB")
+    except Exception as exc:
+        logger.error("Unexpected error rejecting PB for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to reject derived PB")
 
 
 # ---------------------------------------------------------------------------

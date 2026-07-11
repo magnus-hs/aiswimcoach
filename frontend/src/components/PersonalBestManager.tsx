@@ -1,5 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { savePersonalBest, getPersonalBests, deletePersonalBest, PersonalBest } from '../api/planService';
+import { Link } from 'react-router-dom';
+import { savePersonalBest, getPersonalBests, deletePersonalBest, rejectDerivedPB, PersonalBest } from '../api/planService';
 import { STROKES, DISTANCES, StrokeType, DistanceOption, buildEventName, validateTimeInput, validateCustomDistance } from '../utils/pbValidation';
 import { groupPersonalBests, formatTimeDiff } from '../utils/pbGrouping';
 import './PersonalBestManager.css';
@@ -19,6 +20,7 @@ export function PersonalBestManager() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState<string | null>(null);
 
   const loadPBs = async () => {
     try {
@@ -95,6 +97,20 @@ export function PersonalBestManager() {
     }
   };
 
+  const handleRejectDerived = async (event: string) => {
+    if (!confirm("Dismiss this derived PB? It won't appear again unless you upload a faster time.")) return;
+    setRejecting(event);
+    try {
+      await rejectDerivedPB(event);
+      await loadPBs();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to dismiss derived PB.';
+      setSaveError(message);
+    } finally {
+      setRejecting(null);
+    }
+  };
+
   return (
     <div className="pb-manager">
       <h1 className="pb-manager__heading">Personal Bests</h1>
@@ -131,7 +147,13 @@ export function PersonalBestManager() {
                           {entry.manual ? formatPBTime(entry.manual.time_seconds) : '—'}
                         </td>
                         <td className="pb-manager__td">
-                          {entry.derived ? formatPBTime(entry.derived.time_seconds) : '—'}
+                          {entry.derived ? (
+                            entry.derived.session_id ? (
+                              <Link to={`/activity/${entry.derived.session_id}`}>{formatPBTime(entry.derived.time_seconds)}</Link>
+                            ) : (
+                              formatPBTime(entry.derived.time_seconds)
+                            )
+                          ) : '—'}
                         </td>
                         <td className="pb-manager__td">
                           {entry.manual && entry.derived ? (
@@ -147,6 +169,16 @@ export function PersonalBestManager() {
                               onClick={() => handleDelete(entry.manual!.event)}
                               disabled={deleting === entry.manual!.event}
                               title="Remove entered PB"
+                            >
+                              ✕
+                            </button>
+                          )}
+                          {entry.derived && (
+                            <button
+                              className="pb-manager__delete-btn"
+                              onClick={() => handleRejectDerived(entry.derived!.event)}
+                              disabled={rejecting === entry.derived!.event}
+                              title="Dismiss derived PB"
                             >
                               ✕
                             </button>

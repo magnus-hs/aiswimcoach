@@ -197,6 +197,35 @@ def delete_personal_best(user_id: str, event: str) -> None:
         ) from e
 
 
+def reject_derived_pb(user_id: str, event: str) -> None:
+    """Mark a derived PB as rejected so it won't be shown again.
+
+    Stores the event name in a "rejected_pbs" set on the user's profile.
+    The derived PB will be filtered out in get_personal_bests until a
+    faster time is uploaded.
+
+    Args:
+        user_id: User identifier (UUID v4)
+        event: Event name (e.g., "400m Freestyle")
+
+    Raises:
+        ValueError: If event is empty
+        PBResolverError: If DynamoDB operation fails
+    """
+    if not event or not event.strip():
+        raise ValueError("Event name must be non-empty")
+
+    table = _get_profiles_table()
+    try:
+        table.update_item(
+            Key={"user_id": user_id},
+            UpdateExpression="ADD rejected_pbs :event_set",
+            ExpressionAttributeValues={":event_set": {event}},
+        )
+    except ClientError as e:
+        raise PBResolverError(f"Failed to reject PB: {e}") from e
+
+
 def get_personal_bests(user_id: str) -> list[dict]:
     """Return all PBs (manual + derived) for a user.
 
@@ -227,7 +256,7 @@ def get_personal_bests(user_id: str) -> list[dict]:
     try:
         response = table.get_item(
             Key={"user_id": user_id},
-            ProjectionExpression="personal_bests",
+            ProjectionExpression="personal_bests, rejected_pbs",
         )
     except ClientError as e:
         raise PBResolverError(
@@ -249,6 +278,10 @@ def get_personal_bests(user_id: str) -> list[dict]:
 
     # Derive PBs from session history
     derived_pbs = _derive_all_pbs_from_history(user_id)
+
+    # Filter out rejected derived PBs
+    rejected = set(item.get("rejected_pbs", set()))
+    derived_pbs = {k: v for k, v in derived_pbs.items() if k not in rejected}
 
     # Return ALL PBs — both manual and derived (even for same event)
     all_pbs = list(manual_pbs.values()) + list(derived_pbs.values())
@@ -442,7 +475,7 @@ def _derive_all_pbs_from_history(user_id: str) -> dict[str, dict]:
         response = sessions_table.query(
             KeyConditionExpression=Key("user_id").eq(user_id),
             ProjectionExpression=(
-                "session_date, pool_length_meters, splits"
+                "session_date, pool_length_meters, splits, session_id"
             ),
         )
     except ClientError:
@@ -455,6 +488,8 @@ def _derive_all_pbs_from_history(user_id: str) -> dict[str, dict]:
 
     # best_time[(distance, stroke)] = fastest elapsed time (seconds)
     best_time: dict[tuple[int, str], float] = {}
+    # best_session[(distance, stroke)] = session_id that produced the best time
+    best_session: dict[tuple[int, str], str] = {}
 
     for item in items:
         session_date = item.get("session_date", "")
@@ -508,6 +543,9 @@ def _derive_all_pbs_from_history(user_id: str) -> dict[str, dict]:
                 key = (target, group_stroke)
                 if key not in best_time or group_time < best_time[key]:
                     best_time[key] = group_time
+                    session_id = item.get("session_id")
+                    if session_id:
+                        best_session[key] = str(session_id)
 
     # Build derived PB entries (only for distances actually swum continuously).
     derived: dict[str, dict] = {}
@@ -520,6 +558,7 @@ def _derive_all_pbs_from_history(user_id: str) -> dict[str, dict]:
             "time_seconds": round(time_seconds, 3),
             "source": "derived",
             "updated_at": now,
+            "session_id": best_session.get((distance, stroke)),
         }
 
     return derived
