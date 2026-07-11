@@ -698,7 +698,7 @@ def get_friends_activities(user_id: str) -> list[dict]:
 
                 all_sessions.append({
                     "session_id": item["session_id"],
-                    "session_date": item["session_date"],
+                    "session_date": session_date.split("#")[0],
                     "total_distance_meters": int(item.get("total_distance_meters", 0)),
                     "total_time_seconds": int(item.get("total_time_seconds", 0)),
                     "stroke_type": item.get("stroke_type", ""),

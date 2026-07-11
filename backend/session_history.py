@@ -214,11 +214,19 @@ def save_session(
     now = datetime.now(tz=timezone.utc)
     uploaded_at = now.isoformat()
     
+    # Build a COMPOSITE range key: "{date}#{session_id}" to guarantee uniqueness.
+    # Previously session_date alone was the range key, so two swims with the same
+    # timestamp (e.g. unset device clocks producing identical garbage dates) would
+    # overwrite each other. The session_id suffix makes every row unique while the
+    # date prefix preserves chronological sorting and range queries.
+    raw_date = session_info.start_time or ""
+    session_date_key = f"{raw_date}#{session_id}"
+
     # Build DynamoDB item
     item = {
         "session_id": session_id,
         "user_id": user_id,
-        "session_date": session_info.start_time,
+        "session_date": session_date_key,
         "pool_length_meters": int(session_info.pool_length_m),
         "total_distance_meters": int(session_info.total_distance_m),
         "total_time_seconds": int(session_info.total_time_seconds),
@@ -332,10 +340,12 @@ def get_user_sessions(
             end_date
         )
     else:
-        # Default: only fetch sessions with valid ISO date format (1990-2030)
-        # This excludes garbage dates like "9634", "92125", "PLAN#..." at the DynamoDB level
+        # Default: only fetch sessions with valid ISO date format (1990-2030).
+        # Excludes garbage dates like "9634", "92125", "PLAN#..." at the DynamoDB
+        # level. Upper bound "2031" ensures composite keys ("2030-...#uuid") are
+        # included.
         query_params["KeyConditionExpression"] &= Key("session_date").between(
-            "1990", "2030-12-31T23:59:59"
+            "1990", "2031"
         )
     
     # Execute query — with pagination support and optional limit
@@ -366,13 +376,16 @@ def get_user_sessions(
             break
         query_params["ExclusiveStartKey"] = response["LastEvaluatedKey"]
     
-    # Deserialize items into Session objects
+    # Deserialize items into Session objects.
+    # Strip the "#session_id" suffix from the composite range key so downstream
+    # code and the API see a clean date. Legacy rows (plain date, no "#") are
+    # unaffected since split("#")[0] returns them unchanged.
     sessions = []
     for item in items:
         session = Session(
             session_id=item["session_id"],
             user_id=item["user_id"],
-            session_date=item["session_date"],
+            session_date=item["session_date"].split("#")[0],
             pool_length_meters=int(item.get("pool_length_meters", 25)),
             total_distance_meters=int(item.get("total_distance_meters", 0)),
             total_time_seconds=int(item.get("total_time_seconds", 0)),
@@ -434,11 +447,11 @@ def get_session_by_id(session_id: str) -> Session:
     hr_zones = _deserialize_hr_zones(item.get("hr_zones"))
     ability_assessment = _deserialize_ability_assessment(item.get("ability_assessment"))
     
-    # Build and return Session object
+    # Build and return Session object (strip composite "#session_id" suffix)
     return Session(
         session_id=item["session_id"],
         user_id=item["user_id"],
-        session_date=item["session_date"],
+        session_date=item["session_date"].split("#")[0],
         pool_length_meters=int(item["pool_length_meters"]),
         total_distance_meters=int(item["total_distance_meters"]),
         total_time_seconds=int(item["total_time_seconds"]),
