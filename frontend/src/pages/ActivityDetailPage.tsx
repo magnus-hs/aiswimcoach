@@ -4,7 +4,7 @@ import { getSessionById, SessionDetail } from '../api/sessionService';
 import { uploadFitFile } from '../api/upload';
 import { invalidateSessionsCache } from '../api/sessionService';
 import { FullResponse } from '../types';
-import { SessionSummary } from '../components/SessionSummary';
+
 import { GroupedSplitsTable } from '../components/GroupedSplitsTable';
 import { HRZonesCard } from '../components/HRZonesCard';
 import { HRTimeGraph } from '../components/HRTimeGraph';
@@ -13,7 +13,6 @@ import { EfficiencyCurve } from '../components/EfficiencyCurve';
 import { StrokeMetricsCharts } from '../components/StrokeMetricsCharts';
 import { SessionStatsBlock } from '../components/SessionStatsBlock';
 import { SetSummary } from '../components/SetSummary';
-import { computeBreakdownFromSplits } from '../utils/strokeBreakdown';
 import { TrainingLoadChart } from '../components/TrainingLoadChart';
 import { AICoachChat } from '../components/AICoachChat';
 import { CoachingResult } from '../components/CoachingResult';
@@ -215,15 +214,6 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
   }) {
     return (
       <div className="activity-detail__sections">
-        <SessionSummary
-          session={data.session}
-          splits={data.splits}
-          strokeBreakdown={
-            data.splits && data.splits.length > 0
-              ? computeBreakdownFromSplits(data.splits)
-              : undefined
-          }
-        />
         {data.splits && data.splits.length > 0 && (
           <DrillSummary splits={data.splits} poolLengthM={data.session.pool_length_m} />
         )}
