@@ -65,6 +65,7 @@ from interactions_service import (
 )
 from notes_service import NotFoundError as NotesNotFoundError
 import notes_service
+import statistics_service
 import chat_history_store
 from chat_history_store import QAEntry
 from prompt_assembler import build_chat_messages
@@ -258,6 +259,10 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         event["session_id"] = session_id
         limited = _enforce_rate_limit(event, "toggle-kudos", 30, 60)
         return limited or _handle_toggle_kudos(event, context)
+
+    # Statistics route (auth required)
+    elif path == "/statistics" and http_method == "GET":
+        return _handle_get_statistics(event, context)
 
     # Session history routes (auth required)
     elif path == "/sessions" and http_method == "GET":
@@ -1049,6 +1054,12 @@ def _handle_file_upload(event: dict[str, Any], context: Any) -> dict[str, Any]:
                     hr_timeseries=hr_timeseries if hr_timeseries else None,
                 )
                 logger.info("Session saved successfully: %s for user %s", session_id, user_id)
+
+                # Recompute statistics (best-effort, don't block response)
+                try:
+                    statistics_service.recompute_user_statistics(user_id)
+                except Exception as exc:
+                    logger.warning("Statistics recomputation failed: %s", exc)
             
             except Exception as exc:
                 # Session save failure is best-effort - log but don't block response
@@ -2429,6 +2440,25 @@ def _handle_reject_derived_pb(event: dict[str, Any], context: Any) -> dict[str, 
     except Exception as exc:
         logger.error("Unexpected error rejecting PB for user %s: %s", user_id, exc)
         return _error_response(500, "Failed to reject derived PB")
+
+
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Statistics handler (requires authentication)
+# ---------------------------------------------------------------------------
+
+
+@require_auth
+def _handle_get_statistics(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /statistics — return pre-computed user statistics."""
+    user_id = event["auth_context"]["user_id"]
+
+    stats = statistics_service.get_statistics(user_id)
+    if stats is None:
+        # First time — compute on-the-fly and cache
+        stats = statistics_service.recompute_user_statistics(user_id)
+
+    return http_200_dict(stats)
 
 
 # ---------------------------------------------------------------------------

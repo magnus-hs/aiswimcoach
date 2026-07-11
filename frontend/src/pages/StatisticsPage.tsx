@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getUserSessions, SessionSummary } from '../api/sessionService';
 import './StatisticsPage.css';
 
 interface YearStats {
   year: number;
   sessions: number;
-  totalDistanceM: number;
-  totalTimeS: number;
-  avgPace: number;
-  avgSwolf: number;
-  longestSessionM: number;
+  total_distance_m: number;
+  total_time_seconds: number;
+  avg_pace: number;
+  avg_swolf: number;
+  longest_session_m: number;
+}
+
+interface AllTimeTotals {
+  sessions: number;
+  total_distance_m: number;
+  total_time_seconds: number;
 }
 
 function formatTime(totalSeconds: number): string {
@@ -43,64 +48,26 @@ export function StatisticsPage() {
   const [yearStats, setYearStats] = useState<YearStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [allTimeTotals, setAllTimeTotals] = useState<{
-    sessions: number;
-    distance: number;
-    time: number;
-  } | null>(null);
+  const [allTimeTotals, setAllTimeTotals] = useState<AllTimeTotals | null>(null);
 
   useEffect(() => {
     async function loadStats() {
       try {
-        const sessions = await getUserSessions(undefined, undefined, { all: true });
-        const byYear = new Map<number, SessionSummary[]>();
-
-        for (const session of sessions) {
-          const year = new Date(session.session_date).getFullYear();
-          if (!byYear.has(year)) byYear.set(year, []);
-          byYear.get(year)!.push(session);
-        }
-
-        const stats: YearStats[] = [];
-        for (const [year, yearSessions] of byYear) {
-          const totalDist = yearSessions.reduce((s, sess) => s + sess.total_distance_meters, 0);
-          const totalTime = yearSessions.reduce((s, sess) => s + sess.total_time_seconds, 0);
-          const paces = yearSessions
-            .filter(s => s.average_pace_per_100m > 0)
-            .map(s => s.average_pace_per_100m);
-          const swolfs = yearSessions
-            .filter(s => s.swolf_score > 0)
-            .map(s => s.swolf_score);
-          const longest = Math.max(...yearSessions.map(s => s.total_distance_meters));
-
-          stats.push({
-            year,
-            sessions: yearSessions.length,
-            totalDistanceM: totalDist,
-            totalTimeS: totalTime,
-            avgPace: paces.length > 0 ? paces.reduce((a, b) => a + b, 0) / paces.length : 0,
-            avgSwolf: swolfs.length > 0 ? swolfs.reduce((a, b) => a + b, 0) / swolfs.length : 0,
-            longestSessionM: longest,
-          });
-        }
-
-        // Sort by year descending (most recent first)
-        stats.sort((a, b) => b.year - a.year);
-        setYearStats(stats);
-
-        // All-time totals
-        setAllTimeTotals({
-          sessions: sessions.length,
-          distance: sessions.reduce((s, sess) => s + sess.total_distance_meters, 0),
-          time: sessions.reduce((s, sess) => s + sess.total_time_seconds, 0),
+        const token = localStorage.getItem('auth_token');
+        if (!token) { setLoading(false); return; }
+        const response = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/statistics`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
+        if (!response.ok) throw new Error('Failed to load statistics');
+        const data = await response.json();
+        setAllTimeTotals(data.all_time);
+        setYearStats(data.yearly);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load statistics.');
       } finally {
         setLoading(false);
       }
     }
-
     loadStats();
   }, []);
 
@@ -123,11 +90,11 @@ export function StatisticsPage() {
                 <span className="statistics-page__total-label">Sessions</span>
               </div>
               <div className="statistics-page__total-item">
-                <span className="statistics-page__total-value">{formatDistance(allTimeTotals.distance)}</span>
+                <span className="statistics-page__total-value">{formatDistance(allTimeTotals.total_distance_m)}</span>
                 <span className="statistics-page__total-label">Distance</span>
               </div>
               <div className="statistics-page__total-item">
-                <span className="statistics-page__total-value">{formatTime(allTimeTotals.time)}</span>
+                <span className="statistics-page__total-value">{formatTime(allTimeTotals.total_time_seconds)}</span>
                 <span className="statistics-page__total-label">Time in Pool</span>
               </div>
             </div>
@@ -148,23 +115,23 @@ export function StatisticsPage() {
                         <span className="statistics-page__stat-label">Sessions</span>
                       </div>
                       <div className="statistics-page__stat">
-                        <span className="statistics-page__stat-value">{formatDistance(year.totalDistanceM)}</span>
+                        <span className="statistics-page__stat-value">{formatDistance(year.total_distance_m)}</span>
                         <span className="statistics-page__stat-label">Distance</span>
                       </div>
                       <div className="statistics-page__stat">
-                        <span className="statistics-page__stat-value">{formatTime(year.totalTimeS)}</span>
+                        <span className="statistics-page__stat-value">{formatTime(year.total_time_seconds)}</span>
                         <span className="statistics-page__stat-label">Time</span>
                       </div>
                       <div className="statistics-page__stat">
-                        <span className="statistics-page__stat-value">{year.avgPace > 0 ? formatPace(year.avgPace) : '—'}</span>
+                        <span className="statistics-page__stat-value">{year.avg_pace > 0 ? formatPace(year.avg_pace) : '—'}</span>
                         <span className="statistics-page__stat-label">Avg Pace</span>
                       </div>
                       <div className="statistics-page__stat">
-                        <span className="statistics-page__stat-value">{year.avgSwolf > 0 ? Math.round(year.avgSwolf) : '—'}</span>
+                        <span className="statistics-page__stat-value">{year.avg_swolf > 0 ? Math.round(year.avg_swolf) : '—'}</span>
                         <span className="statistics-page__stat-label">Avg SWOLF</span>
                       </div>
                       <div className="statistics-page__stat">
-                        <span className="statistics-page__stat-value">{formatDistance(year.longestSessionM)}</span>
+                        <span className="statistics-page__stat-value">{formatDistance(year.longest_session_m)}</span>
                         <span className="statistics-page__stat-label">Longest Swim</span>
                       </div>
                     </div>
