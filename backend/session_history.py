@@ -317,13 +317,16 @@ def get_user_sessions(
         "ScanIndexForward": False,  # Descending order (most recent first)
     }
     
-    # For lightweight list view, only fetch fields needed for activity cards
+    # For lightweight list view, fetch fields needed for activity cards.
+    # `splits` is included so the card can render the session structure summary
+    # and stroke breakdown; heavy fields (hr_zones, hr_timeseries, coaching,
+    # ability_assessment) remain excluded. With limit=10 this stays small.
     if lightweight:
         query_params["ProjectionExpression"] = (
             "session_id, user_id, session_date, pool_length_meters, "
             "total_distance_meters, total_time_seconds, stroke_type, "
             "average_pace_per_100m, swolf_score, stroke_rate, "
-            "uploaded_at, s3_key, kudos, comments"
+            "uploaded_at, s3_key, kudos, comments, splits"
         )
     
     # Add date range filtering if provided
