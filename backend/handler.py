@@ -1826,13 +1826,12 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # Build session history summary for the AI
     history_summary = ""
     if sessions:
-        history_summary = f"\n\nSession History ({len(sessions)} sessions, showing last 10):\n"
-        for s in sessions[:10]:  # Last 10 sessions (trimmed from 20 to control prompt size)
+        history_summary = f"\n\nSession History ({len(sessions)} sessions, showing last 5):\n"
+        for s in sessions[:5]:  # Last 5 sessions to keep prompt compact
             history_summary += (
                 f"- {s.session_date[:10]}: {s.total_distance_meters}m, "
                 f"pace {s.average_pace_per_100m:.1f}s/100m, "
                 f"SWOLF {s.swolf_score}, "
-                f"stroke rate {s.stroke_rate:.1f} spm, "
                 f"{s.stroke_type}\n"
             )
     
@@ -2005,9 +2004,9 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
         current_prompt=user_message,
         conversation_history=effective_history,
         notes=user_notes,
-        max_exchanges=5,
-        max_history_chars=2000,
-        max_notes=10,
+        max_exchanges=3,
+        max_history_chars=1500,
+        max_notes=5,
     )
     
     try:
@@ -2018,7 +2017,7 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
             "anthropic_version": "bedrock-2023-05-31",
             "system": assembled_system_prompt,
             "messages": assembled_messages,
-            "max_tokens": 1024,
+            "max_tokens": 512,
         }
         
         response = client.invoke_model(
