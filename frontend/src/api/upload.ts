@@ -58,7 +58,11 @@ export async function uploadFitFile(file: File): Promise<FullResponse> {
     throw new ApiError(response.status, errorMessageForStatus(response.status, text));
   }
 
-  return response.json() as Promise<FullResponse>;
+  const data = await response.json();
+  if (data.duplicate) {
+    throw new ApiError(409, data.message || 'This swim was already uploaded.');
+  }
+  return data as FullResponse;
 }
 
 
