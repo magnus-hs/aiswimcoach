@@ -3081,11 +3081,9 @@ def _handle_stripe_webhook(event: dict[str, Any], context: Any) -> dict[str, Any
             elif result["action"] == "deactivate":
                 stripe_service.set_user_tier(result["user_id"], "free")
         return http_200_dict({"received": True})
-    except stripe.error.SignatureVerificationError:
-        return _error_response(400, "Invalid signature")
     except Exception as exc:
         logger.error("Webhook processing failed: %s", exc)
-        return _error_response(500, "Webhook processing failed")
+        return _error_response(400, "Webhook processing failed")
 
 
 # ---------------------------------------------------------------------------

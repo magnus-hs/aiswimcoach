@@ -86,32 +86,39 @@ def handle_webhook_event(payload: bytes, sig_header: str) -> dict[str, Any] | No
         event is subscription-relevant, or None if it should be ignored.
 
     Raises:
-        stripe.error.SignatureVerificationError: If signature is invalid.
+        Exception: If signature is invalid or parsing fails.
     """
     endpoint_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
     event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
 
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        user_id = session.get("client_reference_id") or session.get("metadata", {}).get("user_id")
-        customer_id = session.get("customer")
-        if user_id and customer_id:
-            _store_customer_id(user_id, customer_id)
-            return {"user_id": user_id, "action": "activate"}
+    event_type = event.type if hasattr(event, "type") else event.get("type", "")
+    data_object = event.data.object if hasattr(event, "data") else event.get("data", {}).get("object", {})
 
-    elif event["type"] in (
+    if event_type == "checkout.session.completed":
+        # data_object is the checkout Session
+        user_id = getattr(data_object, "client_reference_id", None) or (data_object.get("client_reference_id") if isinstance(data_object, dict) else None)
+        customer_id = getattr(data_object, "customer", None) or (data_object.get("customer") if isinstance(data_object, dict) else None)
+        # Also check metadata
+        if not user_id:
+            metadata = getattr(data_object, "metadata", None) or (data_object.get("metadata", {}) if isinstance(data_object, dict) else {})
+            user_id = metadata.get("user_id") if isinstance(metadata, dict) else getattr(metadata, "user_id", None)
+        if user_id and customer_id:
+            _store_customer_id(user_id, str(customer_id))
+            return {"user_id": str(user_id), "action": "activate"}
+
+    elif event_type in (
         "customer.subscription.deleted",
         "customer.subscription.updated",
     ):
-        sub = event["data"]["object"]
-        customer_id = sub.get("customer")
-        status = sub.get("status")
-        user_id = _find_user_by_customer_id(customer_id)
-        if user_id:
-            if status in ("canceled", "unpaid", "past_due", "incomplete_expired"):
-                return {"user_id": user_id, "action": "deactivate"}
-            elif status == "active":
-                return {"user_id": user_id, "action": "activate"}
+        customer_id = getattr(data_object, "customer", None) or (data_object.get("customer") if isinstance(data_object, dict) else None)
+        status = getattr(data_object, "status", None) or (data_object.get("status") if isinstance(data_object, dict) else None)
+        if customer_id:
+            user_id = _find_user_by_customer_id(str(customer_id))
+            if user_id:
+                if status in ("canceled", "unpaid", "past_due", "incomplete_expired"):
+                    return {"user_id": user_id, "action": "deactivate"}
+                elif status == "active":
+                    return {"user_id": user_id, "action": "activate"}
 
     return None
 
