@@ -177,6 +177,14 @@ function DetailRows({
     return cumTime;
   });
 
+  // Compute reference swim-only pace from the group's best lengths.
+  // The fastest 50% of lengths represent minimal turn delay.
+  // Turn estimate = how much slower each length is vs the reference.
+  const validSplits = group.splits.filter(s => s.strokes > 0 && s.time_seconds > 0);
+  const sortedTimes = validSplits.map(s => s.time_seconds).sort((a, b) => a - b);
+  const fastHalf = sortedTimes.slice(0, Math.max(1, Math.floor(sortedTimes.length * 0.5)));
+  const refSwimTime = fastHalf.length > 0 ? fastHalf.reduce((a, b) => a + b, 0) / fastHalf.length : 0;
+
   return (
     <div className="grouped-splits__detail">
       <table className="grouped-splits__detail-table">
@@ -197,24 +205,16 @@ function DetailRows({
         <tbody>
           {group.splits.map((split, i) => {
             const isDrill = split.stroke === 'drill';
-            // Estimate turn time: total_time - swimming_time
-            // swimming_time ≈ strokes × (time / strokes_per_second) but simplest:
-            // For lengths after the first, use the median stroke time from the group
-            // and subtract from total. First length is a dive start so we skip it.
+            // Turn estimate: how much slower is this length vs the reference?
+            // Positive = more time spent on turn/push-off/glide
             let turnEst: string = '—';
-            if (i > 0 && split.strokes > 0 && split.time_seconds > 0) {
-              // Estimate stroke time using distance_per_stroke and average speed
-              const dps = poolLengthM / split.strokes;
-              const avgSpeed = poolLengthM / split.time_seconds; // m/s
-              const strokeTime = dps / avgSpeed; // seconds per stroke
-              const swimTime = split.strokes * strokeTime;
-              const turn = split.time_seconds - swimTime;
-              // Turn should be positive and reasonable (0.5s - 8s)
-              if (turn > 0.3 && turn < 10) {
-                turnEst = `~${turn.toFixed(1)}s`;
-              }
-            } else if (i === 0) {
+            if (i === 0) {
               turnEst = 'start';
+            } else if (split.strokes > 0 && split.time_seconds > 0 && refSwimTime > 0) {
+              const overhead = split.time_seconds - refSwimTime;
+              if (overhead >= 0 && overhead < 10) {
+                turnEst = `~${overhead.toFixed(1)}s`;
+              }
             }
             return (
               <tr key={split.length_number} className={isDrill ? 'grouped-splits__row--drill' : ''}>
