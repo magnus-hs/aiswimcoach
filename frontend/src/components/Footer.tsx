@@ -33,6 +33,7 @@ export function Footer() {
           <Link to="/privacy" className="footer__link">Data Privacy</Link>
           <Link to="/support" className="footer__link">Support</Link>
           <Link to="/faq" className="footer__link">FAQ</Link>
+          <Link to="/roadmap" className="footer__link">Roadmap</Link>
         </nav>
       </div>
 

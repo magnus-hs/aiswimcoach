@@ -22,6 +22,7 @@ import { TermsPage } from './pages/TermsPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { SupportPage } from './pages/SupportPage';
 import { FAQPage } from './pages/FAQPage';
+import { RoadmapPage } from './pages/RoadmapPage';
 import { PlanDetailView } from './components/PlanDetailView';
 import { FriendsPage } from './pages/FriendsPage';
 import { LandingPage } from './pages/LandingPage';
@@ -78,6 +79,7 @@ function App() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/support" element={<SupportPage />} />
           <Route path="/faq" element={<FAQPage />} />
+          <Route path="/roadmap" element={<RoadmapPage />} />
 
           {/* Root: showcase landing page for visitors, dashboard for logged-in users */}
           <Route
