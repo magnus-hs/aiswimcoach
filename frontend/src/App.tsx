@@ -27,6 +27,7 @@ import { FriendsPage } from './pages/FriendsPage';
 import { LandingPage } from './pages/LandingPage';
 import { TrainingNotesPage } from './pages/TrainingNotesPage';
 import { StatisticsPage } from './pages/StatisticsPage';
+import { SubscriptionPage } from './pages/SubscriptionPage';
 
 /**
  * Redirect component for backward compatibility.
@@ -182,6 +183,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <StatisticsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subscription"
+            element={
+              <ProtectedRoute>
+                <SubscriptionPage />
               </ProtectedRoute>
             }
           />

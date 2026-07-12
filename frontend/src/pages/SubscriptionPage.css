@@ -1,0 +1,96 @@
+.subscription-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+.subscription-page__back {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.subscription-page__back:hover {
+  text-decoration: underline;
+}
+
+.subscription-page__heading {
+  margin: var(--space-3) 0 var(--space-6);
+}
+
+.subscription-page__loading {
+  color: var(--color-text-muted);
+  padding: var(--space-4) 0;
+}
+
+/* Active subscription card */
+.subscription-page__active {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+
+.subscription-page__badge {
+  display: inline-block;
+  background: var(--color-success, #16a34a);
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full, 9999px);
+  margin-bottom: var(--space-4);
+}
+
+.subscription-page__active h2 {
+  font-size: var(--font-size-lg);
+  margin: 0 0 var(--space-2);
+}
+
+.subscription-page__price {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  margin: 0 0 var(--space-3);
+}
+
+.subscription-page__description {
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-5);
+}
+
+.subscription-page__manage-btn {
+  display: inline-block;
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.subscription-page__manage-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.subscription-page__manage-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.subscription-page__manage-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-2);
+}
+
+/* Mobile */
+@media (max-width: 599px) {
+  .subscription-page__active {
+    padding: var(--space-4);
+  }
+}

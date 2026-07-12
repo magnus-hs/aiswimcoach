@@ -131,6 +131,13 @@ export function Navigation({ onProfileClick, profileButtonRef }: NavigationProps
               <button
                 className="nav__dropdown-item"
                 role="menuitem"
+                onClick={() => { setProfileMenuOpen(false); navigate('/subscription'); }}
+              >
+                Subscription
+              </button>
+              <button
+                className="nav__dropdown-item"
+                role="menuitem"
                 onClick={() => { setProfileMenuOpen(false); onProfileClick?.(); }}
               >
                 Edit Profile
