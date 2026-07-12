@@ -80,11 +80,48 @@ export function RoadmapPage() {
       ))}
 
       <section className="roadmap-page__suggestions">
-        <h2>Have an idea?</h2>
-        <p>
-          We're always listening. If there's a feature you'd love to see, drop us a note via the{' '}
-          <Link to="/support">Support page</Link> — your feedback shapes what we build next.
+        <h2>Ideas We're Considering</h2>
+        <p className="roadmap-page__suggestions-intro">
+          These are features we think swimmers would love. Tell us which ones matter most to you — your votes decide what gets built next.
         </p>
+        <div className="roadmap-page__ideas">
+          <div className="roadmap-page__idea">
+            <h3>🏅 Challenge-Based Goals</h3>
+            <p>"Swim 10km this month" or "Hit your CSS pace 5 times" — gamified progress with badges and streaks</p>
+          </div>
+          <div className="roadmap-page__idea">
+            <h3>👥 Club & Squad Management</h3>
+            <p>Coaches can view their squad's sessions, set group plans, and track attendance</p>
+          </div>
+          <div className="roadmap-page__idea">
+            <h3>🏁 Race Day Mode</h3>
+            <p>Set a target race + time → get a taper plan, pacing strategy, and confidence score</p>
+          </div>
+          <div className="roadmap-page__idea">
+            <h3>📊 Technique Scoring</h3>
+            <p>A simple 1-100 "technique score" per session derived from SWOLF, DPS, and stroke rate trends</p>
+          </div>
+          <div className="roadmap-page__idea">
+            <h3>📧 Weekly Insights Emails</h3>
+            <p>"You swam 12% further than last week" — AI-generated summaries to keep you motivated</p>
+          </div>
+          <div className="roadmap-page__idea">
+            <h3>🎁 Referral Rewards</h3>
+            <p>Invite a friend → both get a free month of Premium. Great for squad adoption</p>
+          </div>
+          <div className="roadmap-page__idea">
+            <h3>🏊‍♂️ Swim-Specific Wearable Metrics</h3>
+            <p>Deeper integration with Garmin/Apple to pull in advanced metrics like SWOLF per arm, turn times</p>
+          </div>
+        </div>
+        <div className="roadmap-page__feedback-cta">
+          <h3>Want any of these? Let us know!</h3>
+          <p>
+            Email us at{' '}
+            <a href="mailto:magshs@gmail.com?subject=AI Swim Coach Feature Request">magshs@gmail.com</a>
+            {' '}with which features you'd love to see — or suggest something new. Your feedback directly shapes what we build.
+          </p>
+        </div>
       </section>
     </div>
   );
