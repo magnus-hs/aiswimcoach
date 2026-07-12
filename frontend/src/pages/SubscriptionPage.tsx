@@ -138,6 +138,21 @@ export function SubscriptionPage() {
                 <td>✓</td>
               </tr>
               <tr className="subscription-page__table-row--premium">
+                <td>AI session-to-session comparison</td>
+                <td>—</td>
+                <td>✓</td>
+              </tr>
+              <tr className="subscription-page__table-row--premium">
+                <td>AI training load & recovery insights</td>
+                <td>—</td>
+                <td>✓</td>
+              </tr>
+              <tr className="subscription-page__table-row--premium">
+                <td>AI technique & efficiency analysis</td>
+                <td>—</td>
+                <td>✓</td>
+              </tr>
+              <tr className="subscription-page__table-row--premium">
                 <td>AI training plan generation</td>
                 <td>—</td>
                 <td>✓</td>
