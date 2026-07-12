@@ -210,10 +210,13 @@ function DetailRows({
             let turnEst: string = '—';
             if (i === 0) {
               turnEst = 'start';
-            } else if (split.strokes > 0 && split.time_seconds > 0 && refSwimTime > 0) {
+            } else if (split.time_seconds > 0 && refSwimTime > 0) {
               const overhead = split.time_seconds - refSwimTime;
-              if (overhead >= 0 && overhead < 10) {
+              if (overhead >= 0) {
                 turnEst = `~${overhead.toFixed(1)}s`;
+              } else {
+                // Faster than reference (this IS one of the fast lengths)
+                turnEst = `~0.0s`;
               }
             }
             return (
