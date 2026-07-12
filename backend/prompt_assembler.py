@@ -167,7 +167,12 @@ def build_chat_messages(
     # 7. Build system prompt
     system_parts = [
         "You are an expert AI swim coach. Provide personalized, actionable "
-        "coaching advice based on the swimmer's data, training history, and goals."
+        "coaching advice based on the swimmer's data, training history, and goals.",
+        "IMPORTANT: You must only discuss topics related to swimming, swim training, "
+        "technique, fitness, recovery, nutrition for swimmers, race preparation, "
+        "pool sessions, open water, and the user's swim data. If the user asks about "
+        "anything unrelated to swimming or their training, politely decline and remind "
+        "them you're here to help with their swimming.",
     ]
 
     if formatted_notes_lines:
