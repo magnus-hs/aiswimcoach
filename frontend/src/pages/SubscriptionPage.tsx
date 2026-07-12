@@ -74,6 +74,83 @@ export function SubscriptionPage() {
       {!loading && tier !== 'paid' && (
         <UpgradePrompt />
       )}
+
+      {!loading && (
+        <section className="subscription-page__comparison">
+          <h2>Feature Comparison</h2>
+          <table className="subscription-page__table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Free</th>
+                <th>Premium (£3/mo)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Upload & track swim sessions</td>
+                <td>✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Session splits & stroke breakdown</td>
+                <td>✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Heart rate zones</td>
+                <td>✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Personal bests (manual & derived)</td>
+                <td>✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Statistics & yearly totals</td>
+                <td>✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Friends & social features</td>
+                <td>✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Training notes</td>
+                <td>✓</td>
+                <td>✓</td>
+              </tr>
+              <tr>
+                <td>Goals & distance targets</td>
+                <td>✓</td>
+                <td>✓</td>
+              </tr>
+              <tr className="subscription-page__table-row--premium">
+                <td>AI Coach chat</td>
+                <td>—</td>
+                <td>✓</td>
+              </tr>
+              <tr className="subscription-page__table-row--premium">
+                <td>AI coaching tips on uploads</td>
+                <td>—</td>
+                <td>✓</td>
+              </tr>
+              <tr className="subscription-page__table-row--premium">
+                <td>AI training plan generation</td>
+                <td>—</td>
+                <td>✓</td>
+              </tr>
+              <tr className="subscription-page__table-row--premium">
+                <td>Competitive ability assessment</td>
+                <td>—</td>
+                <td>✓</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      )}
     </div>
   );
 }
