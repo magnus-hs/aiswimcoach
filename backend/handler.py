@@ -1682,9 +1682,20 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     user_id = event["auth_context"]["user_id"]
 
     # Rate limit AI chat per user — this is the most expensive endpoint (Bedrock).
-    # 60 requests/hour per user protects against runaway cost/abuse.
+    # Burst guard: 60 requests/hour per user.
     if not check_rate_limit("ai_chat", user_id, 60, 3600):
         return _error_response(429, "You've reached the AI coach limit for now. Please try again later.")
+
+    # Tiered daily quota to cap Bedrock spend. Free users get a modest daily
+    # allowance; paid users get a much higher one. Tier is read from the profile
+    # ("tier" attribute), defaulting to "free".
+    _tier = _get_user_tier(user_id)
+    _daily_cap = 300 if _tier == "paid" else 15
+    if not check_rate_limit("ai_chat_daily", user_id, _daily_cap, 86400):
+        msg = ("You've reached today's AI coach limit. It resets in 24 hours."
+               if _tier == "paid"
+               else "You've reached today's free AI coach limit. Upgrade for more daily questions.")
+        return _error_response(429, msg)
 
     try:
         body = json.loads(event.get("body") or "{}")
@@ -2963,6 +2974,22 @@ def _handle_clear_notifications(event: dict[str, Any], context: Any) -> dict[str
 # ---------------------------------------------------------------------------
 # Response helpers
 # ---------------------------------------------------------------------------
+
+
+def _get_user_tier(user_id: str) -> str:
+    """Return the user's subscription tier ("free" or "paid").
+
+    Reads the `tier` attribute from the profile record, defaulting to "free".
+    Best-effort: any error resolves to "free" so quota enforcement still applies.
+    """
+    try:
+        table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
+        table = boto3.resource("dynamodb").Table(table_name)
+        resp = table.get_item(Key={"user_id": user_id}, ProjectionExpression="tier")
+        tier = (resp.get("Item") or {}).get("tier")
+        return "paid" if tier == "paid" else "free"
+    except Exception:
+        return "free"
 
 
 def _client_ip(event: dict[str, Any]) -> str:
