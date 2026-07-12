@@ -166,7 +166,7 @@ function GroupRow({
 
 /**
  * Estimate the turn + push-off + glide overhead for a single length, relative to
- * the swimmer's most efficient (fastest) length in the same set.
+ * the swimmer's average length time in the same set.
  *
  * Why relative? The watch only records each length's wall-to-wall time and its
  * stroke count. The reported cadence is itself derived from strokes ÷ length-time,
@@ -174,11 +174,10 @@ function GroupRow({
  * pure-swim time from turn time. Any absolute "turn time" from this data is
  * therefore not measurable.
  *
- * Instead we treat the fastest length in the set as the reference (baseline turn
+ * Instead we treat the average length in the set as the reference (baseline turn
  * overhead) and express each other length's overhead as that baseline plus the
- * extra time it took versus the reference. This is always populated, always
- * physically plausible (never below a real flip-turn minimum), and honestly
- * reflects transition/turn efficiency relative to the swimmer's best length.
+ * extra time it took versus the average. Using the average rather than the fastest
+ * length prevents anomaly lengths from skewing the baseline.
  */
 function estimateTurnSeconds(timeSeconds: number, refTime: number): number {
   const overhead = MIN_TURN_SECONDS + (timeSeconds - refTime);
@@ -203,14 +202,16 @@ function DetailRows({
     return cumTime;
   });
 
-  // Reference = fastest length that has an incoming turn (i.e. not the first
-  // length of the set, which is a push-off start). This is the swimmer's most
-  // efficient length and anchors the baseline turn overhead.
+  // Reference = average time of lengths with an incoming turn (i.e. excluding the
+  // first length which is a push-off start). Using the average instead of the
+  // fastest avoids anomaly lengths skewing the baseline.
   const turnCandidateTimes = group.splits
     .slice(1)
     .filter((s) => s.time_seconds > 0)
     .map((s) => s.time_seconds);
-  const refTime = turnCandidateTimes.length > 0 ? Math.min(...turnCandidateTimes) : 0;
+  const refTime = turnCandidateTimes.length > 0
+    ? turnCandidateTimes.reduce((a, b) => a + b, 0) / turnCandidateTimes.length
+    : 0;
 
   return (
     <div className="grouped-splits__detail">
@@ -225,7 +226,7 @@ function DetailRows({
             <th>DPS</th>
             <th>Stroke</th>
             {hasHR && <th>HR</th>}
-            <th title="Estimated turn + transition overhead, relative to your fastest length in this set">Turn Est.*</th>
+            <th title="Estimated turn + transition overhead, relative to the average length in this set">Turn Est.*</th>
             <th>Cum. Dist</th>
           </tr>
         </thead>
@@ -255,7 +256,7 @@ function DetailRows({
         </tbody>
       </table>
       <p className="grouped-splits__turn-footnote">
-        * Turn Est. = estimated turn + transition overhead (turn + push-off + glide), relative to your fastest length in this set. Your watch only records each length's total time and stroke count, so a true turn time can't be measured directly — this shows how much longer each length took versus your most efficient one, on top of a baseline turn. It's an estimate, not a measured value.
+        * Turn Est. = estimated turn + transition overhead (turn + push-off + glide), relative to your average length time in this set. Your watch only records each length's total time and stroke count, so a true turn time can't be measured directly — this shows how much longer or shorter each length took versus the set average, on top of a baseline turn. It's an estimate, not a measured value.
       </p>
     </div>
   );

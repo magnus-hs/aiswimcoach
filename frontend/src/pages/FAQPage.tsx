@@ -19,7 +19,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'What does the Turn Est. column mean?',
-    a: 'Turn Est. is an approximation of your turn + push-off + glide time on each length. Your watch only records total wall-to-wall time and stroke count per length — it doesn\'t directly measure the turn itself. So we estimate it by comparing each length to your fastest length in the same set: the fastest length is treated as having the minimum possible turn overhead (~0.8s), and every other length shows that baseline plus the extra time it took. It\'s useful for spotting which turns are costing you time, but it\'s an estimate, not a directly measured value.',
+    a: 'Turn Est. is an approximation of your turn + push-off + glide time on each length. Your watch only records total wall-to-wall time and stroke count per length — it doesn\'t directly measure the turn itself. So we estimate it by comparing each length to the average length time in the same set: the average is treated as having a baseline turn overhead (~0.8s), and each length shows that baseline adjusted by how much faster or slower it was than the set average. It\'s useful for spotting which turns are costing you time, but it\'s an estimate, not a directly measured value.',
   },
   {
     q: 'How do goals work?',
