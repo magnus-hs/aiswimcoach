@@ -1826,20 +1826,38 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # Build session history summary for the AI
     history_summary = ""
     if sessions:
-        # Compute the swimmer's real average training pace from recent sessions
-        recent_paces = [s.average_pace_per_100m for s in sessions[:10] if s.average_pace_per_100m > 0]
+        # Compute the swimmer's real average training pace from recent sessions.
+        # Filter out anomalous paces (drills, corrupted data) — real pool swimming
+        # is typically 60-150s/100m for recreational to competitive swimmers.
+        recent_paces = [
+            s.average_pace_per_100m for s in sessions[:20]
+            if 40 < s.average_pace_per_100m < 150
+        ]
         avg_training_pace = sum(recent_paces) / len(recent_paces) if recent_paces else 0
 
         history_summary = f"\n\nSession History ({len(sessions)} sessions, showing last 5):\n"
         if avg_training_pace > 0:
             mins = int(avg_training_pace) // 60
             secs = int(avg_training_pace) % 60
+            # Pre-compute race estimates so the AI uses them directly
+            est_1500_secs = (avg_training_pace + 3) * 15  # 1500m is slower than training pace
+            est_1500_mins = int(est_1500_secs) // 60
+            est_1500_rem = int(est_1500_secs) % 60
             history_summary += (
                 f"SWIMMER'S ACTUAL AVERAGE TRAINING PACE: {avg_training_pace:.1f}s/100m "
                 f"({mins}:{secs:02d}/100m). "
-                f"Always use this as the baseline when suggesting target times or paces.\n\n"
+                f"Always use this as the baseline when suggesting target times or paces.\n"
+                f"PRE-COMPUTED RACE ESTIMATES (use these, do NOT guess):\n"
+                f"  - 1500m race/open water: ~{est_1500_secs:.0f}s ({est_1500_mins}:{est_1500_rem:02d}) at ~{avg_training_pace + 3:.0f}s/100m pace\n"
+                f"  - 800m race: ~{(avg_training_pace + 2) * 8:.0f}s at ~{avg_training_pace + 2:.0f}s/100m pace\n"
+                f"  - 400m race: ~{(avg_training_pace) * 4:.0f}s at ~{avg_training_pace:.0f}s/100m pace\n"
+                f"  - 200m race: ~{(avg_training_pace - 3) * 2:.0f}s at ~{avg_training_pace - 3:.0f}s/100m pace\n"
+                f"  - 100m race: ~{avg_training_pace - 5:.0f}s\n"
+                f"  Note: Open water 1500m is typically 5-10%% slower than pool due to sighting, currents, no walls.\n\n"
             )
         for s in sessions[:5]:  # Last 5 sessions to keep prompt compact
+            if s.average_pace_per_100m > 150:
+                continue  # Skip anomalous sessions
             history_summary += (
                 f"- {s.session_date[:10]}: {s.total_distance_meters}m, "
                 f"pace {s.average_pace_per_100m:.1f}s/100m, "
