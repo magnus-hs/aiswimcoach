@@ -1826,7 +1826,19 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # Build session history summary for the AI
     history_summary = ""
     if sessions:
+        # Compute the swimmer's real average training pace from recent sessions
+        recent_paces = [s.average_pace_per_100m for s in sessions[:10] if s.average_pace_per_100m > 0]
+        avg_training_pace = sum(recent_paces) / len(recent_paces) if recent_paces else 0
+
         history_summary = f"\n\nSession History ({len(sessions)} sessions, showing last 5):\n"
+        if avg_training_pace > 0:
+            mins = int(avg_training_pace) // 60
+            secs = int(avg_training_pace) % 60
+            history_summary += (
+                f"SWIMMER'S ACTUAL AVERAGE TRAINING PACE: {avg_training_pace:.1f}s/100m "
+                f"({mins}:{secs:02d}/100m). "
+                f"Always use this as the baseline when suggesting target times or paces.\n\n"
+            )
         for s in sessions[:5]:  # Last 5 sessions to keep prompt compact
             history_summary += (
                 f"- {s.session_date[:10]}: {s.total_distance_meters}m, "
