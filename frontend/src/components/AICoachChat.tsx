@@ -150,6 +150,16 @@ export function AICoachChat({ currentSession, externalPrompt, intents }: AICoach
           Send
         </button>
       </form>
+      {input.trim() && (
+        <button
+          className="ai-chat__clear"
+          type="button"
+          onClick={() => setInput('')}
+          disabled={loading}
+        >
+          Clear
+        </button>
+      )}
 
       {messages.length > 0 && (
         <div className="ai-chat__messages">
