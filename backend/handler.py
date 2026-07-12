@@ -1255,19 +1255,22 @@ def _handle_get_profile(event: dict[str, Any], context: Any) -> dict[str, Any]:
     Requirements: 4.7
     """
     user_id = event["auth_context"]["user_id"]
-    
+
+    # Helper to return just the tier when a full profile isn't available
+    def _tier_only_response():
+        try:
+            table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
+            table = boto3.resource("dynamodb").Table(table_name)
+            response = table.get_item(Key={"user_id": user_id}, ProjectionExpression="tier")
+            tier = (response.get("Item") or {}).get("tier", "free")
+        except Exception:
+            tier = "free"
+        return http_200_dict({"tier": tier, "profile_incomplete": True})
+
     try:
         profile = get_profile(user_id)
         if profile is None:
-            # No full profile yet — still return the tier if stored (for paywall checks)
-            try:
-                table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
-                table = boto3.resource("dynamodb").Table(table_name)
-                response = table.get_item(Key={"user_id": user_id}, ProjectionExpression="tier")
-                tier = (response.get("Item") or {}).get("tier", "free")
-            except Exception:
-                tier = "free"
-            return http_200_dict({"tier": tier, "profile_incomplete": True})
+            return _tier_only_response()
         
         profile_dict = {
             "age": profile.age,
@@ -1290,9 +1293,9 @@ def _handle_get_profile(event: dict[str, Any], context: Any) -> dict[str, Any]:
             profile_dict["tier"] = "free"
         
         return http_200_dict(profile_dict)
-    except ProfileStorageError as exc:
-        logger.error("Profile retrieval failed for user %s: %s", user_id, exc)
-        return _error_response(500, "Profile retrieval failure")
+    except ProfileStorageError:
+        # Profile row exists but missing required fields (partial profile)
+        return _tier_only_response()
     except Exception as exc:
         logger.error("Profile retrieval failed for user %s: %s", user_id, exc)
         return _error_response(500, "Internal server error")
