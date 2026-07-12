@@ -4,7 +4,8 @@ import { getSessionById, SessionDetail } from '../api/sessionService';
 import { uploadFitFile } from '../api/upload';
 import { invalidateSessionsCache } from '../api/sessionService';
 import { FullResponse } from '../types';
-
+import { SessionSummary } from '../components/SessionSummary';
+import { computeBreakdownFromSplits } from '../utils/strokeBreakdown';
 import { GroupedSplitsTable } from '../components/GroupedSplitsTable';
 import { HRZonesCard } from '../components/HRZonesCard';
 import { HRTimeGraph } from '../components/HRTimeGraph';
@@ -214,6 +215,15 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
   }) {
     return (
       <div className="activity-detail__sections">
+        <SessionSummary
+          session={data.session}
+          splits={data.splits}
+          strokeBreakdown={
+            data.splits && data.splits.length > 0
+              ? computeBreakdownFromSplits(data.splits)
+              : undefined
+          }
+        />
         {data.splits && data.splits.length > 0 && (
           <DrillSummary splits={data.splits} poolLengthM={data.session.pool_length_m} />
         )}
