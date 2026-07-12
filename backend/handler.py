@@ -18,6 +18,7 @@ from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
+import stripe
 
 from multipart_parser import ParseError as MultipartParseError  # noqa: E402
 from multipart_parser import parse_multipart
@@ -68,6 +69,7 @@ import notes_service
 import account_service
 import statistics_service
 import chat_history_store
+import stripe_service
 from chat_history_store import QAEntry
 from prompt_assembler import build_chat_messages
 from http_headers import response_headers
@@ -193,6 +195,14 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         return _handle_get_notifications(event, context)
     elif path == "/notifications" and http_method == "DELETE":
         return _handle_clear_notifications(event, context)
+
+    # Billing / Stripe routes
+    elif path == "/billing/checkout" and http_method == "POST":
+        return _handle_create_checkout(event, context)
+    elif path == "/billing/portal" and http_method == "POST":
+        return _handle_billing_portal(event, context)
+    elif path == "/webhooks/stripe" and http_method == "POST":
+        return _handle_stripe_webhook(event, context)
 
     # Structured training plans routes (auth required)
     elif path == "/plans/generate" and http_method == "POST":
@@ -776,6 +786,13 @@ def _handle_training_plan(event: dict[str, Any], context: Any) -> dict[str, Any]
     if auth_context:
         user_id = auth_context.get("user_id")
         if user_id:
+            # Gate training plan generation behind paid tier
+            if _get_user_tier(user_id) != "paid":
+                return _error_response(
+                    403,
+                    "Training plan generation is a premium feature. "
+                    "Upgrade to AI Coach Premium for £3/month to unlock it.",
+                )
             try:
                 profile = get_profile(user_id)
                 if profile:
@@ -882,6 +899,15 @@ def _handle_file_upload(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # Check if coaching should be skipped (bulk import mode)
     query_params = event.get("queryStringParameters") or {}
     skip_coaching = query_params.get("skip_coaching") == "true"
+
+    # AI coaching is gated behind the paid tier
+    if not skip_coaching:
+        auth_ctx = event.get("auth_context") or {}
+        upload_user_id = auth_ctx.get("user_id")
+        if upload_user_id:
+            user_tier = _get_user_tier(upload_user_id)
+            if user_tier != "paid":
+                skip_coaching = True  # Free users get parsing + metrics but no AI coaching
 
     coaching = None
 
@@ -1690,11 +1716,11 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # allowance; paid users get a much higher one. Tier is read from the profile
     # ("tier" attribute), defaulting to "free".
     _tier = _get_user_tier(user_id)
-    _daily_cap = 300 if _tier == "paid" else 15
+    _daily_cap = 300 if _tier == "paid" else 0
     if not check_rate_limit("ai_chat_daily", user_id, _daily_cap, 86400):
         msg = ("You've reached today's AI coach limit. It resets in 24 hours."
                if _tier == "paid"
-               else "You've reached today's free AI coach limit. Upgrade for more daily questions.")
+               else "AI Coach is a premium feature. Upgrade to AI Coach Premium for £3/month to unlock unlimited AI coaching.")
         return _error_response(429, msg)
 
     try:
@@ -2139,6 +2165,14 @@ def _handle_generate_structured_plan(event: dict[str, Any], context: Any) -> dic
     import base64
 
     user_id = event["auth_context"]["user_id"]
+
+    # Gate structured plan generation behind paid tier
+    if _get_user_tier(user_id) != "paid":
+        return _error_response(
+            403,
+            "Training plan generation is a premium feature. "
+            "Upgrade to AI Coach Premium for £3/month to unlock it.",
+        )
 
     try:
         body = event.get("body")
@@ -2969,6 +3003,87 @@ def _handle_clear_notifications(event: dict[str, Any], context: Any) -> dict[str
     except Exception as exc:
         logger.error("Clear notifications failed for user %s: %s", user_id, exc)
         return _error_response(500, "Failed to clear notifications")
+
+
+# ---------------------------------------------------------------------------
+# Billing / Stripe handlers
+# ---------------------------------------------------------------------------
+
+
+@require_auth
+def _handle_create_checkout(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """POST /billing/checkout — create a Stripe Checkout session."""
+    user_id = event["auth_context"]["user_id"]
+    email = event["auth_context"].get("email", "")
+
+    origin = os.environ.get(
+        "ALLOWED_ORIGIN", "https://main.d3qbayea55l8tl.amplifyapp.com"
+    )
+    success_url = f"{origin}/?subscription=success"
+    cancel_url = f"{origin}/?subscription=cancelled"
+
+    try:
+        checkout_url = stripe_service.create_checkout_session(
+            user_id, email, success_url, cancel_url
+        )
+        return http_200_dict({"url": checkout_url})
+    except Exception as exc:
+        logger.error("Checkout creation failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to create checkout session")
+
+
+@require_auth
+def _handle_billing_portal(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """POST /billing/portal — create a Stripe Billing Portal session."""
+    user_id = event["auth_context"]["user_id"]
+    origin = os.environ.get(
+        "ALLOWED_ORIGIN", "https://main.d3qbayea55l8tl.amplifyapp.com"
+    )
+
+    try:
+        table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
+        table = boto3.resource("dynamodb").Table(table_name)
+        resp = table.get_item(
+            Key={"user_id": user_id},
+            ProjectionExpression="stripe_customer_id",
+        )
+        customer_id = (resp.get("Item") or {}).get("stripe_customer_id")
+        if not customer_id:
+            return _error_response(400, "No active subscription found")
+
+        portal_url = stripe_service.create_portal_session(customer_id, origin)
+        return http_200_dict({"url": portal_url})
+    except Exception as exc:
+        logger.error("Portal creation failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to create portal session")
+
+
+def _handle_stripe_webhook(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """POST /webhooks/stripe — handle Stripe webhook events (no auth required)."""
+    import base64 as b64
+
+    body = event.get("body") or ""
+    if event.get("isBase64Encoded"):
+        body = b64.b64decode(body)
+    else:
+        body = body.encode("utf-8") if isinstance(body, str) else body
+
+    headers = event.get("headers") or {}
+    sig = headers.get("Stripe-Signature") or headers.get("stripe-signature") or ""
+
+    try:
+        result = stripe_service.handle_webhook_event(body, sig)
+        if result:
+            if result["action"] == "activate":
+                stripe_service.set_user_tier(result["user_id"], "paid")
+            elif result["action"] == "deactivate":
+                stripe_service.set_user_tier(result["user_id"], "free")
+        return http_200_dict({"received": True})
+    except stripe.error.SignatureVerificationError:
+        return _error_response(400, "Invalid signature")
+    except Exception as exc:
+        logger.error("Webhook processing failed: %s", exc)
+        return _error_response(500, "Webhook processing failed")
 
 
 # ---------------------------------------------------------------------------

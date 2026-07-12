@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
+import { UpgradePrompt } from './UpgradePrompt';
 import './AICoachChat.css';
 
 interface AICoachChatProps {
@@ -29,6 +30,7 @@ export function AICoachChat({ currentSession, externalPrompt, intents }: AICoach
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<{role: string, content: string}[]>([]);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   // When an external prompt is set (from clicking an example), populate the input
   useEffect(() => {
@@ -62,6 +64,14 @@ export function AICoachChat({ currentSession, externalPrompt, intents }: AICoach
       });
 
       if (!response.ok) {
+        if (response.status === 429 || response.status === 403) {
+          const data = await response.json().catch(() => ({ error: '' }));
+          const errorMsg = data.error || '';
+          if (errorMsg.toLowerCase().includes('upgrade') || errorMsg.toLowerCase().includes('premium')) {
+            setShowUpgrade(true);
+            return;
+          }
+        }
         throw new Error('AI unavailable');
       }
 
@@ -98,6 +108,10 @@ export function AICoachChat({ currentSession, externalPrompt, intents }: AICoach
         Ask about your performance, trends, or how you compare to others in your age group
       </p>
 
+      {showUpgrade ? (
+        <UpgradePrompt message="AI Coach is a premium feature. Subscribe for £3/month to unlock unlimited AI coaching, training plans, and ability assessments." />
+      ) : (
+      <>
       <form className="ai-chat__form" onSubmit={handleSubmit}>
         <input
           className="ai-chat__input"
@@ -129,6 +143,8 @@ export function AICoachChat({ currentSession, externalPrompt, intents }: AICoach
             </div>
           )}
         </div>
+      )}
+      </>
       )}
     </section>
   );

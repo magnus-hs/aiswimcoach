@@ -1,5 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { generateStructuredPlan, StructuredPlan } from '../api/planService';
+import { ApiError } from '../types';
+import { UpgradePrompt } from './UpgradePrompt';
 import './StructuredPlanForm.css';
 
 export interface StructuredPlanFormProps {
@@ -17,6 +19,7 @@ export function StructuredPlanForm({ onPlanGenerated }: StructuredPlanFormProps)
   const [sessionsPerWeek, setSessionsPerWeek] = useState(3);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -32,6 +35,13 @@ export function StructuredPlanForm({ onPlanGenerated }: StructuredPlanFormProps)
       });
       onPlanGenerated(plan);
     } catch (err) {
+      if (err instanceof ApiError && (err.status === 403 || err.status === 429)) {
+        const msg = err.serverMessage.toLowerCase();
+        if (msg.includes('upgrade') || msg.includes('premium')) {
+          setShowUpgrade(true);
+          return;
+        }
+      }
       const message =
         err instanceof Error ? err.message : 'Failed to generate plan.';
       setError(message);
@@ -39,6 +49,10 @@ export function StructuredPlanForm({ onPlanGenerated }: StructuredPlanFormProps)
       setLoading(false);
     }
   };
+
+  if (showUpgrade) {
+    return <UpgradePrompt message="Training plan generation is a premium feature. Subscribe for £3/month to unlock personalised multi-week training plans." />;
+  }
 
   return (
     <form className="structured-plan-form" onSubmit={handleSubmit}>

@@ -1,0 +1,83 @@
+.upgrade-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1.5rem;
+  border-radius: 12px;
+  background: var(--color-surface, #f8f9fa);
+  border: 1px solid var(--color-border, #e0e0e0);
+  max-width: 420px;
+  margin: 2rem auto;
+}
+
+.upgrade-prompt__icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.upgrade-prompt__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+  color: var(--color-text, #1a1a1a);
+}
+
+.upgrade-prompt__description {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary, #555);
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.upgrade-prompt__features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.25rem;
+  text-align: left;
+  width: 100%;
+}
+
+.upgrade-prompt__features li {
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary, #555);
+}
+
+.upgrade-prompt__features li::before {
+  content: '✓ ';
+  color: var(--color-primary, #0077b6);
+  font-weight: 600;
+}
+
+.upgrade-prompt__error {
+  color: var(--color-error, #d32f2f);
+  font-size: 0.85rem;
+  margin: 0 0 0.75rem;
+}
+
+.upgrade-prompt__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-primary, #0077b6);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  width: 100%;
+}
+
+.upgrade-prompt__button:hover:not(:disabled) {
+  background: var(--color-primary-hover, #005f8a);
+  transform: translateY(-1px);
+}
+
+.upgrade-prompt__button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
