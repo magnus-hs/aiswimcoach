@@ -65,6 +65,7 @@ from interactions_service import (
 )
 from notes_service import NotFoundError as NotesNotFoundError
 import notes_service
+import account_service
 import statistics_service
 import chat_history_store
 from chat_history_store import QAEntry
@@ -263,6 +264,12 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # Statistics route (auth required)
     elif path == "/statistics" and http_method == "GET":
         return _handle_get_statistics(event, context)
+
+    # Account data routes — GDPR export & deletion (auth required)
+    elif path == "/account/export" and http_method == "GET":
+        return _handle_export_data(event, context)
+    elif path == "/account" and http_method == "DELETE":
+        return _handle_delete_account(event, context)
 
     # Session history routes (auth required)
     elif path == "/sessions" and http_method == "GET":
@@ -2981,6 +2988,41 @@ def _enforce_rate_limit(event: dict[str, Any], action: str, limit: int, window: 
         "headers": response_headers({"Retry-After": str(window)}),
         "body": json.dumps({"error": "Too many requests. Please try again later."}),
     }
+
+
+@require_auth
+def _handle_export_data(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle GET /account/export — GDPR data export."""
+    user_id = event["auth_context"]["user_id"]
+    try:
+        data = account_service.export_user_data(user_id)
+        return {
+            "statusCode": 200,
+            "headers": response_headers({"Content-Disposition": "attachment; filename=my-swim-data.json"}),
+            "body": json.dumps(data, default=str),
+        }
+    except Exception as exc:
+        logger.error("Data export failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to export data")
+
+
+@require_auth
+def _handle_delete_account(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    """Handle DELETE /account — permanent account & data deletion."""
+    user_id = event["auth_context"]["user_id"]
+    # Require explicit confirmation in the body: {"confirm": "DELETE"}
+    try:
+        body = json.loads(event.get("body") or "{}")
+    except (json.JSONDecodeError, TypeError):
+        return _error_response(400, "Invalid JSON body")
+    if body.get("confirm") != "DELETE":
+        return _error_response(400, "Account deletion requires confirmation")
+    try:
+        summary = account_service.delete_user_data(user_id)
+        return http_200_dict({"message": "Account deleted", "summary": summary})
+    except Exception as exc:
+        logger.error("Account deletion failed for user %s: %s", user_id, exc)
+        return _error_response(500, "Failed to delete account")
 
 
 def _error_response(status_code: int, message: str) -> dict[str, Any]:

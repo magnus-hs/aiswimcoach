@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, FormEvent, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveProfile, getProfile, uploadProfilePicture, UserProfile } from '../api/profileService';
+import { exportMyData, deleteMyAccount } from '../api/accountService';
 import { useAuth } from '../hooks/useAuth';
 import { ApiError } from '../types';
 import { ThemeToggle } from './ThemeToggle';
@@ -53,6 +54,11 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [dobError, setDobError] = useState<string>('');
+
+  // Privacy & data state
+  const [exporting, setExporting] = useState<boolean>(false);
+  const [deleting, setDeleting] = useState<boolean>(false);
+  const [privacyError, setPrivacyError] = useState<string>('');
 
   // Compute age from DOB
   const computeAge = useCallback((dob: string): number | null => {
@@ -281,6 +287,61 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
     }
   }, [dateOfBirth, nationality, locality, abilityLevel, profilePicture, isFormValid, computeAge]);
 
+  // Download all user data as a JSON file
+  const handleExportData = useCallback(async () => {
+    setPrivacyError('');
+    setExporting(true);
+    try {
+      const blob = await exportMyData();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'my-swim-data.json';
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      window.URL.revokeObjectURL(url);
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        setPrivacyError(err.serverMessage);
+      } else if (err instanceof Error) {
+        setPrivacyError(err.message);
+      } else {
+        setPrivacyError('Failed to export data');
+      }
+    } finally {
+      setExporting(false);
+    }
+  }, []);
+
+  // Permanently delete the account after explicit confirmation
+  const handleDeleteAccount = useCallback(async () => {
+    setPrivacyError('');
+    const confirmed = window.confirm(
+      'This will permanently delete your account and ALL of your data — sessions, ' +
+        'notes, chat history, friends and profile. This action cannot be undone. ' +
+        'Are you sure you want to continue?'
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    try {
+      await deleteMyAccount();
+      logout();
+      onClose();
+      navigate('/login');
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        setPrivacyError(err.serverMessage);
+      } else if (err instanceof Error) {
+        setPrivacyError(err.message);
+      } else {
+        setPrivacyError('Failed to delete account');
+      }
+      setDeleting(false);
+    }
+  }, [logout, onClose, navigate]);
+
   if (!isOpen) return null;
 
   return (
@@ -478,6 +539,32 @@ export function ProfileModal({ isOpen, onClose, triggerRef }: ProfileModalProps)
               )}
             </div>
           )}
+        </div>
+
+        {/* Privacy & Data */}
+        <div className="modal__section">
+          <h3 className="modal__section-title">Privacy &amp; Data</h3>
+          {privacyError && (
+            <div className="modal__message--error">{privacyError}</div>
+          )}
+          <div className="modal__privacy-actions">
+            <button
+              type="button"
+              className="modal__privacy-btn"
+              onClick={handleExportData}
+              disabled={exporting || deleting}
+            >
+              {exporting ? 'Preparing download...' : 'Download my data'}
+            </button>
+            <button
+              type="button"
+              className="modal__privacy-btn modal__privacy-btn--danger"
+              onClick={handleDeleteAccount}
+              disabled={exporting || deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete my account'}
+            </button>
+          </div>
         </div>
 
         {/* Logout */}
