@@ -1268,16 +1268,18 @@ def _handle_get_profile(event: dict[str, Any], context: Any) -> dict[str, Any]:
             "ability_level": profile.ability_level,
         }
         
-        # Also fetch date_of_birth if stored
+        # Also fetch date_of_birth and tier if stored
         try:
             table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
             table = boto3.resource("dynamodb").Table(table_name)
-            response = table.get_item(Key={"user_id": user_id}, ProjectionExpression="date_of_birth")
-            dob = response.get("Item", {}).get("date_of_birth")
+            response = table.get_item(Key={"user_id": user_id}, ProjectionExpression="date_of_birth, tier")
+            item = response.get("Item", {})
+            dob = item.get("date_of_birth")
             if dob:
                 profile_dict["date_of_birth"] = dob
+            profile_dict["tier"] = item.get("tier", "free")
         except Exception:
-            pass
+            profile_dict["tier"] = "free"
         
         return http_200_dict(profile_dict)
     except ProfileStorageError as exc:

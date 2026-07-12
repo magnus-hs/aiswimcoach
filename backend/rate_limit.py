@@ -40,6 +40,11 @@ def check_rate_limit(action: str, identifier: str, limit: int, window_seconds: i
     """
     key = f"{action}#{identifier}"
     now = int(time.time())
+
+    # Hard block: if limit is 0 or negative, always deny (feature is locked).
+    if limit <= 0:
+        return False
+
     try:
         table = _get_table()
         item = table.get_item(Key={"rl_key": key}).get("Item")

@@ -32,6 +32,31 @@ export function AICoachChat({ currentSession, externalPrompt, intents }: AICoach
   const [conversationHistory, setConversationHistory] = useState<{role: string, content: string}[]>([]);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
+  // Check tier upfront — show paywall immediately for free users
+  useEffect(() => {
+    async function checkTier() {
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+        const resp = await fetch(`${import.meta.env.VITE_API_ENDPOINT}/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          if (!data.tier || data.tier !== 'paid') {
+            setShowUpgrade(true);
+          }
+        } else {
+          // No profile or error — treat as free
+          setShowUpgrade(true);
+        }
+      } catch {
+        // Network error — let backend gate handle it as fallback
+      }
+    }
+    checkTier();
+  }, []);
+
   // When an external prompt is set (from clicking an example), populate the input
   useEffect(() => {
     if (externalPrompt) {
