@@ -207,6 +207,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
   function renderSessionDetail(data: {
     session: SessionDetail['session'] | FullResponse['session'];
     splits: SessionDetail['splits'] | FullResponse['splits'];
+    metrics?: SessionDetail['metrics'] | FullResponse['metrics'];
     coaching: SessionDetail['coaching'] | FullResponse['coaching'];
     hr_zones?: SessionDetail['hr_zones'] | FullResponse['hr_zones'];
     ability_assessment?: SessionDetail['ability_assessment'] | FullResponse['ability_assessment'];
@@ -229,12 +230,12 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
         )}
         <AICoachChat currentSession={{
           total_distance_m: data.session.total_distance_m,
-          pace: (data as any).metrics?.pace,
-          swolf: (data as any).metrics?.swolf,
-          stroke_rate: (data as any).metrics?.stroke_rate,
+          pace: data.metrics?.pace,
+          swolf: data.metrics?.swolf,
+          stroke_rate: data.metrics?.stroke_rate,
         }} />
         {data.splits && data.splits.length > 0 && <SetSummary splits={data.splits} poolLengthM={data.session.pool_length_m} />}
-        {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} strokeRate={(data as any).metrics?.stroke_rate} />}
+        {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} />}
         <HRZonesCard hrZones={data.hr_zones ?? null} />
         <HRTimeGraph
           hrTimeseries={data.hr_timeseries}
@@ -297,6 +298,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
           {sessionDetail && !loading && !error && renderSessionDetail({
             session: sessionDetail.session,
             splits: sessionDetail.splits,
+            metrics: sessionDetail.metrics,
             coaching: sessionDetail.coaching,
             hr_zones: sessionDetail.hr_zones,
             ability_assessment: sessionDetail.ability_assessment,
@@ -344,6 +346,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
               {renderSessionDetail({
                 session: uploadResult.session,
                 splits: uploadResult.splits,
+                metrics: uploadResult.metrics,
                 coaching: uploadResult.coaching,
                 hr_zones: uploadResult.hr_zones,
                 ability_assessment: uploadResult.ability_assessment,

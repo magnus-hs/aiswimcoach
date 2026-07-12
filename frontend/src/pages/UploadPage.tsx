@@ -138,7 +138,7 @@ export function UploadPage() {
           )}
           
           <SessionSummary session={result.session} />
-          <GroupedSplitsTable splits={result.splits} poolLengthM={result.session.pool_length_m} strokeRate={result.metrics?.stroke_rate} />
+          <GroupedSplitsTable splits={result.splits} poolLengthM={result.session.pool_length_m} />
           <HRZonesCard hrZones={result.hr_zones} />
           <CoachingResult tips={result.coaching.tips} drill={result.coaching.drill} />
           <AbilityAssessmentCard assessment={result.ability_assessment} />

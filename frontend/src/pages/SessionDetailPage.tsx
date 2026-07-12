@@ -103,7 +103,7 @@ export function SessionDetailPage() {
 
       <div className="session-detail-page__results">
         <SessionSummary session={sessionDetail.session} />
-        <GroupedSplitsTable splits={sessionDetail.splits} poolLengthM={sessionDetail.session.pool_length_m} strokeRate={sessionDetail.metrics?.stroke_rate} />
+        <GroupedSplitsTable splits={sessionDetail.splits} poolLengthM={sessionDetail.session.pool_length_m} />
         <HRZonesCard hrZones={sessionDetail.hr_zones} />
         <CoachingResult tips={sessionDetail.coaching.tips} drill={sessionDetail.coaching.drill} />
         <AbilityAssessmentCard assessment={sessionDetail.ability_assessment} />
