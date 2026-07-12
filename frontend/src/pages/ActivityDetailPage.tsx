@@ -234,7 +234,7 @@ export function ActivityDetailPage({ mode }: ActivityDetailPageProps) {
           stroke_rate: (data as any).metrics?.stroke_rate,
         }} />
         {data.splits && data.splits.length > 0 && <SetSummary splits={data.splits} poolLengthM={data.session.pool_length_m} />}
-        {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} />}
+        {data.splits && data.splits.length > 0 && <GroupedSplitsTable splits={data.splits} poolLengthM={data.session.pool_length_m} strokeRate={(data as any).metrics?.stroke_rate} />}
         <HRZonesCard hrZones={data.hr_zones ?? null} />
         <HRTimeGraph
           hrTimeseries={data.hr_timeseries}

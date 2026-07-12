@@ -6,7 +6,15 @@ import './GroupedSplitsTable.css';
 interface GroupedSplitsTableProps {
   splits: LengthSplit[];
   poolLengthM: number;
+  /** Session-average stroke rate (strokes/min) from the watch. Used to estimate turn time. */
+  strokeRate?: number;
 }
+
+// Physically plausible bounds for a turn + push-off + glide (seconds).
+const MIN_TURN_SECONDS = 0.6;
+const MAX_TURN_SECONDS = 8.0;
+// Fallback used when stroke rate / stroke count are unavailable so no length is blank.
+const FALLBACK_TURN_SECONDS = 1.0;
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -16,7 +24,7 @@ function capitalize(s: string): string {
  * Grouped splits view: shows reps as expandable rows with rest between.
  * Includes cumulative distance and optional heart rate.
  */
-export function GroupedSplitsTable({ splits, poolLengthM }: GroupedSplitsTableProps) {
+export function GroupedSplitsTable({ splits, poolLengthM, strokeRate }: GroupedSplitsTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
 
   if (splits.length === 0) return null;
@@ -75,6 +83,7 @@ export function GroupedSplitsTable({ splits, poolLengthM }: GroupedSplitsTablePr
                 poolLengthM={poolLengthM}
                 startCumulative={groupCumulatives[idx] - group.totalDistance}
                 hasHR={hasHR}
+                strokeRate={strokeRate}
               />
             )}
             {group.restAfter != null && idx < groups.length - 1 && (
@@ -159,16 +168,47 @@ function GroupRow({
   );
 }
 
+/**
+ * Estimate the non-stroke (turn + push-off + glide) time for a single length.
+ *
+ * Physical basis: the watch measures stroke cadence (strokes/min) independently
+ * of length time, so the pure swimming portion of a length is
+ *   swimming_time = strokes / (strokeRate / 60)
+ * and the leftover is the turn/push-off overhead:
+ *   turn = length_time - swimming_time
+ *
+ * This is NOT circular (unlike deriving swim time from pace, which cancels out),
+ * because cadence comes from an independent sensor. The result is clamped to a
+ * physically plausible range and falls back to a sensible default so that every
+ * length always shows a value.
+ */
+function estimateTurnSeconds(
+  timeSeconds: number,
+  strokes: number,
+  strokeRate?: number,
+): number {
+  if (strokeRate != null && strokeRate > 0 && strokes > 0 && timeSeconds > 0) {
+    const swimmingTime = strokes / (strokeRate / 60); // strokes * 60 / strokeRate
+    const turn = timeSeconds - swimmingTime;
+    if (Number.isFinite(turn)) {
+      return Math.min(MAX_TURN_SECONDS, Math.max(MIN_TURN_SECONDS, turn));
+    }
+  }
+  return FALLBACK_TURN_SECONDS;
+}
+
 function DetailRows({
   group,
   poolLengthM,
   startCumulative,
   hasHR,
+  strokeRate,
 }: {
   group: SplitGroup;
   poolLengthM: number;
   startCumulative: number;
   hasHR: boolean;
+  strokeRate?: number;
 }) {
   // Compute cumulative time within the set
   let cumTime = 0;
@@ -176,14 +216,6 @@ function DetailRows({
     cumTime += split.time_seconds;
     return cumTime;
   });
-
-  // Compute reference swim-only pace from the group's best lengths.
-  // The fastest 50% of lengths represent minimal turn delay.
-  // Turn estimate = how much slower each length is vs the reference.
-  const validSplits = group.splits.filter(s => s.strokes > 0 && s.time_seconds > 0);
-  const sortedTimes = validSplits.map(s => s.time_seconds).sort((a, b) => a - b);
-  const fastHalf = sortedTimes.slice(0, Math.max(1, Math.floor(sortedTimes.length * 0.5)));
-  const refSwimTime = fastHalf.length > 0 ? fastHalf.reduce((a, b) => a + b, 0) / fastHalf.length : 0;
 
   return (
     <div className="grouped-splits__detail">
@@ -205,20 +237,11 @@ function DetailRows({
         <tbody>
           {group.splits.map((split, i) => {
             const isDrill = split.stroke === 'drill';
-            // Turn estimate: how much slower is this length vs the reference?
-            // Positive = more time spent on turn/push-off/glide
-            let turnEst: string = '—';
-            if (i === 0) {
-              turnEst = 'start';
-            } else if (split.time_seconds > 0 && refSwimTime > 0) {
-              const overhead = split.time_seconds - refSwimTime;
-              if (overhead >= 0) {
-                turnEst = `~${overhead.toFixed(1)}s`;
-              } else {
-                // Faster than reference (this IS one of the fast lengths)
-                turnEst = `~0.0s`;
-              }
-            }
+            // First length starts with a dive/push, not a turn.
+            // Every other length gets a physically-grounded estimate so none are blank.
+            const turnEst: string = i === 0
+              ? 'start'
+              : `~${estimateTurnSeconds(split.time_seconds, split.strokes, strokeRate).toFixed(1)}s`;
             return (
               <tr key={split.length_number} className={isDrill ? 'grouped-splits__row--drill' : ''}>
                 <td>{split.length_number}</td>
@@ -237,7 +260,7 @@ function DetailRows({
         </tbody>
       </table>
       <p className="grouped-splits__turn-footnote">
-        * Turn Est. = estimated non-stroke time (turn + push-off + glide). This is an approximation derived from stroke count and pace — not measured directly.
+        * Turn Est. = estimated non-stroke time (turn + push-off + glide), approximated from your length time minus the time your stroke cadence accounts for. It's an estimate, not a directly measured value.
       </p>
     </div>
   );
