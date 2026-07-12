@@ -1826,8 +1826,8 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # Build session history summary for the AI
     history_summary = ""
     if sessions:
-        history_summary = f"\n\nSession History ({len(sessions)} sessions):\n"
-        for s in sessions[:20]:  # Last 20 sessions
+        history_summary = f"\n\nSession History ({len(sessions)} sessions, showing last 10):\n"
+        for s in sessions[:10]:  # Last 10 sessions (trimmed from 20 to control prompt size)
             history_summary += (
                 f"- {s.session_date[:10]}: {s.total_distance_meters}m, "
                 f"pace {s.average_pace_per_100m:.1f}s/100m, "
@@ -2005,6 +2005,9 @@ def _handle_ai_chat(event: dict[str, Any], context: Any) -> dict[str, Any]:
         current_prompt=user_message,
         conversation_history=effective_history,
         notes=user_notes,
+        max_exchanges=5,
+        max_history_chars=2000,
+        max_notes=10,
     )
     
     try:

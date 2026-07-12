@@ -2,7 +2,7 @@
 Chat history storage module for AI Swim Coach.
 
 Persists per-user Q&A conversation history to S3 as a single JSON file
-at `chat-history/{user_id}/history.json`. Enforces a 50-entry cap per user,
+at `chat-history/{user_id}/history.json`. Enforces a 20-entry cap per user,
 dropping oldest entries on overflow.
 """
 from __future__ import annotations
@@ -17,7 +17,7 @@ from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
 
-MAX_ENTRIES = 50
+MAX_ENTRIES = 20
 
 
 @dataclass
@@ -87,7 +87,7 @@ def save_history(user_id: str, history: list[QAEntry]) -> None:
     Drops the oldest entries if the list exceeds MAX_ENTRIES.
     On write failure, logs the error without raising.
     """
-    # Enforce 50-entry cap by keeping only the most recent entries
+    # Enforce 20-entry cap by keeping only the most recent entries
     capped = history[-MAX_ENTRIES:] if len(history) > MAX_ENTRIES else history
 
     payload = json.dumps(
