@@ -1259,7 +1259,15 @@ def _handle_get_profile(event: dict[str, Any], context: Any) -> dict[str, Any]:
     try:
         profile = get_profile(user_id)
         if profile is None:
-            return _error_response(404, "Profile not found")
+            # No full profile yet — still return the tier if stored (for paywall checks)
+            try:
+                table_name = os.environ.get("PROFILES_TABLE", "UserProfiles")
+                table = boto3.resource("dynamodb").Table(table_name)
+                response = table.get_item(Key={"user_id": user_id}, ProjectionExpression="tier")
+                tier = (response.get("Item") or {}).get("tier", "free")
+            except Exception:
+                tier = "free"
+            return http_200_dict({"tier": tier, "profile_incomplete": True})
         
         profile_dict = {
             "age": profile.age,
