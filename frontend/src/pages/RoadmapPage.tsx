@@ -109,10 +109,6 @@ export function RoadmapPage() {
             <h3>🎁 Referral Rewards</h3>
             <p>Invite a friend → both get a free month of Premium. Great for squad adoption</p>
           </div>
-          <div className="roadmap-page__idea">
-            <h3>🏊‍♂️ Swim-Specific Wearable Metrics</h3>
-            <p>Deeper integration with Garmin/Apple to pull in advanced metrics like SWOLF per arm, turn times</p>
-          </div>
         </div>
         <div className="roadmap-page__feedback-cta">
           <h3>Want any of these? Let us know!</h3>

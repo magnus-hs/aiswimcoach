@@ -190,12 +190,32 @@ function DetailRows({
             <th>DPS</th>
             <th>Stroke</th>
             {hasHR && <th>HR</th>}
+            <th title="Estimated turn + push-off time (non-stroke portion of the length)">Turn Est.*</th>
             <th>Cum. Dist</th>
           </tr>
         </thead>
         <tbody>
           {group.splits.map((split, i) => {
             const isDrill = split.stroke === 'drill';
+            // Estimate turn time: total_time - swimming_time
+            // swimming_time ≈ strokes × (time / strokes_per_second) but simplest:
+            // For lengths after the first, use the median stroke time from the group
+            // and subtract from total. First length is a dive start so we skip it.
+            let turnEst: string = '—';
+            if (i > 0 && split.strokes > 0 && split.time_seconds > 0) {
+              // Estimate stroke time using distance_per_stroke and average speed
+              const dps = poolLengthM / split.strokes;
+              const avgSpeed = poolLengthM / split.time_seconds; // m/s
+              const strokeTime = dps / avgSpeed; // seconds per stroke
+              const swimTime = split.strokes * strokeTime;
+              const turn = split.time_seconds - swimTime;
+              // Turn should be positive and reasonable (0.5s - 8s)
+              if (turn > 0.3 && turn < 10) {
+                turnEst = `~${turn.toFixed(1)}s`;
+              }
+            } else if (i === 0) {
+              turnEst = 'start';
+            }
             return (
               <tr key={split.length_number} className={isDrill ? 'grouped-splits__row--drill' : ''}>
                 <td>{split.length_number}</td>
@@ -206,12 +226,16 @@ function DetailRows({
                 <td>{split.strokes > 0 ? `${(poolLengthM / split.strokes).toFixed(2)} m` : '—'}</td>
                 <td>{isDrill ? <span className="drill-indicator">Drill</span> : capitalize(split.stroke)}</td>
                 {hasHR && <td>{split.avg_hr != null ? `${split.avg_hr}` : '—'}</td>}
+                <td className="grouped-splits__turn-cell">{turnEst}</td>
                 <td className="grouped-splits__cum-cell">{startCumulative + (i + 1) * poolLengthM}m</td>
               </tr>
             );
           })}
         </tbody>
       </table>
+      <p className="grouped-splits__turn-footnote">
+        * Turn Est. = estimated non-stroke time (turn + push-off + glide). This is an approximation derived from stroke count and pace — not measured directly.
+      </p>
     </div>
   );
 }

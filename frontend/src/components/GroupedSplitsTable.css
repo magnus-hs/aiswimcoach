@@ -230,3 +230,17 @@
   border-radius: 9999px;
   letter-spacing: 0.02em;
 }
+
+/* Turn estimate column */
+.grouped-splits__turn-cell {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-style: italic;
+}
+
+.grouped-splits__turn-footnote {
+  margin-top: var(--space-2);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
