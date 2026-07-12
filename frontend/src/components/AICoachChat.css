@@ -178,3 +178,9 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.ai-chat__form--followup {
+  margin-top: var(--space-3);
+  border-top: 1px solid var(--color-gray-200);
+  padding-top: var(--space-3);
+}

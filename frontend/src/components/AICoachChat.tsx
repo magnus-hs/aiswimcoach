@@ -137,28 +137,20 @@ export function AICoachChat({ currentSession, externalPrompt, intents }: AICoach
         <UpgradePrompt message="AI Coach is a premium feature. Subscribe for £3/month to unlock unlimited AI coaching, training plans, and ability assessments." />
       ) : (
       <>
-      <form className="ai-chat__form" onSubmit={handleSubmit}>
-        <input
-          className="ai-chat__input"
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask your AI coach..."
-          disabled={loading}
-        />
-        <button className="ai-chat__send" type="submit" disabled={loading || !input.trim()}>
-          Send
-        </button>
-      </form>
-      {input.trim() && (
-        <button
-          className="ai-chat__clear"
-          type="button"
-          onClick={() => setInput('')}
-          disabled={loading}
-        >
-          Clear
-        </button>
+      {messages.length === 0 && (
+        <form className="ai-chat__form" onSubmit={handleSubmit}>
+          <input
+            className="ai-chat__input"
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask your AI coach..."
+            disabled={loading}
+          />
+          <button className="ai-chat__send" type="submit" disabled={loading || !input.trim()}>
+            Send
+          </button>
+        </form>
       )}
 
       {messages.length > 0 && (
@@ -178,6 +170,33 @@ export function AICoachChat({ currentSession, externalPrompt, intents }: AICoach
             </div>
           )}
         </div>
+      )}
+
+      {messages.length > 0 && !loading && (
+        <form className="ai-chat__form ai-chat__form--followup" onSubmit={handleSubmit}>
+          <input
+            className="ai-chat__input"
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Follow up..."
+            disabled={loading}
+          />
+          <button className="ai-chat__send" type="submit" disabled={loading || !input.trim()}>
+            Send
+          </button>
+        </form>
+      )}
+
+      {input.trim() && (
+        <button
+          className="ai-chat__clear"
+          type="button"
+          onClick={() => setInput('')}
+          disabled={loading}
+        >
+          Clear
+        </button>
       )}
       </>
       )}
